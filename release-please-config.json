@@ -1,0 +1,23 @@
+{
+  "include-component-in-tag": false,
+  "packages": {
+    ".": {
+      "release-type": "go",
+      "component": "operator"
+    },
+    "deploy/helm": {
+      "release-type": "helm",
+      "component": "helm"
+    }
+  },
+  "plugins": [
+    {
+      "type": "linked-versions",
+      "groupName": "cloudscaler",
+      "components": [
+        "operator",
+        "helm"
+      ]
+    }
+  ]
+}

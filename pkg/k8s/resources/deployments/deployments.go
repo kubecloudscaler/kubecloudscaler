@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/golgoth31/cloudscaler/api/common"
-	"github.com/golgoth31/cloudscaler/pkg/k8s/utils"
+	"github.com/cloudscalerio/cloudscaler/api/common"
+	"github.com/cloudscalerio/cloudscaler/pkg/k8s/utils"
 	appsV1 "k8s.io/api/apps/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"

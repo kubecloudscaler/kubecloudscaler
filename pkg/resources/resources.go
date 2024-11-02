@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/golgoth31/cloudscaler/pkg/k8s/resources/deployments"
-	"github.com/golgoth31/cloudscaler/pkg/k8s/utils"
-	// "github.com/golgoth31/cloudscaler/pkg/k8s/resources/horizontalpodautoscalers"
+	"github.com/cloudscalerio/cloudscaler/pkg/k8s/resources/deployments"
+	"github.com/cloudscalerio/cloudscaler/pkg/k8s/utils"
+	// "github.com/cloudscalerio/cloudscaler/pkg/k8s/resources/horizontalpodautoscalers"
 )
 
 func NewResource(ctx context.Context, resourceName string, config Config) (IResource, error) {

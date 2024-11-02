@@ -1,14 +1,14 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "cloudscaler.fullname" . }}-controller-manager-metrics-service
+  name: {{ include "helm.fullname" . }}-controller-manager-metrics-service
   labels:
     control-plane: controller-manager
-  {{- include "cloudscaler.labels" . | nindent 4 }}
+  {{- include "helm.labels" . | nindent 4 }}
 spec:
   type: {{ .Values.metricsService.type }}
   selector:
     control-plane: controller-manager
-  {{- include "cloudscaler.selectorLabels" . | nindent 4 }}
+  {{- include "helm.selectorLabels" . | nindent 4 }}
   ports:
 	{{- .Values.metricsService.ports | toYaml | nindent 2 }}

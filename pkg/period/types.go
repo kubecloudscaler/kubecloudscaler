@@ -3,7 +3,7 @@ package period
 import (
 	"time"
 
-	"github.com/golgoth31/cloudscaler/api/common"
+	"github.com/cloudscalerio/cloudscaler/api/common"
 )
 
 type Period struct {

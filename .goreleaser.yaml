@@ -20,12 +20,12 @@ builds:
       - CGO_ENABLED=0
     goos:
       - linux
-      - darwin
     goarch:
       - amd64
       - arm64
     goamd64:
       - v3
+    main: ./cmd
 
 archives:
   - format: tar.gz
@@ -46,61 +46,49 @@ changelog:
     exclude:
       - "^docs:"
       - "^test:"
+      - "^Merge pull request"
+  use: github
 
 # .goreleaser.yaml
 dockers:
   - id: linux-arm64
-
-    # GOOS of the built binaries/packages that should be used.
-    # Default: 'linux'.
     goos: linux
-
-    # GOARCH of the built binaries/packages that should be used.
-    # Default: 'amd64'.
     goarch: arm64
     use: buildx
+    image_templates:
+      - "ghcr.io/cloudscalerio/{{ .ProjectName }}:{{ .Tag }}-arm64v8"
+    build_flag_templates:
+      - --platform=linux/arm64/v8
 
   - id: linux-amd64
-
-    # GOOS of the built binaries/packages that should be used.
-    # Default: 'linux'.
     goos: linux
-
-    # GOARCH of the built binaries/packages that should be used.
-    # Default: 'amd64'.
     goarch: amd64
-
-    # GOAMD64 of the built binaries/packages that should be used.
-    # Default: 'v1'.
     goamd64: "v3"
-
-    # Templates of the Docker image names.
-    #
-    # Templates: allowed.
-    # image_templates:
-    #   - "myuser/myimage:latest"
-    #   - "myuser/myimage:{{ .Tag }}"
-    #   - "myuser/myimage:{{ .Tag }}-{{ .Env.FOOBAR }}"
-    #   - "myuser/myimage:v{{ .Major }}"
-    #   - "gcr.io/myuser/myimage:latest"
-
-    # Set the "backend" for the Docker pipe.
-    #
-    # Valid options are: docker, buildx, podman.
-    #
-    # Podman is a GoReleaser Pro feature and is only available on Linux.
-    #
-    # Default: 'docker'.
     use: buildx
 
-    # Docker build flags.
-    #
-    # Templates: allowed.
-    # build_flag_templates:
-    #   - "--pull"
-    #   - "--label=org.opencontainers.image.created={{.Date}}"
-    #   - "--label=org.opencontainers.image.title={{.ProjectName}}"
-    #   - "--label=org.opencontainers.image.revision={{.FullCommit}}"
-    #   - "--label=org.opencontainers.image.version={{.Version}}"
-    #   - "--build-arg=FOO={{.Env.Bar}}"
-    #   - "--platform=linux/arm64"
+    image_templates:
+      - "ghcr.io/cloudscalerio/{{ .ProjectName }}:{{ .Tag }}-amd64"
+    build_flag_templates:
+      - --platform=linux/amd64
+
+docker_manifests:
+  - name_template: ghcr.io/cloudscalerio/{{ .ProjectName }}:{{ .Tag }}
+    image_templates:
+      - ghcr.io/cloudscalerio/{{ .ProjectName }}:{{ .Tag }}-amd64
+      - ghcr.io/cloudscalerio/{{ .ProjectName }}:{{ .Tag }}-arm64v8
+  - name_template: ghcr.io/cloudscalerio/{{ .ProjectName }}:v{{ .Major }}
+    image_templates:
+      - ghcr.io/cloudscalerio/{{ .ProjectName }}:{{ .Tag }}-amd64
+      - ghcr.io/cloudscalerio/{{ .ProjectName }}:{{ .Tag }}-arm64v8
+  - name_template: ghcr.io/cloudscalerio/{{ .ProjectName }}:v{{ .Major }}.{{ .Minor }}
+    image_templates:
+      - ghcr.io/cloudscalerio/{{ .ProjectName }}:{{ .Tag }}-amd64
+      - ghcr.io/cloudscalerio/{{ .ProjectName }}:{{ .Tag }}-arm64v8
+  - name_template: ghcr.io/cloudscalerio/{{ .ProjectName }}:latest
+    image_templates:
+      - ghcr.io/cloudscalerio/{{ .ProjectName }}:{{ .Tag }}-amd64
+      - ghcr.io/cloudscalerio/{{ .ProjectName }}:{{ .Tag }}-arm64v8
+
+release:
+  mode: replace
+  replace_existing_artifacts: true

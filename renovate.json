@@ -1,0 +1,107 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:best-practices",
+    ":gitSignOff",
+    "group:allNonMajor",
+    "mergeConfidence:all-badges"
+  ],
+  "addLabels": [
+    "dependencies"
+  ],
+  "postUpdateOptions": [
+    "gomodTidy",
+    "gomodMassage"
+  ],
+  "automerge": false,
+  "automergeType": "pr",
+  "schedule": [
+    "at any time"
+  ],
+  "platformAutomerge": false,
+  "packageRules": [
+    {
+      "matchPackageNames": [
+        "azure-sdk-for-go"
+      ],
+      "enabled": true,
+      "groupName": "azure-group"
+    },
+    {
+      "matchPackageNames": [
+        "onsi"
+      ],
+      "enabled": true,
+      "groupName": "onsi-group"
+    },
+    {
+      "matchPackageNames": [
+        "prometheus"
+      ],
+      "enabled": true,
+      "groupName": "prometheus-group"
+    },
+    {
+      "matchPackageNames": [
+        "k8s.io",
+        "sigs.k8s.io"
+      ],
+      "enabled": true,
+      "groupName": "kubernetes-group"
+    },
+    {
+      "matchPackageNames": [
+        "golang"
+      ],
+      "enabled": true,
+      "groupName": "golang-group"
+    },
+    {
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
+      ],
+      "matchCurrentVersion": "!/^0/",
+      "automerge": true
+    },
+    {
+      "matchManagers": [
+        "gomod"
+      ],
+      "addLabels": [
+        "go"
+      ]
+    },
+    {
+      "matchManagers": [
+        "github-actions"
+      ],
+      "addLabels": [
+        "github_actions"
+      ]
+    },
+    {
+      "matchManagers": [
+        "dockerfile"
+      ],
+      "addLabels": [
+        "docker"
+      ]
+    }
+  ],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "fileMatch": [
+        "(^|\\/)Makefile$",
+        "(^|\\/)Dockerfile",
+        "(^|\\/).*\\.ya?ml$",
+        "(^|\\/).*\\.toml$",
+        "(^|\\/).*\\.sh$"
+      ],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>.+?) depName=(?<depName>.+?)\\s.*?_VERSION ?(\\??=|\\: ?) ?\\\"?(?<currentValue>.+?)?\\\"?\\s"
+      ]
+    }
+  ]
+}
