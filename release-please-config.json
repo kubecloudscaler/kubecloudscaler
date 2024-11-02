@@ -1,7 +1,22 @@
 {
   "packages": {
     ".": {
-      "release-type": "go"
+      "release-type": "go",
+      "component": "operator"
+    },
+    "deploy/helm/cloudscaler": {
+      "release-type": "helm",
+      "component": "helm"
     }
-  }
+  },
+  "plugins": [
+    {
+      "type": "linked-versions",
+      "groupName": "cloudscaler",
+      "components": [
+        "operator",
+        "helm"
+      ]
+    }
+  ]
 }
