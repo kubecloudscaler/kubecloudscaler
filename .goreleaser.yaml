@@ -26,6 +26,7 @@ builds:
       - arm64
     goamd64:
       - v3
+    main: ./cmd
 
 archives:
   - format: tar.gz
@@ -50,47 +51,14 @@ changelog:
 # .goreleaser.yaml
 dockers:
   - id: linux-arm64
-
-    # GOOS of the built binaries/packages that should be used.
-    # Default: 'linux'.
     goos: linux
-
-    # GOARCH of the built binaries/packages that should be used.
-    # Default: 'amd64'.
     goarch: arm64
     use: buildx
 
   - id: linux-amd64
-
-    # GOOS of the built binaries/packages that should be used.
-    # Default: 'linux'.
     goos: linux
-
-    # GOARCH of the built binaries/packages that should be used.
-    # Default: 'amd64'.
     goarch: amd64
-
-    # GOAMD64 of the built binaries/packages that should be used.
-    # Default: 'v1'.
     goamd64: "v3"
-
-    # Templates of the Docker image names.
-    #
-    # Templates: allowed.
-    # image_templates:
-    #   - "myuser/myimage:latest"
-    #   - "myuser/myimage:{{ .Tag }}"
-    #   - "myuser/myimage:{{ .Tag }}-{{ .Env.FOOBAR }}"
-    #   - "myuser/myimage:v{{ .Major }}"
-    #   - "gcr.io/myuser/myimage:latest"
-
-    # Set the "backend" for the Docker pipe.
-    #
-    # Valid options are: docker, buildx, podman.
-    #
-    # Podman is a GoReleaser Pro feature and is only available on Linux.
-    #
-    # Default: 'docker'.
     use: buildx
 
     # Docker build flags.

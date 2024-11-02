@@ -16,3 +16,4 @@ jobs:
       - uses: googleapis/release-please-action@v4
         with:
           token: ${{ secrets.CLOUDSCALER_TOKEN }}
+          skip-github-release: "true"
