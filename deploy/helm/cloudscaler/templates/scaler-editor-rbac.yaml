@@ -1,0 +1,25 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "cloudscaler.fullname" . }}-scaler-editor-role
+  labels:
+  {{- include "cloudscaler.labels" . | nindent 4 }}
+rules:
+- apiGroups:
+  - k8s.cloudscaler.io
+  resources:
+  - scalers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - k8s.cloudscaler.io
+  resources:
+  - scalers/status
+  verbs:
+  - get

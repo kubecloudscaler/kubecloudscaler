@@ -1,0 +1,107 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: manager-role
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - get
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - get
+  - list
+  - patch
+  - update
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets
+  verbs:
+  - get
+  - list
+  - patch
+  - update
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - get
+  - list
+  - patch
+  - update
+- apiGroups:
+  - batch
+  resources:
+  - cronjobs
+  verbs:
+  - get
+  - list
+  - patch
+  - update
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  verbs:
+  - get
+  - list
+- apiGroups:
+  - gcp.cloudscaler.io
+  resources:
+  - scalers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - gcp.cloudscaler.io
+  resources:
+  - scalers/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - gcp.cloudscaler.io
+  resources:
+  - scalers/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - k8s.cloudscaler.io
+  resources:
+  - scalers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - k8s.cloudscaler.io
+  resources:
+  - scalers/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - k8s.cloudscaler.io
+  resources:
+  - scalers/status
+  verbs:
+  - get
+  - patch
+  - update

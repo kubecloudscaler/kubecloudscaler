@@ -1,0 +1,21 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "cloudscaler.fullname" . }}-gcp-scaler-viewer-role
+  labels:
+  {{- include "cloudscaler.labels" . | nindent 4 }}
+rules:
+- apiGroups:
+  - gcp.cloudscaler.io
+  resources:
+  - scalers
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - gcp.cloudscaler.io
+  resources:
+  - scalers/status
+  verbs:
+  - get

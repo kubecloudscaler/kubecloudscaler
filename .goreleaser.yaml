@@ -1,0 +1,106 @@
+# This is an example .goreleaser.yml file with some sensible defaults.
+# Make sure to check the documentation at https://goreleaser.com
+
+# The lines below are called `modelines`. See `:help modeline`
+# Feel free to remove those if you don't want/need to use them.
+# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
+# vim: set ts=2 sw=2 tw=0 fo=cnqoj
+
+version: 2
+
+before:
+  hooks:
+    # You may remove this if you don't use go modules.
+    - go mod tidy
+    # you may remove this if you don't need go generate
+    - go generate ./...
+
+builds:
+  - env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    goamd64:
+      - v3
+
+archives:
+  - format: tar.gz
+    # this name template makes the OS and Arch compatible with the results of `uname`.
+    name_template: >-
+      {{ .ProjectName }}_
+      {{- title .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else }}{{ .Arch }}{{ end }}
+    # use zip for windows archives
+    format_overrides:
+      - goos: windows
+        format: zip
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+
+# .goreleaser.yaml
+dockers:
+  - id: linux-arm64
+
+    # GOOS of the built binaries/packages that should be used.
+    # Default: 'linux'.
+    goos: linux
+
+    # GOARCH of the built binaries/packages that should be used.
+    # Default: 'amd64'.
+    goarch: arm64
+    use: buildx
+
+  - id: linux-amd64
+
+    # GOOS of the built binaries/packages that should be used.
+    # Default: 'linux'.
+    goos: linux
+
+    # GOARCH of the built binaries/packages that should be used.
+    # Default: 'amd64'.
+    goarch: amd64
+
+    # GOAMD64 of the built binaries/packages that should be used.
+    # Default: 'v1'.
+    goamd64: "v3"
+
+    # Templates of the Docker image names.
+    #
+    # Templates: allowed.
+    # image_templates:
+    #   - "myuser/myimage:latest"
+    #   - "myuser/myimage:{{ .Tag }}"
+    #   - "myuser/myimage:{{ .Tag }}-{{ .Env.FOOBAR }}"
+    #   - "myuser/myimage:v{{ .Major }}"
+    #   - "gcr.io/myuser/myimage:latest"
+
+    # Set the "backend" for the Docker pipe.
+    #
+    # Valid options are: docker, buildx, podman.
+    #
+    # Podman is a GoReleaser Pro feature and is only available on Linux.
+    #
+    # Default: 'docker'.
+    use: buildx
+
+    # Docker build flags.
+    #
+    # Templates: allowed.
+    # build_flag_templates:
+    #   - "--pull"
+    #   - "--label=org.opencontainers.image.created={{.Date}}"
+    #   - "--label=org.opencontainers.image.title={{.ProjectName}}"
+    #   - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+    #   - "--label=org.opencontainers.image.version={{.Version}}"
+    #   - "--build-arg=FOO={{.Env.Bar}}"
+    #   - "--platform=linux/arm64"
