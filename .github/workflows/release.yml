@@ -26,7 +26,7 @@ jobs:
         uses: fjogeleit/yaml-update-action@v0.15.0
         with:
           branch: ${{ steps.release.outputs.pr.headBranchName }}
-          message: 'chore: update values.yaml with ${{ steps.release.outputs.root--tag_name }}'
+          message: 'chore: update values.yaml with ${{ steps.release.outputs.pr }}'
           changes: |
             {
               "deploy/helm/cloudscaler/values.yaml": {
