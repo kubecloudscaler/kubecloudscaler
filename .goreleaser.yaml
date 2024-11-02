@@ -84,3 +84,7 @@ dockers:
     #   - "--label=org.opencontainers.image.version={{.Version}}"
     #   - "--build-arg=FOO={{.Env.Bar}}"
     #   - "--platform=linux/arm64"
+
+release:
+  mode: replace
+  replace_existing_artifacts: true
