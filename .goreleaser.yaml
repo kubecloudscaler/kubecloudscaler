@@ -56,7 +56,9 @@ dockers:
     goarch: arm64
     use: buildx
     image_templates:
-      - "ghcr.io/cloudscalerio/{{ .ProjectName }}:{{ .Tag }}-arm64"
+      - "ghcr.io/cloudscalerio/{{ .ProjectName }}:{{ .Tag }}-arm64v8"
+    build_flag_templates:
+      - --platform=linux/arm64/v8
 
   - id: linux-amd64
     goos: linux
@@ -66,36 +68,26 @@ dockers:
 
     image_templates:
       - "ghcr.io/cloudscalerio/{{ .ProjectName }}:{{ .Tag }}-amd64"
-
-    # Docker build flags.
-    #
-    # Templates: allowed.
-    # build_flag_templates:
-    #   - "--pull"
-    #   - "--label=org.opencontainers.image.created={{.Date}}"
-    #   - "--label=org.opencontainers.image.title={{.ProjectName}}"
-    #   - "--label=org.opencontainers.image.revision={{.FullCommit}}"
-    #   - "--label=org.opencontainers.image.version={{.Version}}"
-    #   - "--build-arg=FOO={{.Env.Bar}}"
-    #   - "--platform=linux/arm64"
+    build_flag_templates:
+      - --platform=linux/amd64
 
 docker_manifests:
   - name_template: ghcr.io/cloudscalerio/{{ .ProjectName }}:{{ .Tag }}
     image_templates:
       - ghcr.io/cloudscalerio/{{ .ProjectName }}:{{ .Tag }}-amd64
-      - ghcr.io/cloudscalerio/{{ .ProjectName }}:{{ .Tag }}-arm64
+      - ghcr.io/cloudscalerio/{{ .ProjectName }}:{{ .Tag }}-arm64v8
   - name_template: ghcr.io/cloudscalerio/{{ .ProjectName }}:v{{ .Major }}
     image_templates:
       - ghcr.io/cloudscalerio/{{ .ProjectName }}:{{ .Tag }}-amd64
-      - ghcr.io/cloudscalerio/{{ .ProjectName }}:{{ .Tag }}-arm64
+      - ghcr.io/cloudscalerio/{{ .ProjectName }}:{{ .Tag }}-arm64v8
   - name_template: ghcr.io/cloudscalerio/{{ .ProjectName }}:v{{ .Major }}.{{ .Minor }}
     image_templates:
       - ghcr.io/cloudscalerio/{{ .ProjectName }}:{{ .Tag }}-amd64
-      - ghcr.io/cloudscalerio/{{ .ProjectName }}:{{ .Tag }}-arm64
+      - ghcr.io/cloudscalerio/{{ .ProjectName }}:{{ .Tag }}-arm64v8
   - name_template: ghcr.io/cloudscalerio/{{ .ProjectName }}:latest
     image_templates:
       - ghcr.io/cloudscalerio/{{ .ProjectName }}:{{ .Tag }}-amd64
-      - ghcr.io/cloudscalerio/{{ .ProjectName }}:{{ .Tag }}-arm64
+      - ghcr.io/cloudscalerio/{{ .ProjectName }}:{{ .Tag }}-arm64v8
 
 release:
   mode: replace
