@@ -1,4 +1,4 @@
-module github.com/golgoth31/cloudscaler
+module github.com/cloudscalerio/cloudscaler
 
 go 1.22.0
 

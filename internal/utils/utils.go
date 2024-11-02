@@ -3,8 +3,8 @@ package utils
 import (
 	"fmt"
 
-	"github.com/golgoth31/cloudscaler/api/common"
-	periodPkg "github.com/golgoth31/cloudscaler/pkg/period"
+	"github.com/cloudscalerio/cloudscaler/api/common"
+	periodPkg "github.com/cloudscalerio/cloudscaler/pkg/period"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"

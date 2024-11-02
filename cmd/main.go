@@ -35,10 +35,10 @@ import (
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
-	gcpv1alpha1 "github.com/golgoth31/cloudscaler/api/gcp/v1alpha1"
-	k8sv1alpha1 "github.com/golgoth31/cloudscaler/api/k8s/v1alpha1"
-	gcpcontroller "github.com/golgoth31/cloudscaler/internal/controller/gcp"
-	controller "github.com/golgoth31/cloudscaler/internal/controller/k8s"
+	gcpv1alpha1 "github.com/cloudscalerio/cloudscaler/api/gcp/v1alpha1"
+	k8sv1alpha1 "github.com/cloudscalerio/cloudscaler/api/k8s/v1alpha1"
+	gcpcontroller "github.com/cloudscalerio/cloudscaler/internal/controller/gcp"
+	controller "github.com/cloudscalerio/cloudscaler/internal/controller/k8s"
 	// +kubebuilder:scaffold:imports
 )
 
