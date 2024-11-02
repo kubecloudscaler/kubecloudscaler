@@ -14,6 +14,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: googleapis/release-please-action@7987652d64b4581673a76e33ad5e98e3dd56832f # v4
+        id: release
         with:
           token: ${{ secrets.CLOUDSCALER_TOKEN }}
           # skip-github-release: "true"
+
+      - uses: actions/checkout@v4
+
+      - name: Update Image Version in the related HelmChart values.yaml
+        if: ${{ ! steps.release.outputs.release_created }}
+        uses: fjogeleit/yaml-update-action@v0.15.0
+        with:
+          branch: ${{ steps.release.outputs.pr['headBranchName'] }}
+          message: 'chore: update values.yaml with ${{ steps.release.outputs.tag_name }}'
+          changes: |
+            {
+              "deploy/helm/cloudscaler/values.yaml": {
+                "controllerManager.manager.image.tag": "${{ steps.release.outputs.tag_name }}"
+              }
+            }
