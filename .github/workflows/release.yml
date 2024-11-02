@@ -25,7 +25,7 @@ jobs:
         if: ${{ ! steps.release.outputs.release_created }}
         uses: fjogeleit/yaml-update-action@v0.15.0
         with:
-          branch: ${{ steps.release.outputs.pr['headBranchName'] }}
+          branch: ${{ steps.release.outputs.pr.headBranchName }}
           message: 'chore: update values.yaml with ${{ steps.release.outputs.tag_name }}'
           changes: |
             {
