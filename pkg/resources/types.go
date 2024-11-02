@@ -3,8 +3,8 @@ package resources
 import (
 	"context"
 
-	"github.com/golgoth31/cloudscaler/api/common"
-	k8sUtils "github.com/golgoth31/cloudscaler/pkg/k8s/utils"
+	"github.com/cloudscalerio/cloudscaler/api/common"
+	k8sUtils "github.com/cloudscalerio/cloudscaler/pkg/k8s/utils"
 )
 
 type Config struct {
