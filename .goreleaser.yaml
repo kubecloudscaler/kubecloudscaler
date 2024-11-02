@@ -47,6 +47,8 @@ changelog:
     exclude:
       - "^docs:"
       - "^test:"
+      - "^Merge pull request"
+  use: github
 
 # .goreleaser.yaml
 dockers:
@@ -54,12 +56,22 @@ dockers:
     goos: linux
     goarch: arm64
     use: buildx
+    image_templates:
+      - "ghcr.io/cloudscalerio/cloudscaler:{{ .Tag }}"
+      - "ghcr.io/cloudscalerio/cloudscaler:v{{ .Major }}"
+      - "ghcr.io/cloudscalerio/cloudscaler:latest"
 
   - id: linux-amd64
     goos: linux
     goarch: amd64
     goamd64: "v3"
     use: buildx
+
+    image_templates:
+      - "ghcr.io/cloudscalerio/cloudscaler:{{ .Tag }}"
+      - "ghcr.io/cloudscalerio/cloudscaler:v{{ .Major }}"
+      - "ghcr.io/cloudscalerio/cloudscaler:v{{ .Major }}.{{ .Minor }}"
+      - "ghcr.io/cloudscalerio/cloudscaler:latest"
 
     # Docker build flags.
     #
