@@ -1,3 +1,3 @@
 FROM cgr.dev/chainguard/static
-ENTRYPOINT ["/manager"]
-COPY manager /
+ENTRYPOINT ["/cloudscaler"]
+COPY cloudscaler /
