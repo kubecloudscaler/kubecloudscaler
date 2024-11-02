@@ -22,11 +22,11 @@ jobs:
           # skip-github-release: "true"
 
       - name: Update Image Version in the related HelmChart values.yaml
-        if: ${{ ! steps.release.outputs.release_created }}
+        if: ${{ steps.release.outputs.prs_created }}
         uses: fjogeleit/yaml-update-action@v0.15.0
         with:
           branch: ${{ steps.release.outputs.pr.headBranchName }}
-          message: 'chore: update values.yaml with ${{ steps.release.outputs.pr }}'
+          message: "chore: update values.yaml with ${{ steps.release.outputs.pr['headBranchName'] }}"
           changes: |
             {
               "deploy/helm/cloudscaler/values.yaml": {
