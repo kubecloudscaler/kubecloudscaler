@@ -30,6 +30,6 @@ jobs:
           changes: |
             {
               "deploy/helm/cloudscaler/values.yaml": {
-                "controllerManager.manager.image.tag": "${{ steps.release.outputs.tag_name }}"
+                "controllerManager.manager.image.tag": "${{ steps.release.outputs['deploy/helm/cloudscaler--tag_name'] }}"
               }
             }
