@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.4](https://github.com/cloudscalerio/cloudscaler/compare/v0.2.3...v0.2.4) (2024-11-02)
+
+
+### Bug Fixes
+
+* build ([cc58b33](https://github.com/cloudscalerio/cloudscaler/commit/cc58b33b39169a3ed88c61ba5e8546ace6f80025))
+
 ## [0.2.3](https://github.com/cloudscalerio/cloudscaler/compare/v0.2.2...v0.2.3) (2024-11-02)
 
 
