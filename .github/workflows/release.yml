@@ -25,8 +25,8 @@ jobs:
         if: ${{ steps.release.outputs.prs_created }}
         uses: fjogeleit/yaml-update-action@v0.15.0
         with:
-          branch: ${{ steps.release.outputs.pr.headBranchName }}
-          message: "chore: update values.yaml with ${{ fromJSON(steps.release.outputs.pr).headBranchName }}"
+          branch: ${{ fromJSON(steps.release.outputs.pr).headBranchName }}
+          message: "chore: update values.yaml with ${{ toJSON(steps.release.outputs) }}"
           changes: |
             {
               "deploy/helm/cloudscaler/values.yaml": {
