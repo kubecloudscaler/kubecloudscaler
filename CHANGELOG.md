@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.2.5](https://github.com/cloudscalerio/cloudscaler/compare/v0.2.4...v0.2.5) (2024-11-02)
+
+
+### Bug Fixes
+
+* **deps:** update all non-major dependencies ([c508cb7](https://github.com/cloudscalerio/cloudscaler/commit/c508cb746f7bd0195db4efc853978a05c410055a))
+* **deps:** update k8s.io/utils digest to 49e7df5 ([c2662a5](https://github.com/cloudscalerio/cloudscaler/commit/c2662a51e0a6cdb0aa3dbe0c52d474319f68a5e7))
+* renovate.json ([a566540](https://github.com/cloudscalerio/cloudscaler/commit/a566540e8185bf650331881be07c63d19388655f))
+
 ## [0.2.4](https://github.com/cloudscalerio/cloudscaler/compare/v0.2.3...v0.2.4) (2024-11-02)
 
 
