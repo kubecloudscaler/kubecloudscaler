@@ -20,7 +20,6 @@ builds:
       - CGO_ENABLED=0
     goos:
       - linux
-      - darwin
     goarch:
       - amd64
       - arm64
@@ -57,9 +56,7 @@ dockers:
     goarch: arm64
     use: buildx
     image_templates:
-      - "ghcr.io/cloudscalerio/cloudscaler:{{ .Tag }}"
-      - "ghcr.io/cloudscalerio/cloudscaler:v{{ .Major }}"
-      - "ghcr.io/cloudscalerio/cloudscaler:latest"
+      - "ghcr.io/cloudscalerio/{{ .ProjectName }}:{{ .Tag }}-arm64"
 
   - id: linux-amd64
     goos: linux
@@ -68,10 +65,7 @@ dockers:
     use: buildx
 
     image_templates:
-      - "ghcr.io/cloudscalerio/cloudscaler:{{ .Tag }}"
-      - "ghcr.io/cloudscalerio/cloudscaler:v{{ .Major }}"
-      - "ghcr.io/cloudscalerio/cloudscaler:v{{ .Major }}.{{ .Minor }}"
-      - "ghcr.io/cloudscalerio/cloudscaler:latest"
+      - "ghcr.io/cloudscalerio/{{ .ProjectName }}:{{ .Tag }}-amd64"
 
     # Docker build flags.
     #
@@ -84,6 +78,24 @@ dockers:
     #   - "--label=org.opencontainers.image.version={{.Version}}"
     #   - "--build-arg=FOO={{.Env.Bar}}"
     #   - "--platform=linux/arm64"
+
+docker_manifests:
+  - name_template: ghcr.io/cloudscalerio/{{ .ProjectName }}:{{ .Tag }}
+    image_templates:
+      - ghcr.io/cloudscalerio/{{ .ProjectName }}:{{ .Tag }}-amd64
+      - ghcr.io/cloudscalerio/{{ .ProjectName }}:{{ .Tag }}-arm64
+  - name_template: ghcr.io/cloudscalerio/{{ .ProjectName }}:v{{ .Major }}
+    image_templates:
+      - ghcr.io/cloudscalerio/{{ .ProjectName }}:{{ .Tag }}-amd64
+      - ghcr.io/cloudscalerio/{{ .ProjectName }}:{{ .Tag }}-arm64
+  - name_template: ghcr.io/cloudscalerio/{{ .ProjectName }}:v{{ .Major }}.{{ .Minor }}
+    image_templates:
+      - ghcr.io/cloudscalerio/{{ .ProjectName }}:{{ .Tag }}-amd64
+      - ghcr.io/cloudscalerio/{{ .ProjectName }}:{{ .Tag }}-arm64
+  - name_template: ghcr.io/cloudscalerio/{{ .ProjectName }}:latest
+    image_templates:
+      - ghcr.io/cloudscalerio/{{ .ProjectName }}:{{ .Tag }}-amd64
+      - ghcr.io/cloudscalerio/{{ .ProjectName }}:{{ .Tag }}-arm64
 
 release:
   mode: replace
