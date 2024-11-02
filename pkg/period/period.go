@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/golgoth31/cloudscaler/api/common"
+	"github.com/cloudscalerio/cloudscaler/api/common"
 )
 
 func New(period *common.ScalerPeriod) (*Period, error) {

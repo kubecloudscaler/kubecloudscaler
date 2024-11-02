@@ -27,8 +27,8 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/golgoth31/cloudscaler/api/common"
-	k8sv1alpha1 "github.com/golgoth31/cloudscaler/api/k8s/v1alpha1"
+	"github.com/cloudscalerio/cloudscaler/api/common"
+	k8sv1alpha1 "github.com/cloudscalerio/cloudscaler/api/k8s/v1alpha1"
 )
 
 var _ = Describe("Scaler Controller", func() {

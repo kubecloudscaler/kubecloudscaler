@@ -21,7 +21,7 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"github.com/golgoth31/cloudscaler/api/common"
+	"github.com/cloudscalerio/cloudscaler/api/common"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )
 

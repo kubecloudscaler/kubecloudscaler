@@ -145,7 +145,7 @@ undeploy: kustomize ## Undeploy controller from the K8s cluster specified in ~/.
 
 .PHONY: helm
 helm: manifests generate kustomize helmify
-	$(KUSTOMIZE) build config/default | $(HELMIFY) deploy/helm/cloudscaler
+	$(KUSTOMIZE) build config/default | $(HELMIFY) deploy/helm
 
 ##@ Dependencies
 

@@ -24,7 +24,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/golgoth31/cloudscaler/test/utils"
+	"github.com/cloudscalerio/cloudscaler/test/utils"
 )
 
 const namespace = "cloudscaler-system"

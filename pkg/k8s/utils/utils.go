@@ -4,7 +4,7 @@ import (
 	"context"
 	"strings"
 
-	"github.com/golgoth31/cloudscaler/api/common"
+	"github.com/cloudscalerio/cloudscaler/api/common"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
