@@ -10,7 +10,7 @@ controllerManager:
         drop:
         - ALL
     image:
-      repository: controller
+      repository: ghcr.io/cloudscalerio/cloudscaler
       tag: latest
     resources:
       limits:
