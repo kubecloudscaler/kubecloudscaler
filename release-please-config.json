@@ -2,6 +2,7 @@
   "release-type": "go",
   "extra-files": [
     {
+      "type": "generic",
       "path": "deploy/helm/Chart.yaml"
     },
     {
