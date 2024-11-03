@@ -1,6 +1,6 @@
 +++
-title = ""
+title = "Cloudscaler"
 type = "home"
 +++
 
-This is your new home page.
+This kubernetes operator is intended to replace the kube-downscaler use.
