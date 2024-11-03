@@ -81,6 +81,7 @@ jobs:
               },
               "deploy/helm/Chart.yaml": {
                 "appVersion": "${{ needs.goreleaser.outputs.release-tag }}"
+                "version": "${{ needs.goreleaser.outputs.release-tag }}"
               }
             }
           commitChange: false
