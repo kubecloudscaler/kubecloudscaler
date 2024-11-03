@@ -11,7 +11,7 @@ controllerManager:
         - ALL
     image:
       repository: ghcr.io/cloudscalerio/cloudscaler
-      tag: latest
+      tag: latest@sha256:1f6918bdbd73bc0bd3fafd86f7a17fa7f15dae0940ec1efaa60031bd91c56b93
     resources:
       limits:
         cpu: 500m
