@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.1](https://github.com/cloudscalerio/cloudscaler/compare/v1.1.0...v1.1.1) (2024-11-03)
+
+
+### Bug Fixes
+
+* chart workflow ([b582424](https://github.com/cloudscalerio/cloudscaler/commit/b582424a04aaf12df991b3351f920517dd8e8cc3))
+
 ## [1.1.0](https://github.com/cloudscalerio/cloudscaler/compare/v1.0.0...v1.1.0) (2024-11-03)
 
 
