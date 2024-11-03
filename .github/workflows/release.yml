@@ -25,6 +25,7 @@ jobs:
     outputs:
       release-created: ${{ steps.release.outputs.release_created }}
       release-tag: ${{ steps.release.outputs.tag_name }}
+      release-version: ${{ steps.release.outputs.version }}
 
   goreleaser:
     needs:
@@ -33,6 +34,7 @@ jobs:
     if: ${{ needs.release-please.outputs.release-created == 'true' }}
     outputs:
       release-tag: ${{ needs.release-please.outputs.release-tag }}
+      release-version: ${{ needs.release-please.outputs.release-version }}
     steps:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
@@ -80,8 +82,8 @@ jobs:
                 "controllerManager.manager.image.tag": "${{ needs.goreleaser.outputs.release-tag }}"
               },
               "deploy/helm/Chart.yaml": {
-                "appVersion": "${{ needs.goreleaser.outputs.release-tag }}"
-                "version": "${{ needs.goreleaser.outputs.release-tag }}"
+                "appVersion": "${{ needs.goreleaser.outputs.release-tag }}",
+                "version": "${{ needs.goreleaser.outputs.release-version }}"
               }
             }
           commitChange: false
