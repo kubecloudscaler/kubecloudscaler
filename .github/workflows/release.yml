@@ -24,8 +24,7 @@ jobs:
           # skip-github-release: "true"
     outputs:
       release-created: ${{ steps.release.outputs.release_created }}
-      release-tag: ${{ steps.release.outputs.tag_name }}
-      release-version: ${{ steps.release.outputs.version }}
+      release-tag: ${{ steps.release.outputs.operator--tag_name }}
 
   goreleaser:
     needs:
