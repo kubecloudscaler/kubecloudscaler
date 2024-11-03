@@ -77,10 +77,10 @@ jobs:
         with:
           changes: |
             {
-              "deploy/helm/cloudscaler/values.yaml": {
+              "deploy/helm/values.yaml": {
                 "controllerManager.manager.image.tag": "${{ needs.goreleaser.outputs.release-tag }}"
               },
-              "deploy/helm/cloudscaler/Chart.yaml": {
+              "deploy/helm/Chart.yaml": {
                 "appVersion": "${{ needs.goreleaser.outputs.release-tag }}"
               }
             }
@@ -94,5 +94,5 @@ jobs:
       - name: Build and Push the Helm Charts to GitHub Container Registry
         uses: JimCronqvist/action-helm-chart-repo@master
         with:
-          chartsPath: deploy/helm/cloudscaler
+          chartsPath: deploy/helm
           token: ${{ secrets.CLOUDSCALER_TOKEN }}

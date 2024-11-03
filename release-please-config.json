@@ -5,7 +5,7 @@
       "release-type": "go",
       "component": "operator"
     },
-    "deploy/helm/cloudscaler": {
+    "deploy/helm": {
       "release-type": "helm",
       "component": "helm"
     }
