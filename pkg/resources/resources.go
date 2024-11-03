@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/cloudscalerio/cloudscaler/pkg/k8s/resources/cronjobs"
 	"github.com/cloudscalerio/cloudscaler/pkg/k8s/resources/deployments"
 	"github.com/cloudscalerio/cloudscaler/pkg/k8s/utils"
 	// "github.com/cloudscalerio/cloudscaler/pkg/k8s/resources/horizontalpodautoscalers"
@@ -27,6 +28,19 @@ func NewResource(ctx context.Context, resourceName string, config Config) (IReso
 		}
 
 		resource = &deployments.Deployments{
+			Resource: k8sResource,
+		}
+	case "cronjobs":
+		k8sResource := &utils.K8sResource{
+			Config: config.K8s,
+		}
+
+		k8sResource.NsList, k8sResource.ListOptions, err = utils.PrepareSearch(ctx, config.K8s)
+		if err != nil {
+			return nil, err
+		}
+
+		resource = &cronjobs.Cronjobs{
 			Resource: k8sResource,
 		}
 	// case "horizontalpodautoscalers":
