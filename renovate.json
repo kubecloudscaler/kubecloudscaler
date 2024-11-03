@@ -1,5 +1,8 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "ignorePaths": [
+    "**/deploy/helm/**"
+  ],
   "extends": [
     "config:best-practices",
     ":gitSignOff",
