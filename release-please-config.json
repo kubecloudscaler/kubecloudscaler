@@ -14,5 +14,8 @@
       "path": "deploy/helm/values.yaml",
       "jsonpath": "$.controllerManager.manager.image.tag"
     }
-  ]
+  ],
+  "packages": {
+    ".": {}
+  }
 }
