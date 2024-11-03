@@ -1,22 +1,23 @@
 {
-  "release-type": "go",
-  "extra-files": [
-    {
-      "type": "generic",
-      "path": "deploy/helm/Chart.yaml"
-    },
-    {
-      "type": "yaml",
-      "path": "deploy/helm/Chart.yaml",
-      "jsonpath": "$.appVersion"
-    },
-    {
-      "type": "yaml",
-      "path": "deploy/helm/values.yaml",
-      "jsonpath": "$.controllerManager.manager.image.tag"
-    }
-  ],
   "packages": {
-    ".": {}
+    ".": {
+      "release-type": "go",
+      "extra-files": [
+        {
+          "type": "generic",
+          "path": "deploy/helm/Chart.yaml"
+        },
+        {
+          "type": "yaml",
+          "path": "deploy/helm/Chart.yaml",
+          "jsonpath": "$.appVersion"
+        },
+        {
+          "type": "yaml",
+          "path": "deploy/helm/values.yaml",
+          "jsonpath": "$.controllerManager.manager.image.tag"
+        }
+      ]
+    }
   }
 }
