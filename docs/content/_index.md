@@ -1,6 +1,7 @@
-+++
-title = "Cloudscaler"
-type = "home"
-+++
+---
+title: ""
+---
 
-This kubernetes operator is intended to replace the kube-downscaler use.
+## What is cloudscaler
+
+Scale down/up any resources in kubernetes or from a cloud provider.

@@ -1,5 +1,5 @@
-module example.com
+module docs
 
 go 1.22.2
 
-require github.com/McShelby/hugo-theme-relearn v0.0.0-20241025063418-28fce6b04c41 // indirect
+require github.com/imfing/hextra v0.8.6 // indirect

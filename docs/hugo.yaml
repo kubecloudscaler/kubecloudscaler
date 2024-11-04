@@ -1,0 +1,12 @@
+baseURL: https://example.org/
+languageCode: en-us
+title: Cloudscaler
+
+module:
+  imports:
+    - path: github.com/imfing/hextra
+menu:
+  main:
+    - name: Documentation
+      pageRef: /docs
+      weight: 1
