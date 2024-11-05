@@ -59,8 +59,8 @@ var _ = Describe("Cronjobs", func() {
 	Describe("Cronjobs", func() {
 		Context("in all namespaces", func() {
 			It("should be suspended", func() {
-				k8sClient.BatchV1().CronJobs("ns1").Create(ctx, cronjob1, metaV1.CreateOptions{})
-				k8sClient.BatchV1().CronJobs("ns2").Create(ctx, cronjob2, metaV1.CreateOptions{})
+				_, _ = k8sClient.BatchV1().CronJobs("ns1").Create(ctx, cronjob1, metaV1.CreateOptions{})
+				_, _ = k8sClient.BatchV1().CronJobs("ns2").Create(ctx, cronjob2, metaV1.CreateOptions{})
 				_, _, err := cronjobsOk.SetState(ctx)
 				Expect(err).ToNot(HaveOccurred())
 
