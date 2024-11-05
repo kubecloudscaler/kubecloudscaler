@@ -9,12 +9,19 @@ import (
 	"github.com/cloudscalerio/cloudscaler/pkg/k8s/utils"
 	autoscaleV2 "k8s.io/api/autoscaling/v2"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
+	v2 "k8s.io/client-go/kubernetes/typed/autoscaling/v2"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 type HorizontalPodAutoscalers struct {
 	Resource *utils.K8sResource
+	Client   v2.AutoscalingV2Interface
+}
+
+func (d *HorizontalPodAutoscalers) Init(client *kubernetes.Clientset) {
+	d.Client = client.AutoscalingV2()
 }
 
 func (d *HorizontalPodAutoscalers) SetState(ctx context.Context) ([]common.ScalerStatusSuccess, []common.ScalerStatusFailed, error) {
@@ -26,7 +33,7 @@ func (d *HorizontalPodAutoscalers) SetState(ctx context.Context) ([]common.Scale
 	for _, ns := range d.Resource.NsList {
 		log.Log.V(1).Info("found namespace", "ns", ns)
 
-		deployList, err := d.Resource.Config.Client.AutoscalingV2().HorizontalPodAutoscalers(ns).List(ctx, d.Resource.ListOptions)
+		deployList, err := d.Client.HorizontalPodAutoscalers(ns).List(ctx, d.Resource.ListOptions)
 		if err != nil {
 			log.Log.V(1).Error(err, "error listing deployments")
 
@@ -42,7 +49,7 @@ func (d *HorizontalPodAutoscalers) SetState(ctx context.Context) ([]common.Scale
 		log.Log.V(1).Info("deployment", "name", dName.Name)
 		var deploy *autoscaleV2.HorizontalPodAutoscaler
 
-		deploy, err := d.Resource.Config.Client.AutoscalingV2().HorizontalPodAutoscalers(dName.Namespace).Get(ctx, dName.Name, metaV1.GetOptions{})
+		deploy, err := d.Client.HorizontalPodAutoscalers(dName.Namespace).Get(ctx, dName.Name, metaV1.GetOptions{})
 		if err != nil {
 			scalerStatusFailed = append(
 				scalerStatusFailed,
@@ -56,21 +63,21 @@ func (d *HorizontalPodAutoscalers) SetState(ctx context.Context) ([]common.Scale
 			continue
 		}
 
-		switch d.Resource.Config.Period.Period.Type {
+		switch d.Resource.Period.Period.Type {
 		case "down":
 			log.Log.V(1).Info("scaling down", "name", dName.Name)
 
 			d.addAnnotations(deploy)
 
-			deploy.Spec.MinReplicas = d.Resource.Config.Period.Period.MinReplicas
+			deploy.Spec.MinReplicas = d.Resource.Period.Period.MinReplicas
 
 		case "up":
 			log.Log.V(1).Info("scaling up", "name", dName.Name)
 
 			d.addAnnotations(deploy)
 
-			deploy.Spec.MinReplicas = d.Resource.Config.Period.Period.MinReplicas
-			deploy.Spec.MaxReplicas = *d.Resource.Config.Period.Period.MaxReplicas
+			deploy.Spec.MinReplicas = d.Resource.Period.Period.MinReplicas
+			deploy.Spec.MaxReplicas = *d.Resource.Period.Period.MaxReplicas
 
 		case "restore":
 			log.Log.V(1).Info("restoring", "name", dName.Name)
@@ -89,16 +96,13 @@ func (d *HorizontalPodAutoscalers) SetState(ctx context.Context) ([]common.Scale
 				continue
 			}
 		default:
-			log.Log.V(1).Info("unknown period type", "type", d.Resource.Config.Period.Period.Type) // case "nominal":
+			log.Log.V(1).Info("unknown period type", "type", d.Resource.Period.Period.Type) // case "nominal":
 		}
 
 		log.Log.V(1).Info("update deployment", "name", dName.Name)
 
 		_, err = d.
-			Resource.
-			Config.
 			Client.
-			AutoscalingV2().
 			HorizontalPodAutoscalers(dName.Namespace).
 			Update(ctx, deploy, metaV1.UpdateOptions{})
 		if err != nil {
@@ -127,7 +131,7 @@ func (d *HorizontalPodAutoscalers) SetState(ctx context.Context) ([]common.Scale
 }
 
 func (d *HorizontalPodAutoscalers) addAnnotations(deploy *autoscaleV2.HorizontalPodAutoscaler) {
-	deploy.Annotations = utils.AddAnnotations(deploy.Annotations, d.Resource.Config.Period.Period)
+	deploy.Annotations = utils.AddAnnotations(deploy.Annotations, d.Resource.Period.Period)
 
 	_, isExists := deploy.Annotations[utils.AnnotationsPrefix+"/original-minreplicas"]
 	if !isExists {

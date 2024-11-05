@@ -7,9 +7,9 @@ import (
 )
 
 type K8sResource struct {
-	Config      *Config
 	NsList      []string
 	ListOptions metaV1.ListOptions
+	Period      *periodPkg.Period `json:"period,omitempty"`
 }
 
 type Config struct {

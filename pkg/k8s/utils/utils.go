@@ -87,3 +87,20 @@ func PrepareSearch(ctx context.Context, config *Config) ([]string, metaV1.ListOp
 
 	return nsList, listOptions, nil
 }
+
+func InitConfig(ctx context.Context, config *Config) (*K8sResource, error) {
+	_ = log.FromContext(ctx)
+	resource := &K8sResource{
+		Period: config.Period,
+	}
+
+	nsList, listOptions, err := PrepareSearch(ctx, config)
+	if err != nil {
+		return nil, err
+	}
+
+	resource.NsList = nsList
+	resource.ListOptions = listOptions
+
+	return resource, nil
+}

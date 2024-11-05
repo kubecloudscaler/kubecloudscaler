@@ -8,12 +8,19 @@ import (
 	"github.com/cloudscalerio/cloudscaler/pkg/k8s/utils"
 	batchV1 "k8s.io/api/batch/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
+	v1 "k8s.io/client-go/kubernetes/typed/batch/v1"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 type Cronjobs struct {
 	Resource *utils.K8sResource
+	Client   v1.BatchV1Interface
+}
+
+func (c *Cronjobs) init(client *kubernetes.Clientset) {
+	c.Client = client.BatchV1()
 }
 
 func (c *Cronjobs) SetState(ctx context.Context) ([]common.ScalerStatusSuccess, []common.ScalerStatusFailed, error) {
@@ -25,7 +32,7 @@ func (c *Cronjobs) SetState(ctx context.Context) ([]common.ScalerStatusSuccess, 
 	for _, ns := range c.Resource.NsList {
 		log.Log.V(1).Info("found namespace", "ns", ns)
 
-		cronList, err := c.Resource.Config.Client.BatchV1().CronJobs(ns).List(ctx, c.Resource.ListOptions)
+		cronList, err := c.Client.CronJobs(ns).List(ctx, c.Resource.ListOptions)
 		if err != nil {
 			log.Log.V(1).Error(err, "error listing deployments")
 
@@ -40,7 +47,7 @@ func (c *Cronjobs) SetState(ctx context.Context) ([]common.ScalerStatusSuccess, 
 	for _, cName := range list {
 		log.Log.V(1).Info("cronjobs", "name", cName.Name)
 
-		cronjob, err := c.Resource.Config.Client.BatchV1().CronJobs(cName.Namespace).Get(ctx, cName.Name, metaV1.GetOptions{})
+		cronjob, err := c.Client.CronJobs(cName.Namespace).Get(ctx, cName.Name, metaV1.GetOptions{})
 		if err != nil {
 			scalerStatusFailed = append(
 				scalerStatusFailed,
@@ -54,7 +61,7 @@ func (c *Cronjobs) SetState(ctx context.Context) ([]common.ScalerStatusSuccess, 
 			continue
 		}
 
-		switch c.Resource.Config.Period.Period.Type {
+		switch c.Resource.Period.Period.Type {
 		case "down":
 			log.Log.V(1).Info("scaling down", "name", cName.Name)
 
@@ -93,12 +100,12 @@ func (c *Cronjobs) SetState(ctx context.Context) ([]common.ScalerStatusSuccess, 
 				continue
 			}
 		default:
-			log.Log.V(1).Info("unknown period type", "type", c.Resource.Config.Period.Period.Type) // case "nominal":
+			log.Log.V(1).Info("unknown period type", "type", c.Resource.Period.Period.Type) // case "nominal":
 		}
 
 		log.Log.V(1).Info("update cronjob", "name", cName.Name)
 
-		_, err = c.Resource.Config.Client.BatchV1().CronJobs(cName.Namespace).Update(ctx, cronjob, metaV1.UpdateOptions{})
+		_, err = c.Client.CronJobs(cName.Namespace).Update(ctx, cronjob, metaV1.UpdateOptions{})
 		if err != nil {
 			scalerStatusFailed = append(
 				scalerStatusFailed,
@@ -125,7 +132,11 @@ func (c *Cronjobs) SetState(ctx context.Context) ([]common.ScalerStatusSuccess, 
 }
 
 func (c *Cronjobs) addAnnotations(cronjob *batchV1.CronJob) {
-	cronjob.Annotations = utils.AddAnnotations(cronjob.Annotations, c.Resource.Config.Period.Period)
+	if cronjob.Annotations == nil {
+		cronjob.Annotations = map[string]string{}
+	}
+
+	cronjob.Annotations = utils.AddAnnotations(cronjob.Annotations, c.Resource.Period.Period)
 
 	_, isExists := cronjob.Annotations[utils.AnnotationsPrefix+"/suspended"]
 	if !isExists {

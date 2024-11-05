@@ -9,12 +9,19 @@ import (
 	"github.com/cloudscalerio/cloudscaler/pkg/k8s/utils"
 	appsV1 "k8s.io/api/apps/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
+	v1 "k8s.io/client-go/kubernetes/typed/apps/v1"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 type Deployments struct {
 	Resource *utils.K8sResource
+	Client   v1.AppsV1Interface
+}
+
+func (d *Deployments) init(client *kubernetes.Clientset) {
+	d.Client = client.AppsV1()
 }
 
 func (d *Deployments) SetState(ctx context.Context) ([]common.ScalerStatusSuccess, []common.ScalerStatusFailed, error) {
@@ -26,7 +33,7 @@ func (d *Deployments) SetState(ctx context.Context) ([]common.ScalerStatusSucces
 	for _, ns := range d.Resource.NsList {
 		log.Log.V(1).Info("found namespace", "ns", ns)
 
-		deployList, err := d.Resource.Config.Client.AppsV1().Deployments(ns).List(ctx, d.Resource.ListOptions)
+		deployList, err := d.Client.Deployments(ns).List(ctx, d.Resource.ListOptions)
 		if err != nil {
 			log.Log.V(1).Error(err, "error listing deployments")
 
@@ -42,7 +49,7 @@ func (d *Deployments) SetState(ctx context.Context) ([]common.ScalerStatusSucces
 		log.Log.V(1).Info("deployment", "name", dName.Name)
 		var deploy *appsV1.Deployment
 
-		deploy, err := d.Resource.Config.Client.AppsV1().Deployments(dName.Namespace).Get(ctx, dName.Name, metaV1.GetOptions{})
+		deploy, err := d.Client.Deployments(dName.Namespace).Get(ctx, dName.Name, metaV1.GetOptions{})
 		if err != nil {
 			scalerStatusFailed = append(
 				scalerStatusFailed,
@@ -56,20 +63,20 @@ func (d *Deployments) SetState(ctx context.Context) ([]common.ScalerStatusSucces
 			continue
 		}
 
-		switch d.Resource.Config.Period.Period.Type {
+		switch d.Resource.Period.Period.Type {
 		case "down":
 			log.Log.V(1).Info("scaling down", "name", dName.Name)
 
 			d.addAnnotations(deploy)
 
-			deploy.Spec.Replicas = d.Resource.Config.Period.Period.MinReplicas
+			deploy.Spec.Replicas = d.Resource.Period.Period.MinReplicas
 
 		case "up":
 			log.Log.V(1).Info("scaling up", "name", dName.Name)
 
 			d.addAnnotations(deploy)
 
-			deploy.Spec.Replicas = d.Resource.Config.Period.Period.MaxReplicas
+			deploy.Spec.Replicas = d.Resource.Period.Period.MaxReplicas
 
 		case "restore":
 			log.Log.V(1).Info("restoring", "name", dName.Name)
@@ -88,12 +95,12 @@ func (d *Deployments) SetState(ctx context.Context) ([]common.ScalerStatusSucces
 				continue
 			}
 		default:
-			log.Log.V(1).Info("unknown period type", "type", d.Resource.Config.Period.Period.Type) // case "nominal":
+			log.Log.V(1).Info("unknown period type", "type", d.Resource.Period.Period.Type) // case "nominal":
 		}
 
 		log.Log.V(1).Info("update deployment", "name", dName.Name)
 
-		_, err = d.Resource.Config.Client.AppsV1().Deployments(dName.Namespace).Update(ctx, deploy, metaV1.UpdateOptions{})
+		_, err = d.Client.Deployments(dName.Namespace).Update(ctx, deploy, metaV1.UpdateOptions{})
 		if err != nil {
 			scalerStatusFailed = append(
 				scalerStatusFailed,
@@ -120,7 +127,7 @@ func (d *Deployments) SetState(ctx context.Context) ([]common.ScalerStatusSucces
 }
 
 func (d *Deployments) addAnnotations(deploy *appsV1.Deployment) {
-	deploy.Annotations = utils.AddAnnotations(deploy.Annotations, d.Resource.Config.Period.Period)
+	deploy.Annotations = utils.AddAnnotations(deploy.Annotations, d.Resource.Period.Period)
 
 	_, isExists := deploy.Annotations[utils.AnnotationsPrefix+"/original-replicas"]
 	if !isExists {
