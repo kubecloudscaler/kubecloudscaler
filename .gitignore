@@ -28,3 +28,5 @@ go.work
 
 dist/
 docs/public
+docs/go.mod
+docs/go.sum
