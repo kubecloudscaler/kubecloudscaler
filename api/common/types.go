@@ -12,12 +12,29 @@ type ScalerPeriod struct {
 }
 
 type TimePeriod struct {
+	Recurring *RecurringPeriod `json:"recurring,omitempty"`
+	Fixed     *FixedPeriod     `json:"fixed,omitempty"`
+}
+
+type RecurringPeriod struct {
 	Days []string `json:"days"`
 	// +kubebuilder:validation:Pattern=`^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$`
 	StartTime string `json:"startTime"`
 	// +kubebuilder:validation:Pattern=`^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$`
-	EndTime  string `json:"endTime"`
-	Timezone string `json:"timezone,omitempty"`
+	EndTime  string  `json:"endTime"`
+	Timezone *string `json:"timezone,omitempty"`
+	// Run once at StartTime
+	Once bool `json:"once,omitempty"`
+	// Grace period in seconds for deployments before scaling down
+	GracePeriod int `json:"gracePeriod,omitempty"`
+}
+
+type FixedPeriod struct {
+	// +kubebuilder:validation:Pattern=`^\d{4}-(0?[1-9]|1[0,1,2])-(0?[1-9]|[12][0-9]|3[01]) ([0-1]?[0-9]|2[0-3]):[0-5]?[0-9]:[0-5]?[0-9]$`
+	StartTime string `json:"startTime"`
+	// +kubebuilder:validation:Pattern=`^\d{4}-(0?[1-9]|1[0,1,2])-(0?[1-9]|[12][0-9]|3[01]) ([0-1]?[0-9]|2[0-3]):[0-5]?[0-9]:[0-5]?[0-9]$`
+	EndTime  string  `json:"endTime"`
+	Timezone *string `json:"timezone,omitempty"`
 	// Run once at StartTime
 	Once bool `json:"once,omitempty"`
 	// Grace period in seconds for deployments before scaling down
@@ -31,7 +48,7 @@ type ScalerStatus struct {
 }
 
 type ScalerStatusPeriod struct {
-	Spec       *ScalerPeriod         `json:"spec"`
+	Spec       *RecurringPeriod      `json:"spec"`
 	SpecSHA    string                `json:"specSHA"`
 	Successful []ScalerStatusSuccess `json:"success,omitempty"`
 	Failed     []ScalerStatusFailed  `json:"failed,omitempty"`

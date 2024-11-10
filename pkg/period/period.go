@@ -5,35 +5,39 @@ import (
 	"encoding/json"
 	"fmt"
 	"slices"
-	"strconv"
 	"strings"
 	"time"
 
 	"github.com/cloudscalerio/cloudscaler/api/common"
+	"k8s.io/utils/ptr"
 )
 
 func New(period *common.ScalerPeriod) (*Period, error) {
 	var err error
 
-	timeLocation, err := time.LoadLocation(period.Time.Timezone)
-	if err != nil {
-		return &Period{}, err
-	}
-
-	localTime := time.Now().In(timeLocation)
-
 	curPeriod := &Period{
-		Period: period,
+		IsActive: false,
+		Type:     period.Type,
 	}
-	// check if the period is active
-	curPeriod.IsActive, curPeriod.GetStartTime, curPeriod.GetEndTime, err = isPeriodActive(
-		period,
-		&localTime,
-		timeLocation,
+
+	// first check for the fixed period by converting to recuuring one
+	convertedPeriod := convertFixedToRecurring(period.Time.Fixed)
+	periodType := PeriodFixedName
+
+	if convertedPeriod == nil {
+		convertedPeriod = period.Time.Recurring
+		periodType = PeriodRecurringName
+	}
+
+	curPeriod.IsActive, curPeriod.GetStartTime, curPeriod.GetEndTime, curPeriod.Once, err = isPeriodActive(
+		periodType,
+		convertedPeriod,
 	)
 	if err != nil {
 		return nil, err
 	}
+
+	curPeriod.Period = convertedPeriod
 
 	periodData, err := json.Marshal(period)
 	if err != nil {
@@ -41,6 +45,8 @@ func New(period *common.ScalerPeriod) (*Period, error) {
 	}
 
 	curPeriod.Hash = fmt.Sprintf("%x", sha1.Sum(periodData))
+	curPeriod.MinReplicas = period.MinReplicas
+	curPeriod.MaxReplicas = period.MaxReplicas
 
 	return curPeriod, nil
 }
@@ -72,52 +78,58 @@ func isDay(day string, localTime *time.Time) (bool, error) {
 	return indexedDay == localDay, nil
 }
 
-func checkTime(period string) ([]int, error) {
-	periodSplit := strings.Split(period, ":")
-	output := []int{}
-	for _, val := range periodSplit {
-		converted, err := strconv.Atoi(val)
+func getTime(period, periodType string, timeLocation *time.Location) (time.Time, error) {
+	var (
+		outTime time.Time
+		err     error
+	)
+
+	switch periodType {
+	case PeriodRecurringName:
+		outTime, err = time.ParseInLocation(time.TimeOnly, period+":00", timeLocation)
 		if err != nil {
-			return output, ErrBadTime
+			return outTime, ErrRecurringTimeFormat
 		}
-
-		output = append(output, converted)
+	case PeriodFixedName:
+		outTime, err = time.ParseInLocation(time.DateTime, period, timeLocation)
+		if err != nil {
+			return outTime, ErrFixedTimeFormat
+		}
+	default:
+		return time.Time{}, fmt.Errorf("unknown period type: %s", periodType)
 	}
 
-	return output, nil
-}
-
-func getTime(period string, localTime *time.Time, timeLocation *time.Location) (time.Time, error) {
-	periodSplit, err := checkTime(period)
-	if err != nil {
-		return time.Time{}, err
-	}
-
-	return time.Date(
-		localTime.Year(),
-		localTime.Month(),
-		localTime.Day(),
-		periodSplit[0],
-		periodSplit[1],
-		0,
-		0,
-		timeLocation,
-	), nil
+	return outTime, nil
 }
 
 func isPeriodActive(
-	period *common.ScalerPeriod,
-	localTime *time.Time,
-	timeLocation *time.Location,
-) (bool, time.Time, time.Time, error) {
-	onDay := false
+	periodType string,
+	period *common.RecurringPeriod,
+) (bool, time.Time, time.Time, bool, error) {
+	var (
+		err  error
+		zone string
+	)
 
-	for _, day := range period.Time.Days {
+	onDay := false
+	timeLocation := time.Local
+
+	if period.Timezone != nil {
+		ptr.Deref(period.Timezone, zone)
+		timeLocation, err = time.LoadLocation(zone)
+		if err != nil {
+			return false, time.Time{}, time.Time{}, false, err
+		}
+	}
+
+	localTime := time.Now().In(timeLocation)
+
+	for _, day := range period.Days {
 		var onDayErr error
 		// check if we are in the right day
-		onDay, onDayErr = isDay(day, localTime)
+		onDay, onDayErr = isDay(day, &localTime)
 		if onDayErr != nil {
-			return false, time.Time{}, time.Time{}, onDayErr
+			return false, time.Time{}, time.Time{}, false, onDayErr
 		}
 
 		if onDay {
@@ -126,18 +138,35 @@ func isPeriodActive(
 	}
 
 	if !onDay {
-		return onDay, time.Time{}, time.Time{}, nil
+		return onDay, time.Time{}, time.Time{}, false, nil
 	}
 
-	startTime, err := getTime(period.Time.StartTime, localTime, timeLocation)
+	startTime, err := getTime(period.StartTime, periodType, timeLocation)
 	if err != nil {
-		return false, time.Time{}, time.Time{}, err
+		return false, time.Time{}, time.Time{}, false, err
 	}
 
-	endTime, err := getTime(period.Time.EndTime, localTime, timeLocation)
+	endTime, err := getTime(period.EndTime, periodType, timeLocation)
 	if err != nil {
-		return false, time.Time{}, time.Time{}, err
+		return false, time.Time{}, time.Time{}, false, err
 	}
 
-	return localTime.After(startTime) && localTime.Before(endTime), startTime, endTime, nil
+	return localTime.After(startTime) && localTime.Before(endTime), startTime, endTime, period.Once, nil
+}
+
+func convertFixedToRecurring(fixed *common.FixedPeriod) *common.RecurringPeriod {
+	if fixed == nil {
+		return nil
+	}
+
+	return &common.RecurringPeriod{
+		Days: []string{
+			"all",
+		},
+		StartTime:   fixed.StartTime,
+		EndTime:     fixed.EndTime,
+		Timezone:    fixed.Timezone,
+		Once:        fixed.Once,
+		GracePeriod: fixed.GracePeriod,
+	}
 }

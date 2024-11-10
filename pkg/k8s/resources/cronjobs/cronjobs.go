@@ -29,6 +29,7 @@ func (c *Cronjobs) SetState(ctx context.Context) ([]common.ScalerStatusSuccess, 
 	scalerStatusFailed := []common.ScalerStatusFailed{}
 	list := []batchV1.CronJob{}
 
+	// list all objects in all needed namespaces
 	for _, ns := range c.Resource.NsList {
 		log.Log.V(1).Info("found namespace", "ns", ns)
 
@@ -61,7 +62,7 @@ func (c *Cronjobs) SetState(ctx context.Context) ([]common.ScalerStatusSuccess, 
 			continue
 		}
 
-		switch c.Resource.Period.Period.Type {
+		switch c.Resource.Period.Type {
 		case "down":
 			log.Log.V(1).Info("scaling down", "name", cName.Name)
 
@@ -100,7 +101,7 @@ func (c *Cronjobs) SetState(ctx context.Context) ([]common.ScalerStatusSuccess, 
 				continue
 			}
 		default:
-			log.Log.V(1).Info("unknown period type", "type", c.Resource.Period.Period.Type) // case "nominal":
+			log.Log.V(1).Info("unknown period type", "type", c.Resource.Period.Type) // case "nominal":
 		}
 
 		log.Log.V(1).Info("update cronjob", "name", cName.Name)
@@ -136,7 +137,7 @@ func (c *Cronjobs) addAnnotations(cronjob *batchV1.CronJob) {
 		cronjob.Annotations = map[string]string{}
 	}
 
-	cronjob.Annotations = utils.AddAnnotations(cronjob.Annotations, c.Resource.Period.Period)
+	cronjob.Annotations = utils.AddAnnotations(cronjob.Annotations, c.Resource.Period)
 
 	_, isExists := cronjob.Annotations[utils.AnnotationsPrefix+"/suspended"]
 	if !isExists {

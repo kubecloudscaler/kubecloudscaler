@@ -48,9 +48,8 @@ var _ = Describe("Cronjobs", func() {
 			Resource: &utils.K8sResource{
 				NsList: []string{"ns1", "ns2"},
 				Period: &periodPkg.Period{
-					Period: &common.ScalerPeriod{
-						Type: "down",
-					},
+					Type:   "down",
+					Period: &common.RecurringPeriod{},
 				},
 			},
 		}

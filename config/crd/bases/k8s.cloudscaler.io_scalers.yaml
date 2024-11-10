@@ -125,29 +125,55 @@ spec:
                       type: integer
                     time:
                       properties:
-                        days:
-                          items:
-                            type: string
-                          type: array
-                        endTime:
-                          pattern: ^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$
-                          type: string
-                        gracePeriod:
-                          description: Grace period in seconds for deployments before
-                            scaling down
-                          type: integer
-                        once:
-                          description: Run once at StartTime
-                          type: boolean
-                        startTime:
-                          pattern: ^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$
-                          type: string
-                        timezone:
-                          type: string
-                      required:
-                      - days
-                      - endTime
-                      - startTime
+                        fixed:
+                          properties:
+                            endTime:
+                              pattern: ^\d{4}-(0?[1-9]|1[0,1,2])-(0?[1-9]|[12][0-9]|3[01])
+                                ([0-1]?[0-9]|2[0-3]):[0-5]?[0-9]:[0-5]?[0-9]$
+                              type: string
+                            gracePeriod:
+                              description: Grace period in seconds for deployments
+                                before scaling down
+                              type: integer
+                            once:
+                              description: Run once at StartTime
+                              type: boolean
+                            startTime:
+                              pattern: ^\d{4}-(0?[1-9]|1[0,1,2])-(0?[1-9]|[12][0-9]|3[01])
+                                ([0-1]?[0-9]|2[0-3]):[0-5]?[0-9]:[0-5]?[0-9]$
+                              type: string
+                            timezone:
+                              type: string
+                          required:
+                          - endTime
+                          - startTime
+                          type: object
+                        recurring:
+                          properties:
+                            days:
+                              items:
+                                type: string
+                              type: array
+                            endTime:
+                              pattern: ^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$
+                              type: string
+                            gracePeriod:
+                              description: Grace period in seconds for deployments
+                                before scaling down
+                              type: integer
+                            once:
+                              description: Run once at StartTime
+                              type: boolean
+                            startTime:
+                              pattern: ^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$
+                              type: string
+                            timezone:
+                              type: string
+                          required:
+                          - days
+                          - endTime
+                          - startTime
+                          type: object
                       type: object
                     type:
                       enum:
@@ -193,50 +219,29 @@ spec:
                     type: array
                   spec:
                     properties:
-                      maxReplicas:
-                        description: Maximum replicas
-                        format: int32
+                      days:
+                        items:
+                          type: string
+                        type: array
+                      endTime:
+                        pattern: ^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$
+                        type: string
+                      gracePeriod:
+                        description: Grace period in seconds for deployments before
+                          scaling down
                         type: integer
-                      minReplicas:
-                        description: Minimum replicas
-                        format: int32
-                        type: integer
-                      time:
-                        properties:
-                          days:
-                            items:
-                              type: string
-                            type: array
-                          endTime:
-                            pattern: ^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$
-                            type: string
-                          gracePeriod:
-                            description: Grace period in seconds for deployments before
-                              scaling down
-                            type: integer
-                          once:
-                            description: Run once at StartTime
-                            type: boolean
-                          startTime:
-                            pattern: ^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$
-                            type: string
-                          timezone:
-                            type: string
-                        required:
-                        - days
-                        - endTime
-                        - startTime
-                        type: object
-                      type:
-                        enum:
-                        - down
-                        - nominal
-                        - up
-                        - restore
+                      once:
+                        description: Run once at StartTime
+                        type: boolean
+                      startTime:
+                        pattern: ^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$
+                        type: string
+                      timezone:
                         type: string
                     required:
-                    - time
-                    - type
+                    - days
+                    - endTime
+                    - startTime
                     type: object
                   specSHA:
                     type: string

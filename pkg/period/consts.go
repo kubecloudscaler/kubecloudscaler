@@ -1,5 +1,7 @@
 package period
 
 const (
-	allDays = "all"
+	allDays             = "all"
+	PeriodFixedName     = "fixed"
+	PeriodRecurringName = "recurring"
 )

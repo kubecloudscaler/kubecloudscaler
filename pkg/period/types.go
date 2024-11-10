@@ -7,9 +7,13 @@ import (
 )
 
 type Period struct {
-	Period       *common.ScalerPeriod
+	Period       *common.RecurringPeriod
+	Type         string
 	IsActive     bool
 	Hash         string
 	GetStartTime time.Time
 	GetEndTime   time.Time
+	Once         bool
+	MinReplicas  *int32
+	MaxReplicas  *int32
 }

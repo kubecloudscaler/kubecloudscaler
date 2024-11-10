@@ -28,10 +28,12 @@ func ValidatePeriod(periods []*common.ScalerPeriod, status *common.ScalerStatus)
 	restorePeriod := &common.ScalerPeriod{
 		Type: "restore",
 		Time: common.TimePeriod{
-			Days:      []string{"all"},
-			StartTime: "00:00",
-			EndTime:   "00:00",
-			Once:      false,
+			Recurring: &common.RecurringPeriod{
+				Days:      []string{"all"},
+				StartTime: "00:00",
+				EndTime:   "00:00",
+				Once:      false,
+			},
 		},
 	}
 
@@ -58,14 +60,14 @@ func ValidatePeriod(periods []*common.ScalerPeriod, status *common.ScalerStatus)
 	}
 
 	// if we are in a once period, we do nothing if the period has already been processed
-	if onPeriod.Period.Time.Once && status.CurrentPeriod.SpecSHA == onPeriod.Hash {
+	if onPeriod.Once && status.CurrentPeriod.SpecSHA == onPeriod.Hash {
 		log.Log.V(1).Info("period already running")
 
 		return onPeriod, ErrRunOncePeriod
 	}
 
 	// we always parse resources to scale or restore values
-	log.Log.V(1).Info(fmt.Sprintf("is period:\n  type => %s\n  def => %v\n", onPeriod.Period.Type, onPeriod.Period))
+	log.Log.V(1).Info(fmt.Sprintf("is period:\n  type => %s\n  def => %v\n", onPeriod.Type, onPeriod.Period))
 
 	// prepare status
 	status.CurrentPeriod = &common.ScalerStatusPeriod{}

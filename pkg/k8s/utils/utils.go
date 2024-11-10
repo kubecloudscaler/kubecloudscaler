@@ -4,8 +4,9 @@ import (
 	"context"
 	"strings"
 
-	"github.com/cloudscalerio/cloudscaler/api/common"
+	periodPkg "github.com/cloudscalerio/cloudscaler/pkg/period"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
@@ -46,11 +47,11 @@ func SetNamespaceList(ctx context.Context, config *Config) ([]string, error) {
 	return nsList, nil
 }
 
-func AddAnnotations(annotations map[string]string, period *common.ScalerPeriod) map[string]string {
+func AddAnnotations(annotations map[string]string, period *periodPkg.Period) map[string]string {
 	annotations[AnnotationsPrefix+"/"+PeriodType] = period.Type
-	annotations[AnnotationsPrefix+"/"+PeriodStartTime] = period.Time.StartTime
-	annotations[AnnotationsPrefix+"/"+PeriodEndTime] = period.Time.EndTime
-	annotations[AnnotationsPrefix+"/"+PeriodTimezone] = period.Time.Timezone
+	annotations[AnnotationsPrefix+"/"+PeriodStartTime] = period.GetStartTime.String()
+	annotations[AnnotationsPrefix+"/"+PeriodEndTime] = period.GetEndTime.String()
+	ptr.Deref(period.Period.Timezone, annotations[AnnotationsPrefix+"/"+PeriodTimezone])
 
 	return annotations
 }

@@ -14,12 +14,13 @@ spec:
     - home
   periods:
     - time:
-        days:
-          - all
-        startTime: "00:00"
-        endTime: "23:00"
-        timezone: "Europe/Paris"
-        once: true
+        recurring:
+          days:
+            - all
+          startTime: "00:00"
+          endTime: "23:00"
+          timezone: "Europe/Paris"
+          once: true
       minReplicas: 0
       maxReplicas: 10
       type: "down"

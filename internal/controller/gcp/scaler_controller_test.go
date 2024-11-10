@@ -47,12 +47,14 @@ var _ = Describe("Scaler Controller", func() {
 					{
 						Type: "restore",
 						Time: common.TimePeriod{
-							Days: []string{
-								"all",
+							Recurring: &common.RecurringPeriod{
+								Days: []string{
+									"all",
+								},
+								StartTime: "00:00",
+								EndTime:   "00:00",
+								Once:      false,
 							},
-							StartTime: "00:00",
-							EndTime:   "00:00",
-							Once:      false,
 						},
 					},
 				},
@@ -73,12 +75,14 @@ var _ = Describe("Scaler Controller", func() {
 							{
 								Type: "restore",
 								Time: common.TimePeriod{
-									Days: []string{
-										"all",
+									Recurring: &common.RecurringPeriod{
+										Days: []string{
+											"all",
+										},
+										StartTime: "00:00",
+										EndTime:   "00:00",
+										Once:      false,
 									},
-									StartTime: "00:00",
-									EndTime:   "00:00",
-									Once:      false,
 								},
 							},
 						},
@@ -96,12 +100,14 @@ var _ = Describe("Scaler Controller", func() {
 						{
 							Type: "restore",
 							Time: common.TimePeriod{
-								Days: []string{
-									"all",
+								Recurring: &common.RecurringPeriod{
+									Days: []string{
+										"all",
+									},
+									StartTime: "00:00",
+									EndTime:   "00:00",
+									Once:      false,
 								},
-								StartTime: "00:00",
-								EndTime:   "00:00",
-								Once:      false,
 							},
 						},
 					},

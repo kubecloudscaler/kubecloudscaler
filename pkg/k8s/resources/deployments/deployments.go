@@ -63,20 +63,20 @@ func (d *Deployments) SetState(ctx context.Context) ([]common.ScalerStatusSucces
 			continue
 		}
 
-		switch d.Resource.Period.Period.Type {
+		switch d.Resource.Period.Type {
 		case "down":
 			log.Log.V(1).Info("scaling down", "name", dName.Name)
 
 			d.addAnnotations(deploy)
 
-			deploy.Spec.Replicas = d.Resource.Period.Period.MinReplicas
+			deploy.Spec.Replicas = d.Resource.Period.MinReplicas
 
 		case "up":
 			log.Log.V(1).Info("scaling up", "name", dName.Name)
 
 			d.addAnnotations(deploy)
 
-			deploy.Spec.Replicas = d.Resource.Period.Period.MaxReplicas
+			deploy.Spec.Replicas = d.Resource.Period.MaxReplicas
 
 		case "restore":
 			log.Log.V(1).Info("restoring", "name", dName.Name)
@@ -95,7 +95,7 @@ func (d *Deployments) SetState(ctx context.Context) ([]common.ScalerStatusSucces
 				continue
 			}
 		default:
-			log.Log.V(1).Info("unknown period type", "type", d.Resource.Period.Period.Type) // case "nominal":
+			log.Log.V(1).Info("unknown period type", "type", d.Resource.Period.Type) // case "nominal":
 		}
 
 		log.Log.V(1).Info("update deployment", "name", dName.Name)
@@ -127,7 +127,7 @@ func (d *Deployments) SetState(ctx context.Context) ([]common.ScalerStatusSucces
 }
 
 func (d *Deployments) addAnnotations(deploy *appsV1.Deployment) {
-	deploy.Annotations = utils.AddAnnotations(deploy.Annotations, d.Resource.Period.Period)
+	deploy.Annotations = utils.AddAnnotations(deploy.Annotations, d.Resource.Period)
 
 	_, isExists := deploy.Annotations[utils.AnnotationsPrefix+"/original-replicas"]
 	if !isExists {

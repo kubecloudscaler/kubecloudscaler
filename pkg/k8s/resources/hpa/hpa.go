@@ -63,21 +63,21 @@ func (d *HorizontalPodAutoscalers) SetState(ctx context.Context) ([]common.Scale
 			continue
 		}
 
-		switch d.Resource.Period.Period.Type {
+		switch d.Resource.Period.Type {
 		case "down":
 			log.Log.V(1).Info("scaling down", "name", dName.Name)
 
 			d.addAnnotations(deploy)
 
-			deploy.Spec.MinReplicas = d.Resource.Period.Period.MinReplicas
+			deploy.Spec.MinReplicas = d.Resource.Period.MinReplicas
 
 		case "up":
 			log.Log.V(1).Info("scaling up", "name", dName.Name)
 
 			d.addAnnotations(deploy)
 
-			deploy.Spec.MinReplicas = d.Resource.Period.Period.MinReplicas
-			deploy.Spec.MaxReplicas = *d.Resource.Period.Period.MaxReplicas
+			deploy.Spec.MinReplicas = d.Resource.Period.MinReplicas
+			deploy.Spec.MaxReplicas = *d.Resource.Period.MaxReplicas
 
 		case "restore":
 			log.Log.V(1).Info("restoring", "name", dName.Name)
@@ -96,7 +96,7 @@ func (d *HorizontalPodAutoscalers) SetState(ctx context.Context) ([]common.Scale
 				continue
 			}
 		default:
-			log.Log.V(1).Info("unknown period type", "type", d.Resource.Period.Period.Type) // case "nominal":
+			log.Log.V(1).Info("unknown period type", "type", d.Resource.Period.Type) // case "nominal":
 		}
 
 		log.Log.V(1).Info("update deployment", "name", dName.Name)
@@ -131,7 +131,7 @@ func (d *HorizontalPodAutoscalers) SetState(ctx context.Context) ([]common.Scale
 }
 
 func (d *HorizontalPodAutoscalers) addAnnotations(deploy *autoscaleV2.HorizontalPodAutoscaler) {
-	deploy.Annotations = utils.AddAnnotations(deploy.Annotations, d.Resource.Period.Period)
+	deploy.Annotations = utils.AddAnnotations(deploy.Annotations, d.Resource.Period)
 
 	_, isExists := deploy.Annotations[utils.AnnotationsPrefix+"/original-minreplicas"]
 	if !isExists {
