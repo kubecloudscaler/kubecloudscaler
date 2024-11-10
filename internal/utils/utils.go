@@ -5,6 +5,7 @@ import (
 
 	"github.com/cloudscalerio/cloudscaler/api/common"
 	periodPkg "github.com/cloudscalerio/cloudscaler/pkg/period"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
@@ -32,7 +33,7 @@ func ValidatePeriod(periods []*common.ScalerPeriod, status *common.ScalerStatus)
 				Days:      []string{"all"},
 				StartTime: "00:00",
 				EndTime:   "00:00",
-				Once:      false,
+				Once:      ptr.To(false),
 			},
 		},
 	}
@@ -45,12 +46,18 @@ func ValidatePeriod(periods []*common.ScalerPeriod, status *common.ScalerStatus)
 	}
 
 	for _, period := range periods {
+		log.Log.V(1).Info(fmt.Sprintf("checking period:\n  type => %s\n  def => %+v\n", period.Type, period.Time))
 		curPeriod, err := periodPkg.New(period)
 		if err != nil {
 			log.Log.Error(err, "unable to load period")
 
 			return nil, ErrLoadPeriod
 		}
+
+		log.Log.V(1).Info(fmt.Sprintf("is period:\n  type => %s\n  def => %v\n  isActive => %t", curPeriod.Type, curPeriod.Period, curPeriod.IsActive))
+
+		log.Log.V(1).Info(fmt.Sprintf("starttime: %v\n", curPeriod.GetStartTime.String()))
+		log.Log.V(1).Info(fmt.Sprintf("endtime: %v\n", curPeriod.GetEndTime.String()))
 
 		if curPeriod.IsActive {
 			onPeriod = curPeriod
@@ -60,7 +67,7 @@ func ValidatePeriod(periods []*common.ScalerPeriod, status *common.ScalerStatus)
 	}
 
 	// if we are in a once period, we do nothing if the period has already been processed
-	if onPeriod.Once && status.CurrentPeriod.SpecSHA == onPeriod.Hash {
+	if ptr.Deref(onPeriod.Once, false) && status.CurrentPeriod.SpecSHA == onPeriod.Hash {
 		log.Log.V(1).Info("period already running")
 
 		return onPeriod, ErrRunOncePeriod

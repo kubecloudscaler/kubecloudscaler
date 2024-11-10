@@ -38,7 +38,7 @@ import (
 	gcpv1alpha1 "github.com/cloudscalerio/cloudscaler/api/gcp/v1alpha1"
 	k8sv1alpha1 "github.com/cloudscalerio/cloudscaler/api/k8s/v1alpha1"
 	gcpcontroller "github.com/cloudscalerio/cloudscaler/internal/controller/gcp"
-	controller "github.com/cloudscalerio/cloudscaler/internal/controller/k8s"
+	k8scontroller "github.com/cloudscalerio/cloudscaler/internal/controller/k8s"
 	// +kubebuilder:scaffold:imports
 )
 
@@ -147,18 +147,18 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (&controller.ScalerReconciler{
+	if err = (&k8scontroller.ScalerReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Scaler")
+		setupLog.Error(err, "unable to create controller", "controller", "K8sScaler")
 		os.Exit(1)
 	}
 	if err = (&gcpcontroller.ScalerReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Scaler")
+		setupLog.Error(err, "unable to create controller", "controller", "GcpScaler")
 		os.Exit(1)
 	}
 	// +kubebuilder:scaffold:builder

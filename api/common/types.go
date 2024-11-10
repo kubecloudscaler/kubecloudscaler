@@ -1,6 +1,8 @@
 // +kubebuilder:object:generate=true
 package common
 
+import "time"
+
 type ScalerPeriod struct {
 	// +kubebuilder:validation:Enum=down;nominal;up;restore
 	Type string     `json:"type"`
@@ -24,9 +26,11 @@ type RecurringPeriod struct {
 	EndTime  string  `json:"endTime"`
 	Timezone *string `json:"timezone,omitempty"`
 	// Run once at StartTime
-	Once bool `json:"once,omitempty"`
+	Once *bool `json:"once,omitempty"`
 	// Grace period in seconds for deployments before scaling down
-	GracePeriod int `json:"gracePeriod,omitempty"`
+	GracePeriod *time.Duration `json:"gracePeriod,omitempty"`
+	// Reverse the period
+	Reverse *bool `json:"reverse,omitempty"`
 }
 
 type FixedPeriod struct {
@@ -36,15 +40,17 @@ type FixedPeriod struct {
 	EndTime  string  `json:"endTime"`
 	Timezone *string `json:"timezone,omitempty"`
 	// Run once at StartTime
-	Once bool `json:"once,omitempty"`
+	Once *bool `json:"once,omitempty"`
 	// Grace period in seconds for deployments before scaling down
-	GracePeriod int `json:"gracePeriod,omitempty"`
+	GracePeriod *time.Duration `json:"gracePeriod,omitempty"`
+	// Reverse the period
+	Reverse *bool `json:"reverse,omitempty"`
 }
 
 // ScalerStatus defines the observed state of Scaler
 type ScalerStatus struct {
 	CurrentPeriod *ScalerStatusPeriod `json:"currentPeriod,omitempty"`
-	Comments      string              `json:"comments,omitempty"`
+	Comments      *string             `json:"comments,omitempty"`
 }
 
 type ScalerStatusPeriod struct {

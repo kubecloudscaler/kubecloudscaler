@@ -134,9 +134,13 @@ spec:
                             gracePeriod:
                               description: Grace period in seconds for deployments
                                 before scaling down
+                              format: int64
                               type: integer
                             once:
                               description: Run once at StartTime
+                              type: boolean
+                            reverse:
+                              description: Reverse the period
                               type: boolean
                             startTime:
                               pattern: ^\d{4}-(0?[1-9]|1[0,1,2])-(0?[1-9]|[12][0-9]|3[01])
@@ -160,9 +164,13 @@ spec:
                             gracePeriod:
                               description: Grace period in seconds for deployments
                                 before scaling down
+                              format: int64
                               type: integer
                             once:
                               description: Run once at StartTime
+                              type: boolean
+                            reverse:
+                              description: Reverse the period
                               type: boolean
                             startTime:
                               pattern: ^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$
@@ -229,9 +237,13 @@ spec:
                       gracePeriod:
                         description: Grace period in seconds for deployments before
                           scaling down
+                        format: int64
                         type: integer
                       once:
                         description: Run once at StartTime
+                        type: boolean
+                      reverse:
+                        description: Reverse the period
                         type: boolean
                       startTime:
                         pattern: ^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$

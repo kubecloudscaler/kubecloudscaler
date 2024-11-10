@@ -23,6 +23,7 @@ import (
 	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -53,7 +54,7 @@ var _ = Describe("Scaler Controller", func() {
 								},
 								StartTime: "00:00",
 								EndTime:   "00:00",
-								Once:      false,
+								Once:      ptr.To(false),
 							},
 						},
 					},
@@ -81,7 +82,7 @@ var _ = Describe("Scaler Controller", func() {
 										},
 										StartTime: "00:00",
 										EndTime:   "00:00",
-										Once:      false,
+										Once:      ptr.To(false),
 									},
 								},
 							},
@@ -106,7 +107,7 @@ var _ = Describe("Scaler Controller", func() {
 									},
 									StartTime: "00:00",
 									EndTime:   "00:00",
-									Once:      false,
+									Once:      ptr.To(false),
 								},
 							},
 						},

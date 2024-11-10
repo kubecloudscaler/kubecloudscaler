@@ -86,10 +86,23 @@ func getTime(period, periodType string, timeLocation *time.Location) (time.Time,
 
 	switch periodType {
 	case PeriodRecurringName:
-		outTime, err = time.ParseInLocation(time.TimeOnly, period+":00", timeLocation)
+		timeOnly, err := time.ParseInLocation(time.TimeOnly, period+":00", timeLocation)
 		if err != nil {
-			return outTime, ErrRecurringTimeFormat
+			return timeOnly, ErrRecurringTimeFormat
 		}
+
+		localTime := time.Now().In(timeLocation)
+
+		outTime = time.Date(
+			localTime.Year(),
+			localTime.Month(),
+			localTime.Day(),
+			timeOnly.Hour(),
+			timeOnly.Minute(),
+			0,
+			0,
+			timeLocation,
+		)
 	case PeriodFixedName:
 		outTime, err = time.ParseInLocation(time.DateTime, period, timeLocation)
 		if err != nil {
@@ -105,20 +118,18 @@ func getTime(period, periodType string, timeLocation *time.Location) (time.Time,
 func isPeriodActive(
 	periodType string,
 	period *common.RecurringPeriod,
-) (bool, time.Time, time.Time, bool, error) {
+) (bool, time.Time, time.Time, *bool, error) {
 	var (
-		err  error
-		zone string
+		err error
 	)
 
 	onDay := false
 	timeLocation := time.Local
 
 	if period.Timezone != nil {
-		ptr.Deref(period.Timezone, zone)
-		timeLocation, err = time.LoadLocation(zone)
+		timeLocation, err = time.LoadLocation(ptr.Deref(period.Timezone, defaultTimezone))
 		if err != nil {
-			return false, time.Time{}, time.Time{}, false, err
+			return false, time.Time{}, time.Time{}, nil, err
 		}
 	}
 
@@ -129,7 +140,7 @@ func isPeriodActive(
 		// check if we are in the right day
 		onDay, onDayErr = isDay(day, &localTime)
 		if onDayErr != nil {
-			return false, time.Time{}, time.Time{}, false, onDayErr
+			return false, time.Time{}, time.Time{}, nil, onDayErr
 		}
 
 		if onDay {
@@ -138,20 +149,25 @@ func isPeriodActive(
 	}
 
 	if !onDay {
-		return onDay, time.Time{}, time.Time{}, false, nil
+		return onDay, time.Time{}, time.Time{}, nil, nil
 	}
 
 	startTime, err := getTime(period.StartTime, periodType, timeLocation)
 	if err != nil {
-		return false, time.Time{}, time.Time{}, false, err
+		return false, time.Time{}, time.Time{}, nil, err
 	}
 
 	endTime, err := getTime(period.EndTime, periodType, timeLocation)
 	if err != nil {
-		return false, time.Time{}, time.Time{}, false, err
+		return false, time.Time{}, time.Time{}, nil, err
 	}
 
-	return localTime.After(startTime) && localTime.Before(endTime), startTime, endTime, period.Once, nil
+	isActive := localTime.After(startTime) && localTime.Before(endTime)
+	if ptr.Deref(period.Reverse, false) {
+		isActive = !isActive
+	}
+
+	return isActive, startTime, endTime, period.Once, nil
 }
 
 func convertFixedToRecurring(fixed *common.FixedPeriod) *common.RecurringPeriod {

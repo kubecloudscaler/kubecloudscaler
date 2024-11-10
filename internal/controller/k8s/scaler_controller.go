@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package controller
+package k8s
 
 import (
 	"context"
@@ -29,6 +29,7 @@ import (
 	k8sClient "github.com/cloudscalerio/cloudscaler/pkg/k8s/utils/client"
 	"github.com/cloudscalerio/cloudscaler/pkg/resources"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -87,7 +88,7 @@ func (r *ScalerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 			return ctrl.Result{RequeueAfter: time.Until(resourceConfig.K8s.Period.GetEndTime.Add(5 * time.Second))}, nil
 		}
 
-		scaler.Status.Comments = err.Error()
+		scaler.Status.Comments = ptr.To(err.Error())
 
 		if err := r.Status().Update(ctx, scaler); err != nil {
 			log.Log.Error(err, "unable to update scaler status")
@@ -105,7 +106,7 @@ func (r *ScalerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	resourceList, err := r.validResourceList(ctx, scaler)
 	if err != nil {
 		log.Log.Error(err, "unable to get valid resources")
-		scaler.Status.Comments = err.Error()
+		scaler.Status.Comments = ptr.To(err.Error())
 
 		if err := r.Status().Update(ctx, scaler); err != nil {
 			log.Log.Error(err, "unable to update scaler status")
@@ -135,7 +136,7 @@ func (r *ScalerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 
 	scaler.Status.CurrentPeriod.Successful = recSuccess
 	scaler.Status.CurrentPeriod.Failed = recFailed
-	scaler.Status.Comments = "time period processed"
+	scaler.Status.Comments = ptr.To("time period processed")
 
 	if err := r.Status().Update(ctx, scaler); err != nil {
 		log.Log.Error(err, "unable to update scaler status")
@@ -149,6 +150,7 @@ func (r *ScalerReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&k8sv1alpha1.Scaler{}).
 		WithEventFilter(utils.IgnoreDeletionPredicate()).
+		Named("k8sScaler").
 		Complete(r)
 }
 

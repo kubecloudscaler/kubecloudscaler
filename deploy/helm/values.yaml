@@ -1,7 +1,6 @@
 controllerManager:
   manager:
     args:
-    - --metrics-bind-address=:8443
     - --leader-elect
     - --health-probe-bind-address=:8081
     containerSecurityContext:
@@ -25,10 +24,3 @@ controllerManager:
   serviceAccount:
     annotations: {}
 kubernetesClusterDomain: cluster.local
-metricsService:
-  ports:
-  - name: https
-    port: 8443
-    protocol: TCP
-    targetPort: 8443
-  type: ClusterIP
