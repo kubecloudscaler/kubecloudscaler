@@ -4,7 +4,7 @@ import (
 	"context"
 	"strconv"
 
-	"github.com/cloudscalerio/cloudscaler/api/common"
+	cloudscaleriov1alpha1 "github.com/cloudscalerio/cloudscaler/api/v1alpha1"
 	"github.com/cloudscalerio/cloudscaler/pkg/k8s/utils"
 	batchV1 "k8s.io/api/batch/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -23,10 +23,10 @@ func (c *Cronjobs) init(client *kubernetes.Clientset) {
 	c.Client = client.BatchV1()
 }
 
-func (c *Cronjobs) SetState(ctx context.Context) ([]common.ScalerStatusSuccess, []common.ScalerStatusFailed, error) {
+func (c *Cronjobs) SetState(ctx context.Context) ([]cloudscaleriov1alpha1.ScalerStatusSuccess, []cloudscaleriov1alpha1.ScalerStatusFailed, error) {
 	_ = log.FromContext(ctx)
-	scalerStatusSuccess := []common.ScalerStatusSuccess{}
-	scalerStatusFailed := []common.ScalerStatusFailed{}
+	scalerStatusSuccess := []cloudscaleriov1alpha1.ScalerStatusSuccess{}
+	scalerStatusFailed := []cloudscaleriov1alpha1.ScalerStatusFailed{}
 	list := []batchV1.CronJob{}
 
 	// list all objects in all needed namespaces
@@ -52,7 +52,7 @@ func (c *Cronjobs) SetState(ctx context.Context) ([]common.ScalerStatusSuccess, 
 		if err != nil {
 			scalerStatusFailed = append(
 				scalerStatusFailed,
-				common.ScalerStatusFailed{
+				cloudscaleriov1alpha1.ScalerStatusFailed{
 					Kind:   "deployment",
 					Name:   cName.Name,
 					Reason: err.Error(),
@@ -75,7 +75,7 @@ func (c *Cronjobs) SetState(ctx context.Context) ([]common.ScalerStatusSuccess, 
 
 			scalerStatusFailed = append(
 				scalerStatusFailed,
-				common.ScalerStatusFailed{
+				cloudscaleriov1alpha1.ScalerStatusFailed{
 					Kind:   "cronjob",
 					Name:   cName.Name,
 					Reason: "cronjob can only be scaled down",
@@ -91,7 +91,7 @@ func (c *Cronjobs) SetState(ctx context.Context) ([]common.ScalerStatusSuccess, 
 			if err != nil {
 				scalerStatusFailed = append(
 					scalerStatusFailed,
-					common.ScalerStatusFailed{
+					cloudscaleriov1alpha1.ScalerStatusFailed{
 						Kind:   "cronjob",
 						Name:   cName.Name,
 						Reason: err.Error(),
@@ -110,7 +110,7 @@ func (c *Cronjobs) SetState(ctx context.Context) ([]common.ScalerStatusSuccess, 
 		if err != nil {
 			scalerStatusFailed = append(
 				scalerStatusFailed,
-				common.ScalerStatusFailed{
+				cloudscaleriov1alpha1.ScalerStatusFailed{
 					Kind:   "cronjob",
 					Name:   cName.Name,
 					Reason: err.Error(),
@@ -122,7 +122,7 @@ func (c *Cronjobs) SetState(ctx context.Context) ([]common.ScalerStatusSuccess, 
 
 		scalerStatusSuccess = append(
 			scalerStatusSuccess,
-			common.ScalerStatusSuccess{
+			cloudscaleriov1alpha1.ScalerStatusSuccess{
 				Kind: "cronjob",
 				Name: cName.Name,
 			},

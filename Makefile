@@ -147,6 +147,10 @@ undeploy: kustomize ## Undeploy controller from the K8s cluster specified in ~/.
 helm: manifests generate kustomize helmify
 	$(KUSTOMIZE) build config/default | $(HELMIFY) deploy/helm
 
+.PHONY: doc
+doc: manifests generate gen-crd-docs
+	$(GEN_CRD_DOCS) -config "$(PWD)/hack/api-doc/config.json" -template-dir "$(PWD)/hack/api-doc/templates" -api-dir "github.com/cloudscalerio/cloudscaler/api"  -out-file "$(PWD)/docs/api.html"
+
 ##@ Dependencies
 
 ## Location to install dependencies to
@@ -161,6 +165,7 @@ CONTROLLER_GEN ?= $(LOCALBIN)/controller-gen
 ENVTEST ?= $(LOCALBIN)/setup-envtest
 GOLANGCI_LINT = $(LOCALBIN)/golangci-lint
 HELMIFY = $(LOCALBIN)/helmify
+GEN_CRD_DOCS = $(LOCALBIN)/gen-crd-api-reference-docs
 
 ## Tool Versions
 KUSTOMIZE_VERSION ?= v5.4.2
@@ -168,6 +173,7 @@ CONTROLLER_TOOLS_VERSION ?= v0.15.0
 ENVTEST_VERSION ?= release-0.18
 GOLANGCI_LINT_VERSION ?= v1.59.1
 HELMIFY_VERSION ?= v0.4.14
+GEN_CRD_DOCS_VERSION ?= master
 
 .PHONY: kustomize
 kustomize: $(KUSTOMIZE) ## Download kustomize locally if necessary.
@@ -193,6 +199,11 @@ $(GOLANGCI_LINT): $(LOCALBIN)
 helmify: $(HELMIFY) ## Download golangci-lint locally if necessary.
 $(HELMIFY): $(LOCALBIN)
 	$(call go-install-tool,$(HELMIFY),github.com/arttor/helmify/cmd/helmify,$(HELMIFY_VERSION))
+
+.PHONY: gen-crd-docs
+gen-crd-docs: $(GEN_CRD_DOCS) ## Download golangci-lint locally if necessary.
+$(GEN_CRD_DOCS): $(LOCALBIN)
+	$(call go-install-tool,$(GEN_CRD_DOCS),github.com/ahmetb/gen-crd-api-reference-docs,$(GEN_CRD_DOCS_VERSION))
 
 # go-install-tool will 'go install' any package with custom target and name of binary, if it doesn't exist
 # $1 - target path with name of binary

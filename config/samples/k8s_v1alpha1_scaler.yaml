@@ -1,10 +1,10 @@
-apiVersion: k8s.cloudscaler.io/v1alpha1
-kind: Scaler
+apiVersion: cloudscaler.io/v1alpha1
+kind: k8s
 metadata:
   labels:
     app.kubernetes.io/name: cloudscaler
     app.kubernetes.io/managed-by: kustomize
-  name: scaler-sample
+  name: k8s-sample
 spec:
   disableEvents: false
   resources:

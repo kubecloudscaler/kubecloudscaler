@@ -17,7 +17,6 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"github.com/cloudscalerio/cloudscaler/api/common"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -29,7 +28,7 @@ import (
 // +kubebuilder:rbac:groups="",resources=secrets,verbs=get
 
 // ScalerSpec defines the desired state of Scaler
-type ScalerSpec struct {
+type K8sSpec struct {
 	// Secret containing k8s config to connect to distant cluster
 	// If not set, will use the incluster client
 	// AuthSecretName string `json:"authSecretName,omitempty"`
@@ -44,7 +43,7 @@ type ScalerSpec struct {
 	// Interval int `json:"interval,omitempty"`
 
 	// Time period to scale
-	Periods []*common.ScalerPeriod `json:"periods"`
+	Periods []*ScalerPeriod `json:"periods"`
 
 	// Resources
 	// Namespaces
@@ -68,23 +67,23 @@ type ScalerSpec struct {
 // +kubebuilder:resource:scope=Cluster
 
 // Scaler is the Schema for the scalers API
-type Scaler struct {
+type K8s struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   ScalerSpec          `json:"spec,omitempty"`
-	Status common.ScalerStatus `json:"status,omitempty"`
+	Spec   K8sSpec      `json:"spec,omitempty"`
+	Status ScalerStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 
 // ScalerList contains a list of Scaler
-type ScalerList struct {
+type K8sList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []Scaler `json:"items"`
+	Items           []K8s `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&Scaler{}, &ScalerList{})
+	SchemeBuilder.Register(&K8s{}, &K8sList{})
 }

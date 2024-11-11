@@ -35,8 +35,7 @@ import (
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
-	gcpv1alpha1 "github.com/cloudscalerio/cloudscaler/api/gcp/v1alpha1"
-	k8sv1alpha1 "github.com/cloudscalerio/cloudscaler/api/k8s/v1alpha1"
+	cloudscaleriov1alpha1 "github.com/cloudscalerio/cloudscaler/api/v1alpha1"
 	gcpcontroller "github.com/cloudscalerio/cloudscaler/internal/controller/gcp"
 	k8scontroller "github.com/cloudscalerio/cloudscaler/internal/controller/k8s"
 	// +kubebuilder:scaffold:imports
@@ -50,8 +49,7 @@ var (
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
-	utilruntime.Must(k8sv1alpha1.AddToScheme(scheme))
-	utilruntime.Must(gcpv1alpha1.AddToScheme(scheme))
+	utilruntime.Must(cloudscaleriov1alpha1.AddToScheme(scheme))
 	// +kubebuilder:scaffold:scheme
 }
 

@@ -3,7 +3,7 @@ package cronjobs_test
 import (
 	"context"
 
-	"github.com/cloudscalerio/cloudscaler/api/common"
+	cloudscaleriov1alpha1 "github.com/cloudscalerio/cloudscaler/api/v1alpha1"
 	"github.com/cloudscalerio/cloudscaler/pkg/k8s/resources/cronjobs"
 	"github.com/cloudscalerio/cloudscaler/pkg/k8s/utils"
 	periodPkg "github.com/cloudscalerio/cloudscaler/pkg/period"
@@ -49,7 +49,7 @@ var _ = Describe("Cronjobs", func() {
 				NsList: []string{"ns1", "ns2"},
 				Period: &periodPkg.Period{
 					Type:   "down",
-					Period: &common.RecurringPeriod{},
+					Period: &cloudscaleriov1alpha1.RecurringPeriod{},
 				},
 			},
 		}

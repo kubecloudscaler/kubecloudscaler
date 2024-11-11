@@ -22,8 +22,7 @@ import (
 	"slices"
 	"time"
 
-	"github.com/cloudscalerio/cloudscaler/api/common"
-	k8sv1alpha1 "github.com/cloudscalerio/cloudscaler/api/k8s/v1alpha1"
+	cloudscaleriov1alpha1 "github.com/cloudscalerio/cloudscaler/api/v1alpha1"
 	"github.com/cloudscalerio/cloudscaler/internal/utils"
 	k8sUtils "github.com/cloudscalerio/cloudscaler/pkg/k8s/utils"
 	k8sClient "github.com/cloudscalerio/cloudscaler/pkg/k8s/utils/client"
@@ -58,7 +57,7 @@ func (r *ScalerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	_ = log.FromContext(ctx)
 
 	// get the scaler object
-	scaler := &k8sv1alpha1.Scaler{}
+	scaler := &cloudscaleriov1alpha1.K8s{}
 	if err := r.Get(ctx, req.NamespacedName, scaler); err != nil {
 		log.Log.Error(err, "unable to fetch Scaler")
 
@@ -98,8 +97,8 @@ func (r *ScalerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	}
 
 	var (
-		recSuccess []common.ScalerStatusSuccess
-		recFailed  []common.ScalerStatusFailed
+		recSuccess []cloudscaleriov1alpha1.ScalerStatusSuccess
+		recFailed  []cloudscaleriov1alpha1.ScalerStatusFailed
 	)
 
 	// filter resources type and execute the needed actions
@@ -148,13 +147,13 @@ func (r *ScalerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 // SetupWithManager sets up the controller with the Manager.
 func (r *ScalerReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&k8sv1alpha1.Scaler{}).
+		For(&cloudscaleriov1alpha1.K8s{}).
 		WithEventFilter(utils.IgnoreDeletionPredicate()).
 		Named("k8sScaler").
 		Complete(r)
 }
 
-func (r *ScalerReconciler) validResourceList(ctx context.Context, scaler *k8sv1alpha1.Scaler) ([]string, error) {
+func (r *ScalerReconciler) validResourceList(ctx context.Context, scaler *cloudscaleriov1alpha1.K8s) ([]string, error) {
 	_ = log.FromContext(ctx)
 
 	var (

@@ -3,7 +3,7 @@ package period_test
 import (
 	"fmt"
 
-	"github.com/cloudscalerio/cloudscaler/api/common"
+	cloudscaleriov1alpha1 "github.com/cloudscalerio/cloudscaler/api/v1alpha1"
 	"github.com/cloudscalerio/cloudscaler/pkg/period"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -12,18 +12,18 @@ import (
 
 var _ = Describe("Cronjobs", func() {
 	var (
-		periodRecurringOk      *common.ScalerPeriod
-		periodRecurringDayErr  *common.ScalerPeriod
-		periodRecurringTimeErr *common.ScalerPeriod
-		periodFixedOk          *common.ScalerPeriod
-		periodFixedErr         *common.ScalerPeriod
+		periodRecurringOk      *cloudscaleriov1alpha1.ScalerPeriod
+		periodRecurringDayErr  *cloudscaleriov1alpha1.ScalerPeriod
+		periodRecurringTimeErr *cloudscaleriov1alpha1.ScalerPeriod
+		periodFixedOk          *cloudscaleriov1alpha1.ScalerPeriod
+		periodFixedErr         *cloudscaleriov1alpha1.ScalerPeriod
 	)
 
 	BeforeEach(func() {
-		periodFixedOk = &common.ScalerPeriod{
+		periodFixedOk = &cloudscaleriov1alpha1.ScalerPeriod{
 			Type: "restore",
-			Time: common.TimePeriod{
-				Fixed: &common.FixedPeriod{
+			Time: cloudscaleriov1alpha1.TimePeriod{
+				Fixed: &cloudscaleriov1alpha1.FixedPeriod{
 					StartTime: "2024-10-10 08:12:00",
 					EndTime:   "2024-10-11 08:12:00",
 					Once:      ptr.To(false),
@@ -33,10 +33,10 @@ var _ = Describe("Cronjobs", func() {
 			MinReplicas: ptr.To(int32(1)),
 			MaxReplicas: ptr.To(int32(1)),
 		}
-		periodFixedErr = &common.ScalerPeriod{
+		periodFixedErr = &cloudscaleriov1alpha1.ScalerPeriod{
 			Type: "restore",
-			Time: common.TimePeriod{
-				Fixed: &common.FixedPeriod{
+			Time: cloudscaleriov1alpha1.TimePeriod{
+				Fixed: &cloudscaleriov1alpha1.FixedPeriod{
 					StartTime: "00:00",
 					EndTime:   "00:00",
 					Once:      ptr.To(false),
@@ -45,10 +45,10 @@ var _ = Describe("Cronjobs", func() {
 			MinReplicas: ptr.To(int32(1)),
 			MaxReplicas: ptr.To(int32(1)),
 		}
-		periodRecurringOk = &common.ScalerPeriod{
+		periodRecurringOk = &cloudscaleriov1alpha1.ScalerPeriod{
 			Type: "restore",
-			Time: common.TimePeriod{
-				Recurring: &common.RecurringPeriod{
+			Time: cloudscaleriov1alpha1.TimePeriod{
+				Recurring: &cloudscaleriov1alpha1.RecurringPeriod{
 					Days: []string{
 						"all",
 					},
@@ -60,10 +60,10 @@ var _ = Describe("Cronjobs", func() {
 			MinReplicas: ptr.To(int32(1)),
 			MaxReplicas: ptr.To(int32(1)),
 		}
-		periodRecurringDayErr = &common.ScalerPeriod{
+		periodRecurringDayErr = &cloudscaleriov1alpha1.ScalerPeriod{
 			Type: "restore",
-			Time: common.TimePeriod{
-				Recurring: &common.RecurringPeriod{
+			Time: cloudscaleriov1alpha1.TimePeriod{
+				Recurring: &cloudscaleriov1alpha1.RecurringPeriod{
 					Days: []string{
 						"test",
 					},
@@ -75,10 +75,10 @@ var _ = Describe("Cronjobs", func() {
 			MinReplicas: ptr.To(int32(1)),
 			MaxReplicas: ptr.To(int32(1)),
 		}
-		periodRecurringTimeErr = &common.ScalerPeriod{
+		periodRecurringTimeErr = &cloudscaleriov1alpha1.ScalerPeriod{
 			Type: "restore",
-			Time: common.TimePeriod{
-				Recurring: &common.RecurringPeriod{
+			Time: cloudscaleriov1alpha1.TimePeriod{
+				Recurring: &cloudscaleriov1alpha1.RecurringPeriod{
 					Days: []string{
 						"all",
 					},

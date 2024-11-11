@@ -5,7 +5,6 @@
 domain: cloudscaler.io
 layout:
   - go.kubebuilder.io/v4
-multigroup: true
 projectName: cloudscaler
 repo: github.com/cloudscalerio/cloudscaler
 resources:
@@ -13,16 +12,14 @@ resources:
       crdVersion: v1
     controller: true
     domain: cloudscaler.io
-    group: k8s
-    kind: Scaler
-    path: github.com/cloudscalerio/cloudscaler/api/k8s/v1alpha1
+    kind: K8s
+    path: github.com/cloudscalerio/cloudscaler/api/v1alpha1
     version: v1alpha1
   - api:
       crdVersion: v1
     controller: true
     domain: cloudscaler.io
-    group: gcp
-    kind: Scaler
-    path: github.com/cloudscalerio/cloudscaler/api/gcp/v1alpha1
+    kind: Gcp
+    path: github.com/cloudscalerio/cloudscaler/api/v1alpha1
     version: v1alpha1
 version: "3"

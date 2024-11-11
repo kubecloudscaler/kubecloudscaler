@@ -17,15 +17,14 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"github.com/cloudscalerio/cloudscaler/api/common"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-// ScalerSpec defines the desired state of Scaler
-type ScalerSpec struct {
+// GcpSpec defines the desired state of Scaler
+type GcpSpec struct {
 	// Secret containing k8s config to connect to distant cluster
 	// If not set, will use the incluster client
 	// AuthSecretName string `json:"authSecretName,omitempty"`
@@ -40,31 +39,31 @@ type ScalerSpec struct {
 	// Interval int `json:"interval,omitempty"`
 
 	// Time period to scale
-	Periods []*common.ScalerPeriod `json:"periods"`
+	Periods []*ScalerPeriod `json:"periods"`
 }
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:scope=Cluster
 
-// Scaler is the Schema for the scalers API
-type Scaler struct {
+// Gcp is the Schema for the scalers API
+type Gcp struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   ScalerSpec          `json:"spec,omitempty"`
-	Status common.ScalerStatus `json:"status,omitempty"`
+	Spec   GcpSpec      `json:"spec,omitempty"`
+	Status ScalerStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 
-// ScalerList contains a list of Scaler
-type ScalerList struct {
+// GcpList contains a list of Scaler
+type GcpList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []Scaler `json:"items"`
+	Items           []Gcp `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&Scaler{}, &ScalerList{})
+	SchemeBuilder.Register(&Gcp{}, &GcpList{})
 }

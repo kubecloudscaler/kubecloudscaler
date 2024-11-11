@@ -19,7 +19,7 @@ package gcp
 import (
 	"context"
 
-	gcpv1alpha1 "github.com/cloudscalerio/cloudscaler/api/gcp/v1alpha1"
+	cloudscaleriov1alpha1 "github.com/cloudscalerio/cloudscaler/api/v1alpha1"
 	"github.com/cloudscalerio/cloudscaler/internal/utils"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -57,7 +57,7 @@ func (r *ScalerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 // SetupWithManager sets up the controller with the Manager.
 func (r *ScalerReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&gcpv1alpha1.Scaler{}).
+		For(&cloudscaleriov1alpha1.Gcp{}).
 		WithEventFilter(utils.IgnoreDeletionPredicate()).
 		Named("gcpScaler").
 		Complete(r)

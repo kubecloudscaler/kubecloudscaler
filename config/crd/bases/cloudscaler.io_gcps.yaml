@@ -4,20 +4,20 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.15.0
-  name: scalers.gcp.cloudscaler.io
+  name: gcps.cloudscaler.io
 spec:
-  group: gcp.cloudscaler.io
+  group: cloudscaler.io
   names:
-    kind: Scaler
-    listKind: ScalerList
-    plural: scalers
-    singular: scaler
+    kind: Gcp
+    listKind: GcpList
+    plural: gcps
+    singular: gcp
   scope: Cluster
   versions:
   - name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: Scaler is the Schema for the scalers API
+        description: Gcp is the Schema for the scalers API
         properties:
           apiVersion:
             description: |-
@@ -37,7 +37,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: ScalerSpec defines the desired state of Scaler
+            description: GcpSpec defines the desired state of Scaler
             properties:
               dryRun:
                 description: dry-run mode

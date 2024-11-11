@@ -1,5 +1,5 @@
 // +kubebuilder:object:generate=true
-package common
+package v1alpha1
 
 import "time"
 

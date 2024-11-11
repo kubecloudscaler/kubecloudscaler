@@ -4,14 +4,14 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.15.0
-  name: scalers.k8s.cloudscaler.io
+  name: k8s.cloudscaler.io
 spec:
-  group: k8s.cloudscaler.io
+  group: cloudscaler.io
   names:
-    kind: Scaler
-    listKind: ScalerList
-    plural: scalers
-    singular: scaler
+    kind: K8s
+    listKind: K8sList
+    plural: k8s
+    singular: k8s
   scope: Cluster
   versions:
   - name: v1alpha1

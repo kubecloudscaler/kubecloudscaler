@@ -28,8 +28,7 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/cloudscalerio/cloudscaler/api/common"
-	k8sv1alpha1 "github.com/cloudscalerio/cloudscaler/api/k8s/v1alpha1"
+	cloudscaleriov1alpha1 "github.com/cloudscalerio/cloudscaler/api/v1alpha1"
 )
 
 var _ = Describe("Scaler Controller", func() {
@@ -42,13 +41,13 @@ var _ = Describe("Scaler Controller", func() {
 			Name:      resourceName,
 			Namespace: "default", // TODO(user):Modify as needed
 		}
-		scaler := &k8sv1alpha1.Scaler{
-			Spec: k8sv1alpha1.ScalerSpec{
-				Periods: []*common.ScalerPeriod{
+		scaler := &cloudscaleriov1alpha1.K8s{
+			Spec: cloudscaleriov1alpha1.K8sSpec{
+				Periods: []*cloudscaleriov1alpha1.ScalerPeriod{
 					{
 						Type: "restore",
-						Time: common.TimePeriod{
-							Recurring: &common.RecurringPeriod{
+						Time: cloudscaleriov1alpha1.TimePeriod{
+							Recurring: &cloudscaleriov1alpha1.RecurringPeriod{
 								Days: []string{
 									"all",
 								},
@@ -66,17 +65,17 @@ var _ = Describe("Scaler Controller", func() {
 			By("creating the custom resource for the Kind Scaler")
 			err := k8sClientTest.Get(ctx, typeNamespacedName, scaler)
 			if err != nil && errors.IsNotFound(err) {
-				resource := &k8sv1alpha1.Scaler{
+				resource := &cloudscaleriov1alpha1.K8s{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      resourceName,
 						Namespace: "default",
 					},
-					Spec: k8sv1alpha1.ScalerSpec{
-						Periods: []*common.ScalerPeriod{
+					Spec: cloudscaleriov1alpha1.K8sSpec{
+						Periods: []*cloudscaleriov1alpha1.ScalerPeriod{
 							{
 								Type: "restore",
-								Time: common.TimePeriod{
-									Recurring: &common.RecurringPeriod{
+								Time: cloudscaleriov1alpha1.TimePeriod{
+									Recurring: &cloudscaleriov1alpha1.RecurringPeriod{
 										Days: []string{
 											"all",
 										},
@@ -95,13 +94,13 @@ var _ = Describe("Scaler Controller", func() {
 
 		AfterEach(func() {
 			// TODO(user): Cleanup logic after each test, like removing the resource instance.
-			resource := &k8sv1alpha1.Scaler{
-				Spec: k8sv1alpha1.ScalerSpec{
-					Periods: []*common.ScalerPeriod{
+			resource := &cloudscaleriov1alpha1.K8s{
+				Spec: cloudscaleriov1alpha1.K8sSpec{
+					Periods: []*cloudscaleriov1alpha1.ScalerPeriod{
 						{
 							Type: "restore",
-							Time: common.TimePeriod{
-								Recurring: &common.RecurringPeriod{
+							Time: cloudscaleriov1alpha1.TimePeriod{
+								Recurring: &cloudscaleriov1alpha1.RecurringPeriod{
 									Days: []string{
 										"all",
 									},
