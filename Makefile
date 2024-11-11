@@ -9,6 +9,7 @@ GOBIN=$(shell go env GOPATH)/bin
 else
 GOBIN=$(shell go env GOBIN)
 endif
+GOPATH=$(shell go env GOPATH)
 
 # CONTAINER_TOOL defines the container tool to be used for building images.
 # Be aware that the target commands are only tested with Docker which is
@@ -149,7 +150,7 @@ helm: manifests generate kustomize helmify
 
 .PHONY: doc
 doc: manifests generate gen-crd-docs
-	$(GEN_CRD_DOCS) -config "$(PWD)/hack/api-doc/config.json" -template-dir "$(PWD)/hack/api-doc/templates" -api-dir "github.com/cloudscalerio/cloudscaler/api"  -out-file "$(PWD)/docs/api.html"
+	$(GEN_CRD_DOCS) --config="./hack/api-doc/config.yaml" --source-path="$(GOPATH)/src/github.com/cloudscalerio/cloudscaler/api" --renderer="markdown" --output-path="./docs/content/docs/api.md"
 
 ##@ Dependencies
 
@@ -165,7 +166,7 @@ CONTROLLER_GEN ?= $(LOCALBIN)/controller-gen
 ENVTEST ?= $(LOCALBIN)/setup-envtest
 GOLANGCI_LINT = $(LOCALBIN)/golangci-lint
 HELMIFY = $(LOCALBIN)/helmify
-GEN_CRD_DOCS = $(LOCALBIN)/gen-crd-api-reference-docs
+GEN_CRD_DOCS = $(LOCALBIN)/crd-ref-docs
 
 ## Tool Versions
 KUSTOMIZE_VERSION ?= v5.4.2
@@ -203,7 +204,7 @@ $(HELMIFY): $(LOCALBIN)
 .PHONY: gen-crd-docs
 gen-crd-docs: $(GEN_CRD_DOCS) ## Download golangci-lint locally if necessary.
 $(GEN_CRD_DOCS): $(LOCALBIN)
-	$(call go-install-tool,$(GEN_CRD_DOCS),github.com/ahmetb/gen-crd-api-reference-docs,$(GEN_CRD_DOCS_VERSION))
+	$(call go-install-tool,$(GEN_CRD_DOCS),github.com/elastic/crd-ref-docs,$(GEN_CRD_DOCS_VERSION))
 
 # go-install-tool will 'go install' any package with custom target and name of binary, if it doesn't exist
 # $1 - target path with name of binary

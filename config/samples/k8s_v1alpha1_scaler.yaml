@@ -1,5 +1,5 @@
 apiVersion: cloudscaler.io/v1alpha1
-kind: k8s
+kind: K8s
 metadata:
   labels:
     app.kubernetes.io/name: cloudscaler
@@ -18,10 +18,11 @@ spec:
           days:
             - all
           startTime: "01:00"
-          endTime: "23:57"
+          endTime: "21:00"
           timezone: "Europe/Paris"
           once: false
           reverse: false
+          gracePeriod: 5s
       minReplicas: 0
       maxReplicas: 10
       type: "down"

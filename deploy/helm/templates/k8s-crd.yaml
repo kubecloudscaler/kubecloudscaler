@@ -135,8 +135,8 @@ spec:
                             gracePeriod:
                               description: Grace period in seconds for deployments before
                                 scaling down
-                              format: int64
-                              type: integer
+                              pattern: ^\d*s$
+                              type: string
                             once:
                               description: Run once at StartTime
                               type: boolean

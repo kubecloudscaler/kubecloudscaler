@@ -42,7 +42,8 @@ type FixedPeriod struct {
 	// Run once at StartTime
 	Once *bool `json:"once,omitempty"`
 	// Grace period in seconds for deployments before scaling down
-	GracePeriod *time.Duration `json:"gracePeriod,omitempty"`
+	// +kubebuilder:validation:Pattern=`^\d*s$`
+	GracePeriod *string `json:"gracePeriod,omitempty"`
 	// Reverse the period
 	Reverse *bool `json:"reverse,omitempty"`
 }

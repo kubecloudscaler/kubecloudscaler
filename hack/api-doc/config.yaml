@@ -1,0 +1,15 @@
+processor:
+  ignoreTypes:
+    - "List$"
+  ignoreFields:
+    - "status$"
+    - "TypeMeta$"
+  ignoreGroupVersions:
+    - "GVK"
+
+render:
+  kubernetesVersion: 1.25
+  knownTypes:
+    - name: DurationReference
+      package: time
+      link: https://pkg.go.dev/time#Duration

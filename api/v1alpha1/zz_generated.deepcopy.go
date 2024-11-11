@@ -41,7 +41,7 @@ func (in *FixedPeriod) DeepCopyInto(out *FixedPeriod) {
 	}
 	if in.GracePeriod != nil {
 		in, out := &in.GracePeriod, &out.GracePeriod
-		*out = new(timex.Duration)
+		*out = new(string)
 		**out = **in
 	}
 	if in.Reverse != nil {
