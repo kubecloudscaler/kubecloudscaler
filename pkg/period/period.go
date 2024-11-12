@@ -37,6 +37,11 @@ func New(period *cloudscaleriov1alpha1.ScalerPeriod) (*Period, error) {
 		return nil, err
 	}
 
+	curPeriod.GracePeriod, err = time.ParseDuration(ptr.Deref(convertedPeriod.GracePeriod, defaultGracePeriod))
+	if err != nil {
+		return nil, err
+	}
+
 	curPeriod.Period = convertedPeriod
 
 	periodData, err := json.Marshal(period)
@@ -160,6 +165,10 @@ func isPeriodActive(
 	endTime, err := getTime(period.EndTime, periodType, timeLocation)
 	if err != nil {
 		return false, time.Time{}, time.Time{}, nil, err
+	}
+
+	if startTime.After(endTime) {
+		return false, time.Time{}, time.Time{}, nil, ErrStartAfterEnd
 	}
 
 	isActive := localTime.After(startTime) && localTime.Before(endTime)

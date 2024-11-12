@@ -65,6 +65,7 @@ type K8sSpec struct {
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:scope=Cluster
+// +genclient
 
 // Scaler is the Schema for the scalers API
 type K8s struct {

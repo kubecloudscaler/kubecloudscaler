@@ -13,6 +13,7 @@ type Period struct {
 	Hash         string
 	GetStartTime time.Time
 	GetEndTime   time.Time
+	GracePeriod  time.Duration
 	Once         *bool
 	MinReplicas  *int32
 	MaxReplicas  *int32

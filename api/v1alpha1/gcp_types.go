@@ -45,6 +45,7 @@ type GcpSpec struct {
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:scope=Cluster
+// +genclient
 
 // Gcp is the Schema for the scalers API
 type Gcp struct {

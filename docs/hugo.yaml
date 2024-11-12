@@ -10,3 +10,11 @@ menu:
     - name: Documentation
       pageRef: /docs
       weight: 1
+markup:
+  goldmark:
+    renderer:
+      unsafe: true
+  highlight:
+    noClasses: false
+
+enableInlineShortcodes: true

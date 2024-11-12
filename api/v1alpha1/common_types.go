@@ -1,8 +1,6 @@
 // +kubebuilder:object:generate=true
 package v1alpha1
 
-import "time"
-
 type ScalerPeriod struct {
 	// +kubebuilder:validation:Enum=down;nominal;up;restore
 	Type string     `json:"type"`
@@ -27,8 +25,8 @@ type RecurringPeriod struct {
 	Timezone *string `json:"timezone,omitempty"`
 	// Run once at StartTime
 	Once *bool `json:"once,omitempty"`
-	// Grace period in seconds for deployments before scaling down
-	GracePeriod *time.Duration `json:"gracePeriod,omitempty"`
+	// +kubebuilder:validation:Pattern=`^\d*s$`
+	GracePeriod *string `json:"gracePeriod,omitempty"`
 	// Reverse the period
 	Reverse *bool `json:"reverse,omitempty"`
 }

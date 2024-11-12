@@ -5,4 +5,5 @@ const (
 	PeriodFixedName     = "fixed"
 	PeriodRecurringName = "recurring"
 	defaultTimezone     = "UTC"
+	defaultGracePeriod  = "0s"
 )
