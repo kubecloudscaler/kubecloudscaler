@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.1.0](https://github.com/cloudscalerio/cloudscaler/compare/v1.0.5...v1.1.0) (2024-11-12)
+
+
+### Features
+
+* refactor crds ([a43ddcd](https://github.com/cloudscalerio/cloudscaler/commit/a43ddcd4c763751fa7adef43fd533e33075f715a))
+
+
+### Bug Fixes
+
+* crds refacto ([d70d83a](https://github.com/cloudscalerio/cloudscaler/commit/d70d83a6c334a00ab01c46b721b98966677ca9cf))
+* doc ([e6b8ec0](https://github.com/cloudscalerio/cloudscaler/commit/e6b8ec017249a8e7f84d62b68cb24568cffe2c54))
+
 ## [1.0.5](https://github.com/cloudscalerio/cloudscaler/compare/v1.0.4...v1.0.5) (2024-11-10)
 
 
