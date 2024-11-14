@@ -1,6 +1,7 @@
 ---
 title: "API reference"
 description: "Cloudscaler operator generated API reference docs"
+weight: 100
 ---
 > This page is automatically generated with `gen-crd-api-reference-docs`.
 <p>Packages:</p>

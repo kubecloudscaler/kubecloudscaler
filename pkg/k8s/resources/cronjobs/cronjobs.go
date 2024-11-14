@@ -2,7 +2,6 @@ package cronjobs
 
 import (
 	"context"
-	"strconv"
 
 	cloudscaleriov1alpha1 "github.com/cloudscalerio/cloudscaler/api/v1alpha1"
 	"github.com/cloudscalerio/cloudscaler/pkg/k8s/utils"
@@ -66,7 +65,7 @@ func (c *Cronjobs) SetState(ctx context.Context) ([]cloudscaleriov1alpha1.Scaler
 		case "down":
 			log.Log.V(1).Info("scaling down", "name", cName.Name)
 
-			c.addAnnotations(cronjob)
+			cronjob.Annotations = utils.AddBoolAnnotations(cronjob.Annotations, c.Resource.Period, suspended)
 
 			cronjob.Spec.Suspend = ptr.To(suspended)
 
@@ -87,7 +86,7 @@ func (c *Cronjobs) SetState(ctx context.Context) ([]cloudscaleriov1alpha1.Scaler
 		case "restore":
 			log.Log.V(1).Info("restoring", "name", cName.Name)
 
-			err := c.restore(cronjob)
+			cronjob.Spec.Suspend, cronjob.Annotations, err = utils.RestoreBool(cronjob.Annotations)
 			if err != nil {
 				scalerStatusFailed = append(
 					scalerStatusFailed,
@@ -130,33 +129,4 @@ func (c *Cronjobs) SetState(ctx context.Context) ([]cloudscaleriov1alpha1.Scaler
 	}
 
 	return scalerStatusSuccess, scalerStatusFailed, nil
-}
-
-func (c *Cronjobs) addAnnotations(cronjob *batchV1.CronJob) {
-	if cronjob.Annotations == nil {
-		cronjob.Annotations = map[string]string{}
-	}
-
-	cronjob.Annotations = utils.AddAnnotations(cronjob.Annotations, c.Resource.Period)
-
-	_, isExists := cronjob.Annotations[utils.AnnotationsPrefix+"/suspended"]
-	if !isExists {
-		cronjob.Annotations[utils.AnnotationsPrefix+"/suspended"] = strconv.FormatBool(*cronjob.Spec.Suspend)
-	}
-}
-
-func (c *Cronjobs) restore(cronjob *batchV1.CronJob) error {
-	rep, isExists := cronjob.Annotations[utils.AnnotationsPrefix+"/suspended"]
-	if isExists {
-		repAsBool, err := strconv.ParseBool(rep)
-		if err != nil {
-			return err
-		}
-
-		cronjob.Spec.Suspend = ptr.To(repAsBool)
-	}
-
-	cronjob.Annotations = utils.RemoveAnnotations(cronjob.Annotations)
-
-	return nil
 }

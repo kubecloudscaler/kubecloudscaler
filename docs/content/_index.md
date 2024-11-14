@@ -7,7 +7,6 @@ layout: index
 
 This project is inspired by [kube-downscaler](https://codeberg.org/hjacobs/kube-downscaler).
 
-
 <div class="hx-mb-6">
 {{< hextra/hero-button text="Documentation" link="docs" >}}
 </div>

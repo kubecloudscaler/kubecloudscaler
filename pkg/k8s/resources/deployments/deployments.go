@@ -2,8 +2,6 @@ package deployments
 
 import (
 	"context"
-	"fmt"
-	"strconv"
 
 	cloudscaleriov1alpha1 "github.com/cloudscalerio/cloudscaler/api/v1alpha1"
 	"github.com/cloudscalerio/cloudscaler/pkg/k8s/utils"
@@ -11,7 +9,6 @@ import (
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	v1 "k8s.io/client-go/kubernetes/typed/apps/v1"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
@@ -67,21 +64,21 @@ func (d *Deployments) SetState(ctx context.Context) ([]cloudscaleriov1alpha1.Sca
 		case "down":
 			log.Log.V(1).Info("scaling down", "name", dName.Name)
 
-			d.addAnnotations(deploy)
+			deploy.Annotations = utils.AddIntAnnotations(deploy.Annotations, d.Resource.Period, d.Resource.Period.MinReplicas)
 
 			deploy.Spec.Replicas = d.Resource.Period.MinReplicas
 
 		case "up":
 			log.Log.V(1).Info("scaling up", "name", dName.Name)
 
-			d.addAnnotations(deploy)
+			deploy.Annotations = utils.AddIntAnnotations(deploy.Annotations, d.Resource.Period, d.Resource.Period.MaxReplicas)
 
 			deploy.Spec.Replicas = d.Resource.Period.MaxReplicas
 
 		case "restore":
 			log.Log.V(1).Info("restoring", "name", dName.Name)
 
-			err := d.restore(deploy)
+			deploy.Spec.Replicas, deploy.Annotations, err = utils.RestoreInt(deploy.Annotations)
 			if err != nil {
 				scalerStatusFailed = append(
 					scalerStatusFailed,
@@ -124,29 +121,4 @@ func (d *Deployments) SetState(ctx context.Context) ([]cloudscaleriov1alpha1.Sca
 	}
 
 	return scalerStatusSuccess, scalerStatusFailed, nil
-}
-
-func (d *Deployments) addAnnotations(deploy *appsV1.Deployment) {
-	deploy.Annotations = utils.AddAnnotations(deploy.Annotations, d.Resource.Period)
-
-	_, isExists := deploy.Annotations[utils.AnnotationsPrefix+"/original-replicas"]
-	if !isExists {
-		deploy.Annotations[utils.AnnotationsPrefix+"/original-replicas"] = fmt.Sprintf("%d", *deploy.Spec.Replicas)
-	}
-}
-
-func (d *Deployments) restore(deploy *appsV1.Deployment) error {
-	rep, isExists := deploy.Annotations[utils.AnnotationsPrefix+"/original-replicas"]
-	if isExists {
-		repAsInt, err := strconv.Atoi(rep)
-		if err != nil {
-			return err
-		}
-
-		deploy.Spec.Replicas = ptr.To(int32(repAsInt))
-	}
-
-	deploy.Annotations = utils.RemoveAnnotations(deploy.Annotations)
-
-	return nil
 }

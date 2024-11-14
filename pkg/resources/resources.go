@@ -6,6 +6,7 @@ import (
 
 	"github.com/cloudscalerio/cloudscaler/pkg/k8s/resources/cronjobs"
 	"github.com/cloudscalerio/cloudscaler/pkg/k8s/resources/deployments"
+	"github.com/cloudscalerio/cloudscaler/pkg/k8s/resources/statefulsets"
 	// "github.com/cloudscalerio/cloudscaler/pkg/k8s/resources/horizontalpodautoscalers"
 )
 
@@ -18,6 +19,12 @@ func NewResource(ctx context.Context, resourceName string, config Config) (IReso
 	switch resourceName {
 	case "deployments":
 		resource, err = deployments.New(ctx, config.K8s)
+		if err != nil {
+			return nil, err
+		}
+
+	case "statefulsets":
+		resource, err = statefulsets.New(ctx, config.K8s)
 		if err != nil {
 			return nil, err
 		}

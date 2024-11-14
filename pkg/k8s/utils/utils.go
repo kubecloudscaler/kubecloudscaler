@@ -2,6 +2,7 @@ package utils
 
 import (
 	"context"
+	"strconv"
 	"strings"
 
 	periodPkg "github.com/cloudscalerio/cloudscaler/pkg/period"
@@ -47,11 +48,20 @@ func SetNamespaceList(ctx context.Context, config *Config) ([]string, error) {
 	return nsList, nil
 }
 
-func AddAnnotations(annotations map[string]string, period *periodPkg.Period) map[string]string {
+func addAnnotations(annotations map[string]string, period *periodPkg.Period, value string) map[string]string {
+	if annotations == nil {
+		annotations = make(map[string]string)
+	}
+
 	annotations[AnnotationsPrefix+"/"+PeriodType] = period.Type
 	annotations[AnnotationsPrefix+"/"+PeriodStartTime] = period.GetStartTime.String()
 	annotations[AnnotationsPrefix+"/"+PeriodEndTime] = period.GetEndTime.String()
 	ptr.Deref(period.Period.Timezone, annotations[AnnotationsPrefix+"/"+PeriodTimezone])
+
+	_, isExists := annotations[AnnotationsPrefix+"/"+AnnotationsOrigValue]
+	if !isExists {
+		annotations[AnnotationsPrefix+"/"+AnnotationsOrigValue] = value
+	}
 
 	return annotations
 }
@@ -104,4 +114,50 @@ func InitConfig(ctx context.Context, config *Config) (*K8sResource, error) {
 	resource.ListOptions = listOptions
 
 	return resource, nil
+}
+
+func AddBoolAnnotations(annot map[string]string, curPeriod *periodPkg.Period, value bool) map[string]string {
+	return addAnnotations(annot, curPeriod, strconv.FormatBool(value))
+}
+
+func RestoreBool(annot map[string]string) (*bool, map[string]string, error) {
+	var (
+		repAsBool bool
+		err       error
+	)
+
+	rep, isExists := annot[AnnotationsPrefix+"/"+AnnotationsOrigValue]
+	if isExists {
+		repAsBool, err = strconv.ParseBool(rep)
+		if err != nil {
+			return nil, annot, err
+		}
+	}
+
+	annot = RemoveAnnotations(annot)
+
+	return ptr.To(repAsBool), annot, nil
+}
+
+func AddIntAnnotations(annot map[string]string, curPeriod *periodPkg.Period, value *int32) map[string]string {
+	return addAnnotations(annot, curPeriod, strconv.FormatInt(int64(ptr.Deref(value, int32(0))), 10))
+}
+
+func RestoreInt(annot map[string]string) (*int32, map[string]string, error) {
+	var (
+		repAsInt int
+		err      error
+	)
+
+	rep, isExists := annot[AnnotationsPrefix+"/"+AnnotationsOrigValue]
+	if isExists {
+		repAsInt, err = strconv.Atoi(rep)
+		if err != nil {
+			return nil, annot, err
+		}
+	}
+
+	annot = RemoveAnnotations(annot)
+
+	return ptr.To(int32(repAsInt)), annot, nil
 }
