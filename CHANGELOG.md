@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.2.0](https://github.com/cloudscalerio/cloudscaler/compare/v1.1.0...v1.2.0) (2024-11-17)
+
+
+### Features
+
+* add statefulsets ([4d34c80](https://github.com/cloudscalerio/cloudscaler/commit/4d34c8032f7caa930141466cad61939e0c9b0fed))
+
+
+### Bug Fixes
+
+* kubernetes resources exclusion ([cc62159](https://github.com/cloudscalerio/cloudscaler/commit/cc621590b6c81649daecf821ba50fa4d348021d2))
+
 ## [1.1.0](https://github.com/cloudscalerio/cloudscaler/compare/v1.0.5...v1.1.0) (2024-11-12)
 
 
