@@ -1,925 +1,273 @@
 ---
-title: "API reference"
-description: "Cloudscaler operator generated API reference docs"
-weight: 100
+title: API Reference
 ---
-> This page is automatically generated with `gen-crd-api-reference-docs`.
-<p>Packages:</p>
-<ul>
-<li>
-<a href="#cloudscaler.io%2fv1alpha1">cloudscaler.io/v1alpha1</a>
-</li>
-</ul>
-<h2 id="cloudscaler.io/v1alpha1">cloudscaler.io/v1alpha1</h2>
-<div>
-<p>Package v1alpha1 contains API Schema definitions for the gcp v1alpha1 API group</p>
-</div>
-Resource Types:
-<ul><li>
-<a href="#cloudscaler.io/v1alpha1.Gcp">Gcp</a>
-</li><li>
-<a href="#cloudscaler.io/v1alpha1.K8s">K8s</a>
-</li></ul>
-<h3 id="cloudscaler.io/v1alpha1.Gcp">Gcp
-</h3>
-<div>
-<p>Gcp is the Schema for the scalers API</p>
-</div>
-<table>
-<thead>
-<tr>
-<th>Field</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-<code>apiVersion</code><br/>
-string</td>
-<td>
-<code>
-cloudscaler.io/v1alpha1
-</code>
-</td>
-</tr>
-<tr>
-<td>
-<code>kind</code><br/>
-string
-</td>
-<td><code>Gcp</code></td>
-</tr>
-<tr>
-<td>
-<code>metadata</code><br/>
-<em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#objectmeta-v1-meta">
-Kubernetes meta/v1.ObjectMeta
-</a>
-</em>
-</td>
-<td>
-Refer to the Kubernetes API documentation for the fields of the
-<code>metadata</code> field.
-</td>
-</tr>
-<tr>
-<td>
-<code>spec</code><br/>
-<em>
-<a href="#cloudscaler.io/v1alpha1.GcpSpec">
-GcpSpec
-</a>
-</em>
-</td>
-<td>
-<br/>
-<br/>
-<table>
-<tr>
-<td>
-<code>dryRun</code><br/>
-<em>
-bool
-</em>
-</td>
-<td>
-<p>dry-run mode</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>periods</code><br/>
-<em>
-<a href="#cloudscaler.io/v1alpha1.ScalerPeriod">
-[]ScalerPeriod
-</a>
-</em>
-</td>
-<td>
-<p>Time period to scale</p>
-</td>
-</tr>
-</table>
-</td>
-</tr>
-<tr>
-<td>
-<code>status</code><br/>
-<em>
-<a href="#cloudscaler.io/v1alpha1.ScalerStatus">
-ScalerStatus
-</a>
-</em>
-</td>
-<td>
-</td>
-</tr>
-</tbody>
-</table>
-<h3 id="cloudscaler.io/v1alpha1.K8s">K8s
-</h3>
-<div>
-<p>Scaler is the Schema for the scalers API</p>
-</div>
-<table>
-<thead>
-<tr>
-<th>Field</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-<code>apiVersion</code><br/>
-string</td>
-<td>
-<code>
-cloudscaler.io/v1alpha1
-</code>
-</td>
-</tr>
-<tr>
-<td>
-<code>kind</code><br/>
-string
-</td>
-<td><code>K8s</code></td>
-</tr>
-<tr>
-<td>
-<code>metadata</code><br/>
-<em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#objectmeta-v1-meta">
-Kubernetes meta/v1.ObjectMeta
-</a>
-</em>
-</td>
-<td>
-Refer to the Kubernetes API documentation for the fields of the
-<code>metadata</code> field.
-</td>
-</tr>
-<tr>
-<td>
-<code>spec</code><br/>
-<em>
-<a href="#cloudscaler.io/v1alpha1.K8sSpec">
-K8sSpec
-</a>
-</em>
-</td>
-<td>
-<br/>
-<br/>
-<table>
-<tr>
-<td>
-<code>dryRun</code><br/>
-<em>
-bool
-</em>
-</td>
-<td>
-<p>dry-run mode</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>periods</code><br/>
-<em>
-<a href="#cloudscaler.io/v1alpha1.ScalerPeriod">
-[]ScalerPeriod
-</a>
-</em>
-</td>
-<td>
-<p>Time period to scale</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>namespaces</code><br/>
-<em>
-[]string
-</em>
-</td>
-<td>
-<p>Resources
-Namespaces</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>excludeNamespaces</code><br/>
-<em>
-[]string
-</em>
-</td>
-<td>
-<p>Exclude namespaces from downscaling</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>resources</code><br/>
-<em>
-[]string
-</em>
-</td>
-<td>
-<p>Resources</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>excludeResources</code><br/>
-<em>
-[]string
-</em>
-</td>
-<td>
-<p>Exclude resources from downscaling</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>labelSelector</code><br/>
-<em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#labelselector-v1-meta">
-Kubernetes meta/v1.LabelSelector
-</a>
-</em>
-</td>
-<td>
-<p>Labels selectors</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>deploymentTimeAnnotation</code><br/>
-<em>
-string
-</em>
-</td>
-<td>
-<p>Deployment time annotation</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>disableEvents</code><br/>
-<em>
-bool
-</em>
-</td>
-<td>
-<p>Disable events</p>
-</td>
-</tr>
-</table>
-</td>
-</tr>
-<tr>
-<td>
-<code>status</code><br/>
-<em>
-<a href="#cloudscaler.io/v1alpha1.ScalerStatus">
-ScalerStatus
-</a>
-</em>
-</td>
-<td>
-</td>
-</tr>
-</tbody>
-</table>
-<h3 id="cloudscaler.io/v1alpha1.FixedPeriod">FixedPeriod
-</h3>
-<p>
-(<em>Appears on:</em><a href="#cloudscaler.io/v1alpha1.TimePeriod">TimePeriod</a>)
-</p>
-<div>
-</div>
-<table>
-<thead>
-<tr>
-<th>Field</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-<code>startTime</code><br/>
-<em>
-string
-</em>
-</td>
-<td>
-</td>
-</tr>
-<tr>
-<td>
-<code>endTime</code><br/>
-<em>
-string
-</em>
-</td>
-<td>
-</td>
-</tr>
-<tr>
-<td>
-<code>timezone</code><br/>
-<em>
-string
-</em>
-</td>
-<td>
-</td>
-</tr>
-<tr>
-<td>
-<code>once</code><br/>
-<em>
-bool
-</em>
-</td>
-<td>
-<p>Run once at StartTime</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>gracePeriod</code><br/>
-<em>
-string
-</em>
-</td>
-<td>
-<p>Grace period in seconds for deployments before scaling down</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>reverse</code><br/>
-<em>
-bool
-</em>
-</td>
-<td>
-<p>Reverse the period</p>
-</td>
-</tr>
-</tbody>
-</table>
-<h3 id="cloudscaler.io/v1alpha1.GcpSpec">GcpSpec
-</h3>
-<p>
-(<em>Appears on:</em><a href="#cloudscaler.io/v1alpha1.Gcp">Gcp</a>)
-</p>
-<div>
-<p>GcpSpec defines the desired state of Scaler</p>
-</div>
-<table>
-<thead>
-<tr>
-<th>Field</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-<code>dryRun</code><br/>
-<em>
-bool
-</em>
-</td>
-<td>
-<p>dry-run mode</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>periods</code><br/>
-<em>
-<a href="#cloudscaler.io/v1alpha1.ScalerPeriod">
-[]ScalerPeriod
-</a>
-</em>
-</td>
-<td>
-<p>Time period to scale</p>
-</td>
-</tr>
-</tbody>
-</table>
-<h3 id="cloudscaler.io/v1alpha1.K8sSpec">K8sSpec
-</h3>
-<p>
-(<em>Appears on:</em><a href="#cloudscaler.io/v1alpha1.K8s">K8s</a>)
-</p>
-<div>
-<p>ScalerSpec defines the desired state of Scaler</p>
-</div>
-<table>
-<thead>
-<tr>
-<th>Field</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-<code>dryRun</code><br/>
-<em>
-bool
-</em>
-</td>
-<td>
-<p>dry-run mode</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>periods</code><br/>
-<em>
-<a href="#cloudscaler.io/v1alpha1.ScalerPeriod">
-[]ScalerPeriod
-</a>
-</em>
-</td>
-<td>
-<p>Time period to scale</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>namespaces</code><br/>
-<em>
-[]string
-</em>
-</td>
-<td>
-<p>Resources
-Namespaces</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>excludeNamespaces</code><br/>
-<em>
-[]string
-</em>
-</td>
-<td>
-<p>Exclude namespaces from downscaling</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>resources</code><br/>
-<em>
-[]string
-</em>
-</td>
-<td>
-<p>Resources</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>excludeResources</code><br/>
-<em>
-[]string
-</em>
-</td>
-<td>
-<p>Exclude resources from downscaling</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>labelSelector</code><br/>
-<em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#labelselector-v1-meta">
-Kubernetes meta/v1.LabelSelector
-</a>
-</em>
-</td>
-<td>
-<p>Labels selectors</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>deploymentTimeAnnotation</code><br/>
-<em>
-string
-</em>
-</td>
-<td>
-<p>Deployment time annotation</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>disableEvents</code><br/>
-<em>
-bool
-</em>
-</td>
-<td>
-<p>Disable events</p>
-</td>
-</tr>
-</tbody>
-</table>
-<h3 id="cloudscaler.io/v1alpha1.RecurringPeriod">RecurringPeriod
-</h3>
-<p>
-(<em>Appears on:</em><a href="#cloudscaler.io/v1alpha1.ScalerStatusPeriod">ScalerStatusPeriod</a>, <a href="#cloudscaler.io/v1alpha1.TimePeriod">TimePeriod</a>)
-</p>
-<div>
-</div>
-<table>
-<thead>
-<tr>
-<th>Field</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-<code>days</code><br/>
-<em>
-[]string
-</em>
-</td>
-<td>
-</td>
-</tr>
-<tr>
-<td>
-<code>startTime</code><br/>
-<em>
-string
-</em>
-</td>
-<td>
-</td>
-</tr>
-<tr>
-<td>
-<code>endTime</code><br/>
-<em>
-string
-</em>
-</td>
-<td>
-</td>
-</tr>
-<tr>
-<td>
-<code>timezone</code><br/>
-<em>
-string
-</em>
-</td>
-<td>
-</td>
-</tr>
-<tr>
-<td>
-<code>once</code><br/>
-<em>
-bool
-</em>
-</td>
-<td>
-<p>Run once at StartTime</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>gracePeriod</code><br/>
-<em>
-string
-</em>
-</td>
-<td>
-</td>
-</tr>
-<tr>
-<td>
-<code>reverse</code><br/>
-<em>
-bool
-</em>
-</td>
-<td>
-<p>Reverse the period</p>
-</td>
-</tr>
-</tbody>
-</table>
-<h3 id="cloudscaler.io/v1alpha1.ScalerPeriod">ScalerPeriod
-</h3>
-<p>
-(<em>Appears on:</em><a href="#cloudscaler.io/v1alpha1.GcpSpec">GcpSpec</a>, <a href="#cloudscaler.io/v1alpha1.K8sSpec">K8sSpec</a>)
-</p>
-<div>
-</div>
-<table>
-<thead>
-<tr>
-<th>Field</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-<code>type</code><br/>
-<em>
-string
-</em>
-</td>
-<td>
-</td>
-</tr>
-<tr>
-<td>
-<code>time</code><br/>
-<em>
-<a href="#cloudscaler.io/v1alpha1.TimePeriod">
-TimePeriod
-</a>
-</em>
-</td>
-<td>
-</td>
-</tr>
-<tr>
-<td>
-<code>minReplicas</code><br/>
-<em>
-int32
-</em>
-</td>
-<td>
-<p>Minimum replicas</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>maxReplicas</code><br/>
-<em>
-int32
-</em>
-</td>
-<td>
-<p>Maximum replicas</p>
-</td>
-</tr>
-</tbody>
-</table>
-<h3 id="cloudscaler.io/v1alpha1.ScalerStatus">ScalerStatus
-</h3>
-<p>
-(<em>Appears on:</em><a href="#cloudscaler.io/v1alpha1.Gcp">Gcp</a>, <a href="#cloudscaler.io/v1alpha1.K8s">K8s</a>)
-</p>
-<div>
-<p>ScalerStatus defines the observed state of Scaler</p>
-</div>
-<table>
-<thead>
-<tr>
-<th>Field</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-<code>currentPeriod</code><br/>
-<em>
-<a href="#cloudscaler.io/v1alpha1.ScalerStatusPeriod">
-ScalerStatusPeriod
-</a>
-</em>
-</td>
-<td>
-</td>
-</tr>
-<tr>
-<td>
-<code>comments</code><br/>
-<em>
-string
-</em>
-</td>
-<td>
-</td>
-</tr>
-</tbody>
-</table>
-<h3 id="cloudscaler.io/v1alpha1.ScalerStatusFailed">ScalerStatusFailed
-</h3>
-<p>
-(<em>Appears on:</em><a href="#cloudscaler.io/v1alpha1.ScalerStatusPeriod">ScalerStatusPeriod</a>)
-</p>
-<div>
-</div>
-<table>
-<thead>
-<tr>
-<th>Field</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-<code>kind</code><br/>
-<em>
-string
-</em>
-</td>
-<td>
-</td>
-</tr>
-<tr>
-<td>
-<code>name</code><br/>
-<em>
-string
-</em>
-</td>
-<td>
-</td>
-</tr>
-<tr>
-<td>
-<code>reason</code><br/>
-<em>
-string
-</em>
-</td>
-<td>
-</td>
-</tr>
-</tbody>
-</table>
-<h3 id="cloudscaler.io/v1alpha1.ScalerStatusPeriod">ScalerStatusPeriod
-</h3>
-<p>
-(<em>Appears on:</em><a href="#cloudscaler.io/v1alpha1.ScalerStatus">ScalerStatus</a>)
-</p>
-<div>
-</div>
-<table>
-<thead>
-<tr>
-<th>Field</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-<code>spec</code><br/>
-<em>
-<a href="#cloudscaler.io/v1alpha1.RecurringPeriod">
-RecurringPeriod
-</a>
-</em>
-</td>
-<td>
-<br/>
-<br/>
-<table>
-</table>
-</td>
-</tr>
-<tr>
-<td>
-<code>specSHA</code><br/>
-<em>
-string
-</em>
-</td>
-<td>
-</td>
-</tr>
-<tr>
-<td>
-<code>success</code><br/>
-<em>
-<a href="#cloudscaler.io/v1alpha1.ScalerStatusSuccess">
-[]ScalerStatusSuccess
-</a>
-</em>
-</td>
-<td>
-</td>
-</tr>
-<tr>
-<td>
-<code>failed</code><br/>
-<em>
-<a href="#cloudscaler.io/v1alpha1.ScalerStatusFailed">
-[]ScalerStatusFailed
-</a>
-</em>
-</td>
-<td>
-</td>
-</tr>
-</tbody>
-</table>
-<h3 id="cloudscaler.io/v1alpha1.ScalerStatusSuccess">ScalerStatusSuccess
-</h3>
-<p>
-(<em>Appears on:</em><a href="#cloudscaler.io/v1alpha1.ScalerStatusPeriod">ScalerStatusPeriod</a>)
-</p>
-<div>
-</div>
-<table>
-<thead>
-<tr>
-<th>Field</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-<code>kind</code><br/>
-<em>
-string
-</em>
-</td>
-<td>
-</td>
-</tr>
-<tr>
-<td>
-<code>name</code><br/>
-<em>
-string
-</em>
-</td>
-<td>
-</td>
-</tr>
-</tbody>
-</table>
-<h3 id="cloudscaler.io/v1alpha1.TimePeriod">TimePeriod
-</h3>
-<p>
-(<em>Appears on:</em><a href="#cloudscaler.io/v1alpha1.ScalerPeriod">ScalerPeriod</a>)
-</p>
-<div>
-</div>
-<table>
-<thead>
-<tr>
-<th>Field</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-<code>recurring</code><br/>
-<em>
-<a href="#cloudscaler.io/v1alpha1.RecurringPeriod">
-RecurringPeriod
-</a>
-</em>
-</td>
-<td>
-</td>
-</tr>
-<tr>
-<td>
-<code>fixed</code><br/>
-<em>
-<a href="#cloudscaler.io/v1alpha1.FixedPeriod">
-FixedPeriod
-</a>
-</em>
-</td>
-<td>
-</td>
-</tr>
-</tbody>
-</table>
-<hr/>
+
+**Packages**
+- [cloudscaler.io/v1alpha1](#cloudscaleriov1alpha1)
+
+
+## cloudscaler.io/v1alpha1
+
+
+Package v1alpha1 contains API Schema definitions for the k8s v1alpha1 API group
+
+### Resource Types
+- [Gcp](#gcp)
+- [GcpList](#gcplist)
+- [K8s](#k8s)
+- [K8sList](#k8slist)
+
+
+
+#### FixedPeriod
+
+
+
+
+
+
+
+_Appears in:_
+- [TimePeriod](#timeperiod)
+
+| Field | Description | Default | Validation |
+| --- | --- | --- | --- |
+| `startTime` _string_ |  |  | Pattern: `^\d\{4\}-(0?[1-9]\|1[0,1,2])-(0?[1-9]\|[12][0-9]\|3[01]) ([0-1]?[0-9]\|2[0-3]):[0-5]?[0-9]:[0-5]?[0-9]$` <br /> |
+| `endTime` _string_ |  |  | Pattern: `^\d\{4\}-(0?[1-9]\|1[0,1,2])-(0?[1-9]\|[12][0-9]\|3[01]) ([0-1]?[0-9]\|2[0-3]):[0-5]?[0-9]:[0-5]?[0-9]$` <br /> |
+| `timezone` _string_ |  |  |  |
+| `once` _boolean_ | Run once at StartTime |  |  |
+| `gracePeriod` _string_ | Grace period in seconds for deployments before scaling down |  | Pattern: `^\d*s$` <br /> |
+| `reverse` _boolean_ | Reverse the period |  |  |
+
+
+#### Gcp
+
+
+
+Gcp is the Schema for the scalers API
+
+
+
+_Appears in:_
+- [GcpList](#gcplist)
+
+| Field | Description | Default | Validation |
+| --- | --- | --- | --- |
+| `apiVersion` _string_ | `cloudscaler.io/v1alpha1` | | |
+| `kind` _string_ | `Gcp` | | |
+| `metadata` _[ObjectMeta](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#objectmeta-v1-meta)_ | Refer to Kubernetes API documentation for fields of `metadata`. |  |  |
+| `spec` _[GcpSpec](#gcpspec)_ |  |  |  |
+
+
+#### GcpList
+
+
+
+GcpList contains a list of Scaler
+
+
+
+
+
+| Field | Description | Default | Validation |
+| --- | --- | --- | --- |
+| `apiVersion` _string_ | `cloudscaler.io/v1alpha1` | | |
+| `kind` _string_ | `GcpList` | | |
+| `metadata` _[ListMeta](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#listmeta-v1-meta)_ | Refer to Kubernetes API documentation for fields of `metadata`. |  |  |
+| `items` _[Gcp](#gcp) array_ |  |  |  |
+
+
+#### GcpSpec
+
+
+
+GcpSpec defines the desired state of Scaler
+
+
+
+_Appears in:_
+- [Gcp](#gcp)
+
+| Field | Description | Default | Validation |
+| --- | --- | --- | --- |
+| `dryRun` _boolean_ | dry-run mode |  |  |
+| `periods` _[ScalerPeriod](#scalerperiod) array_ | Time period to scale |  |  |
+
+
+#### K8s
+
+
+
+Scaler is the Schema for the scalers API
+
+
+
+_Appears in:_
+- [K8sList](#k8slist)
+
+| Field | Description | Default | Validation |
+| --- | --- | --- | --- |
+| `apiVersion` _string_ | `cloudscaler.io/v1alpha1` | | |
+| `kind` _string_ | `K8s` | | |
+| `metadata` _[ObjectMeta](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#objectmeta-v1-meta)_ | Refer to Kubernetes API documentation for fields of `metadata`. |  |  |
+| `spec` _[K8sSpec](#k8sspec)_ |  |  |  |
+
+
+#### K8sList
+
+
+
+ScalerList contains a list of Scaler
+
+
+
+
+
+| Field | Description | Default | Validation |
+| --- | --- | --- | --- |
+| `apiVersion` _string_ | `cloudscaler.io/v1alpha1` | | |
+| `kind` _string_ | `K8sList` | | |
+| `metadata` _[ListMeta](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#listmeta-v1-meta)_ | Refer to Kubernetes API documentation for fields of `metadata`. |  |  |
+| `items` _[K8s](#k8s) array_ |  |  |  |
+
+
+#### K8sSpec
+
+
+
+ScalerSpec defines the desired state of Scaler
+
+
+
+_Appears in:_
+- [K8s](#k8s)
+
+| Field | Description | Default | Validation |
+| --- | --- | --- | --- |
+| `dryRun` _boolean_ | dry-run mode |  |  |
+| `periods` _[ScalerPeriod](#scalerperiod) array_ | Time period to scale |  |  |
+| `namespaces` _string array_ | Resources<br />Namespaces |  |  |
+| `excludeNamespaces` _string array_ | Exclude namespaces from downscaling |  |  |
+| `resources` _string array_ | Resources |  |  |
+| `excludeResources` _string array_ | Exclude resources from downscaling |  |  |
+| `labelSelector` _[LabelSelector](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#labelselector-v1-meta)_ | Labels selectors |  |  |
+| `deploymentTimeAnnotation` _string_ | Deployment time annotation |  |  |
+| `disableEvents` _boolean_ | Disable events |  |  |
+
+
+#### RecurringPeriod
+
+
+
+
+
+
+
+_Appears in:_
+- [ScalerStatusPeriod](#scalerstatusperiod)
+- [TimePeriod](#timeperiod)
+
+| Field | Description | Default | Validation |
+| --- | --- | --- | --- |
+| `days` _string array_ |  |  |  |
+| `startTime` _string_ |  |  | Pattern: `^([0-1]?[0-9]\|2[0-3]):[0-5][0-9]$` <br /> |
+| `endTime` _string_ |  |  | Pattern: `^([0-1]?[0-9]\|2[0-3]):[0-5][0-9]$` <br /> |
+| `timezone` _string_ |  |  |  |
+| `once` _boolean_ | Run once at StartTime |  |  |
+| `gracePeriod` _string_ |  |  | Pattern: `^\d*s$` <br /> |
+| `reverse` _boolean_ | Reverse the period |  |  |
+
+
+#### ScalerPeriod
+
+
+
+
+
+
+
+_Appears in:_
+- [GcpSpec](#gcpspec)
+- [K8sSpec](#k8sspec)
+
+| Field | Description | Default | Validation |
+| --- | --- | --- | --- |
+| `type` _string_ |  |  | Enum: [down nominal up restore] <br /> |
+| `time` _[TimePeriod](#timeperiod)_ |  |  |  |
+| `minReplicas` _integer_ | Minimum replicas |  |  |
+| `maxReplicas` _integer_ | Maximum replicas |  |  |
+
+
+
+
+#### ScalerStatusFailed
+
+
+
+
+
+
+
+_Appears in:_
+- [ScalerStatusPeriod](#scalerstatusperiod)
+
+| Field | Description | Default | Validation |
+| --- | --- | --- | --- |
+| `kind` _string_ |  |  |  |
+| `name` _string_ |  |  |  |
+| `reason` _string_ |  |  |  |
+
+
+#### ScalerStatusPeriod
+
+
+
+
+
+
+
+_Appears in:_
+- [ScalerStatus](#scalerstatus)
+
+| Field | Description | Default | Validation |
+| --- | --- | --- | --- |
+| `spec` _[RecurringPeriod](#recurringperiod)_ |  |  |  |
+| `specSHA` _string_ |  |  |  |
+| `success` _[ScalerStatusSuccess](#scalerstatussuccess) array_ |  |  |  |
+| `failed` _[ScalerStatusFailed](#scalerstatusfailed) array_ |  |  |  |
+
+
+#### ScalerStatusSuccess
+
+
+
+
+
+
+
+_Appears in:_
+- [ScalerStatusPeriod](#scalerstatusperiod)
+
+| Field | Description | Default | Validation |
+| --- | --- | --- | --- |
+| `kind` _string_ |  |  |  |
+| `name` _string_ |  |  |  |
+
+
+#### TimePeriod
+
+
+
+
+
+
+
+_Appears in:_
+- [ScalerPeriod](#scalerperiod)
+
+| Field | Description | Default | Validation |
+| --- | --- | --- | --- |
+| `recurring` _[RecurringPeriod](#recurringperiod)_ |  |  |  |
+| `fixed` _[FixedPeriod](#fixedperiod)_ |  |  |  |
+
+
