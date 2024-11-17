@@ -1,14 +1,11 @@
 processor:
-  ignoreGroupVersions:
-    - "GVK"
+  # ignoreGroupVersions:
+  #   - "GVK"
   ignoreTypes:
-    - "Embedded[2-4]$"
+    - "(K8s|Gcp)List$"
   ignoreFields:
-    - "status$"
+    # - "status$"
     - "TypeMeta$"
-  customMarkers:
-    - name: "hidefromdoc"
-      target: field
 
 render:
   kubernetesVersion: 1.31

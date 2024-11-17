@@ -72,10 +72,9 @@ func (d *Statefulsets) SetState(ctx context.Context) ([]cloudscaleriov1alpha1.Sc
 			log.Log.V(1).Info("scaling up", "name", dName.Name)
 
 			stateful.Annotations = utils.AddIntAnnotations(stateful.Annotations, d.Resource.Period, d.Resource.Period.MaxReplicas)
-
 			stateful.Spec.Replicas = d.Resource.Period.MaxReplicas
 
-		case "restore":
+		default:
 			log.Log.V(1).Info("restoring", "name", dName.Name)
 
 			stateful.Spec.Replicas, stateful.Annotations, err = utils.RestoreInt(stateful.Annotations)
@@ -91,8 +90,6 @@ func (d *Statefulsets) SetState(ctx context.Context) ([]cloudscaleriov1alpha1.Sc
 
 				continue
 			}
-		default:
-			log.Log.V(1).Info("unknown period type", "type", d.Resource.Period.Type) // case "nominal":
 		}
 
 		log.Log.V(1).Info("update deployment", "name", dName.Name)

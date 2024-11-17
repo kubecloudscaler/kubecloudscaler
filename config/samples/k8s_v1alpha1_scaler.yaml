@@ -12,13 +12,15 @@ spec:
     # - hpa
   namespaces:
     - home
+  # - kube-system
+  excludeNamespaces: []
   periods:
     - time:
         recurring:
-          days:
-            - all
+          days: []
+          #   - all
           startTime: "01:00"
-          endTime: "21:00"
+          endTime: "22:50"
           timezone: "Europe/Paris"
           once: false
           reverse: false

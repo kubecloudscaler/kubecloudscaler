@@ -74,10 +74,11 @@ func (r *ScalerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 
 	resourceConfig := resources.Config{
 		K8s: &k8sUtils.Config{
-			Client:            kubeClient,
-			Namespaces:        scaler.Spec.Namespaces,
-			ExcludeNamespaces: scaler.Spec.ExcludeNamespaces,
-			LabelSelector:     scaler.Spec.LabelSelector,
+			Client:                       kubeClient,
+			Namespaces:                   scaler.Spec.Namespaces,
+			ExcludeNamespaces:            scaler.Spec.ExcludeNamespaces,
+			LabelSelector:                scaler.Spec.LabelSelector,
+			ForceExcludeSystemNamespaces: scaler.Spec.ForceExcludeSystemNamespaces,
 		},
 	}
 

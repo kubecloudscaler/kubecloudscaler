@@ -73,11 +73,10 @@ func (d *HorizontalPodAutoscalers) SetState(ctx context.Context) ([]cloudscaleri
 			log.Log.V(1).Info("scaling up", "name", dName.Name)
 
 			deploy.Annotations = utils.AddIntAnnotations(deploy.Annotations, d.Resource.Period, d.Resource.Period.MaxReplicas)
-
 			deploy.Spec.MinReplicas = d.Resource.Period.MinReplicas
 			deploy.Spec.MaxReplicas = *d.Resource.Period.MaxReplicas
 
-		case "restore":
+		default:
 			log.Log.V(1).Info("restoring", "name", dName.Name)
 
 			deploy.Spec.MinReplicas, deploy.Annotations, err = utils.RestoreInt(deploy.Annotations)
@@ -93,8 +92,6 @@ func (d *HorizontalPodAutoscalers) SetState(ctx context.Context) ([]cloudscaleri
 
 				continue
 			}
-		default:
-			log.Log.V(1).Info("unknown period type", "type", d.Resource.Period.Type) // case "nominal":
 		}
 
 		log.Log.V(1).Info("update deployment", "name", dName.Name)

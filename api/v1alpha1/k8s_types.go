@@ -50,6 +50,8 @@ type K8sSpec struct {
 	Namespaces []string `json:"namespaces,omitempty"`
 	// Exclude namespaces from downscaling
 	ExcludeNamespaces []string `json:"excludeNamespaces,omitempty"`
+	// Force exclude system namespaces
+	ForceExcludeSystemNamespaces bool `json:"forceExcludeSystemNamespaces,omitempty"`
 	// Resources
 	Resources []string `json:"resources,omitempty"`
 	// Exclude resources from downscaling

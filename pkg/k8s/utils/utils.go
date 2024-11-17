@@ -2,6 +2,7 @@ package utils
 
 import (
 	"context"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -20,6 +21,7 @@ func SetNamespaceList(ctx context.Context, config *Config) ([]string, error) {
 	if len(config.Namespaces) > 0 {
 		nsList = config.Namespaces
 	} else {
+		// get all namespaces from the cluster
 		nsListItems, err := config.Client.CoreV1().Namespaces().List(context.Background(), metaV1.ListOptions{})
 		if err != nil {
 			log.Log.V(1).Info("error listing namespaces")
@@ -34,13 +36,27 @@ func SetNamespaceList(ctx context.Context, config *Config) ([]string, error) {
 
 	// exclude namespaces
 	if len(config.ExcludeNamespaces) == 0 {
-		config.ExcludeNamespaces = DefaultExcludeNamespace
+		config.ExcludeNamespaces = DefaultExcludeNamespaces
 	}
 
 	for _, ns := range config.ExcludeNamespaces {
 		for i, n := range nsList {
+			if slices.Contains(DefaultExcludeNamespaces, n) {
+				continue
+			}
+
 			if n == ns {
 				nsList = append(nsList[:i], nsList[i+1:]...)
+			}
+		}
+	}
+
+	if config.ForceExcludeSystemNamespaces {
+		for _, ns := range DefaultExcludeNamespaces {
+			for i, n := range nsList {
+				if n == ns {
+					nsList = append(nsList[:i], nsList[i+1:]...)
+				}
 			}
 		}
 	}
@@ -87,13 +103,39 @@ func PrepareSearch(ctx context.Context, config *Config) ([]string, metaV1.ListOp
 		return []string{}, metaV1.ListOptions{}, err
 	}
 
-	listOptions := metaV1.ListOptions{}
+	// set a default label selector to ignore resources with the label "cloudscaler.io/ignore"
+	labelSelectors := metaV1.LabelSelector{
+		MatchLabels: make(map[string]string),
+		MatchExpressions: []metaV1.LabelSelectorRequirement{
+			{
+				Key:      AnnotationsPrefix + "/ignore",
+				Operator: metaV1.LabelSelectorOpDoesNotExist,
+			},
+		},
+	}
+
 	if config.LabelSelector != nil {
 		log.Log.V(1).Info("labelSelector", "selectors", config.LabelSelector)
 
-		listOptions = metaV1.ListOptions{
-			LabelSelector: metaV1.FormatLabelSelector(config.LabelSelector),
+		if config.LabelSelector.MatchLabels != nil {
+			for k, v := range config.LabelSelector.MatchLabels {
+				labelSelectors.MatchLabels[k] = v
+			}
 		}
+
+		if config.LabelSelector.MatchExpressions != nil {
+			for _, v := range config.LabelSelector.MatchExpressions {
+				if v.Key == AnnotationsPrefix+"/ignore" {
+					continue
+				}
+
+				labelSelectors.MatchExpressions = append(labelSelectors.MatchExpressions, v)
+			}
+		}
+	}
+
+	listOptions := metaV1.ListOptions{
+		LabelSelector: metaV1.FormatLabelSelector(&labelSelectors),
 	}
 
 	return nsList, listOptions, nil

@@ -65,17 +65,15 @@ func (d *Deployments) SetState(ctx context.Context) ([]cloudscaleriov1alpha1.Sca
 			log.Log.V(1).Info("scaling down", "name", dName.Name)
 
 			deploy.Annotations = utils.AddIntAnnotations(deploy.Annotations, d.Resource.Period, d.Resource.Period.MinReplicas)
-
 			deploy.Spec.Replicas = d.Resource.Period.MinReplicas
 
 		case "up":
 			log.Log.V(1).Info("scaling up", "name", dName.Name)
 
 			deploy.Annotations = utils.AddIntAnnotations(deploy.Annotations, d.Resource.Period, d.Resource.Period.MaxReplicas)
-
 			deploy.Spec.Replicas = d.Resource.Period.MaxReplicas
 
-		case "restore":
+		default:
 			log.Log.V(1).Info("restoring", "name", dName.Name)
 
 			deploy.Spec.Replicas, deploy.Annotations, err = utils.RestoreInt(deploy.Annotations)
@@ -91,8 +89,6 @@ func (d *Deployments) SetState(ctx context.Context) ([]cloudscaleriov1alpha1.Sca
 
 				continue
 			}
-		default:
-			log.Log.V(1).Info("unknown period type", "type", d.Resource.Period.Type) // case "nominal":
 		}
 
 		log.Log.V(1).Info("update deployment", "name", dName.Name)

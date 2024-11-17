@@ -1,6 +1,6 @@
 ---
 title: 'Install'
-weight: 2
+weight: 1
 ---
 
 {{< tabs items="Manual,Helm,Kustomize" >}}

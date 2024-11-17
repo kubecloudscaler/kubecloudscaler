@@ -2,7 +2,7 @@
 package v1alpha1
 
 type ScalerPeriod struct {
-	// +kubebuilder:validation:Enum=down;nominal;up;restore
+	// +kubebuilder:validation:Enum=down;up
 	Type string     `json:"type"`
 	Time TimePeriod `json:"time"`
 	// Minimum replicas

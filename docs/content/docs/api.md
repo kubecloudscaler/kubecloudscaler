@@ -11,11 +11,10 @@ title: API Reference
 
 Package v1alpha1 contains API Schema definitions for the k8s v1alpha1 API group
 
+
 ### Resource Types
 - [Gcp](#gcp)
-- [GcpList](#gcplist)
 - [K8s](#k8s)
-- [K8sList](#k8slist)
 
 
 
@@ -48,8 +47,7 @@ Gcp is the Schema for the scalers API
 
 
 
-_Appears in:_
-- [GcpList](#gcplist)
+
 
 | Field | Description | Default | Validation |
 | --- | --- | --- | --- |
@@ -57,24 +55,7 @@ _Appears in:_
 | `kind` _string_ | `Gcp` | | |
 | `metadata` _[ObjectMeta](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#objectmeta-v1-meta)_ | Refer to Kubernetes API documentation for fields of `metadata`. |  |  |
 | `spec` _[GcpSpec](#gcpspec)_ |  |  |  |
-
-
-#### GcpList
-
-
-
-GcpList contains a list of Scaler
-
-
-
-
-
-| Field | Description | Default | Validation |
-| --- | --- | --- | --- |
-| `apiVersion` _string_ | `cloudscaler.io/v1alpha1` | | |
-| `kind` _string_ | `GcpList` | | |
-| `metadata` _[ListMeta](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#listmeta-v1-meta)_ | Refer to Kubernetes API documentation for fields of `metadata`. |  |  |
-| `items` _[Gcp](#gcp) array_ |  |  |  |
+| `status` _[ScalerStatus](#scalerstatus)_ |  |  |  |
 
 
 #### GcpSpec
@@ -102,8 +83,7 @@ Scaler is the Schema for the scalers API
 
 
 
-_Appears in:_
-- [K8sList](#k8slist)
+
 
 | Field | Description | Default | Validation |
 | --- | --- | --- | --- |
@@ -111,24 +91,7 @@ _Appears in:_
 | `kind` _string_ | `K8s` | | |
 | `metadata` _[ObjectMeta](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#objectmeta-v1-meta)_ | Refer to Kubernetes API documentation for fields of `metadata`. |  |  |
 | `spec` _[K8sSpec](#k8sspec)_ |  |  |  |
-
-
-#### K8sList
-
-
-
-ScalerList contains a list of Scaler
-
-
-
-
-
-| Field | Description | Default | Validation |
-| --- | --- | --- | --- |
-| `apiVersion` _string_ | `cloudscaler.io/v1alpha1` | | |
-| `kind` _string_ | `K8sList` | | |
-| `metadata` _[ListMeta](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#listmeta-v1-meta)_ | Refer to Kubernetes API documentation for fields of `metadata`. |  |  |
-| `items` _[K8s](#k8s) array_ |  |  |  |
+| `status` _[ScalerStatus](#scalerstatus)_ |  |  |  |
 
 
 #### K8sSpec
@@ -148,6 +111,7 @@ _Appears in:_
 | `periods` _[ScalerPeriod](#scalerperiod) array_ | Time period to scale |  |  |
 | `namespaces` _string array_ | Resources<br />Namespaces |  |  |
 | `excludeNamespaces` _string array_ | Exclude namespaces from downscaling |  |  |
+| `forceExcludeSystemNamespaces` _boolean_ | Force exclude system namespaces |  |  |
 | `resources` _string array_ | Resources |  |  |
 | `excludeResources` _string array_ | Exclude resources from downscaling |  |  |
 | `labelSelector` _[LabelSelector](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#labelselector-v1-meta)_ | Labels selectors |  |  |
@@ -192,12 +156,28 @@ _Appears in:_
 
 | Field | Description | Default | Validation |
 | --- | --- | --- | --- |
-| `type` _string_ |  |  | Enum: [down nominal up restore] <br /> |
+| `type` _string_ |  |  | Enum: [down up] <br /> |
 | `time` _[TimePeriod](#timeperiod)_ |  |  |  |
 | `minReplicas` _integer_ | Minimum replicas |  |  |
 | `maxReplicas` _integer_ | Maximum replicas |  |  |
 
 
+#### ScalerStatus
+
+
+
+ScalerStatus defines the observed state of Scaler
+
+
+
+_Appears in:_
+- [Gcp](#gcp)
+- [K8s](#k8s)
+
+| Field | Description | Default | Validation |
+| --- | --- | --- | --- |
+| `currentPeriod` _[ScalerStatusPeriod](#scalerstatusperiod)_ |  |  |  |
+| `comments` _string_ |  |  |  |
 
 
 #### ScalerStatusFailed

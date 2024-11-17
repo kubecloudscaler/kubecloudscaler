@@ -58,6 +58,9 @@ spec:
                 items:
                   type: string
                 type: array
+              forceExcludeSystemNamespaces:
+                description: Force exclude system namespaces
+                type: boolean
               labelSelector:
                 description: Labels selectors
                 properties:
@@ -184,9 +187,7 @@ spec:
                     type:
                       enum:
                       - down
-                      - nominal
                       - up
-                      - restore
                       type: string
                   required:
                   - time

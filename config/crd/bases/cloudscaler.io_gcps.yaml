@@ -115,9 +115,7 @@ spec:
                     type:
                       enum:
                       - down
-                      - nominal
                       - up
-                      - restore
                       type: string
                   required:
                   - time

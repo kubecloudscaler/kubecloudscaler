@@ -83,7 +83,7 @@ func (c *Cronjobs) SetState(ctx context.Context) ([]cloudscaleriov1alpha1.Scaler
 
 			continue
 
-		case "restore":
+		default:
 			log.Log.V(1).Info("restoring", "name", cName.Name)
 
 			cronjob.Spec.Suspend, cronjob.Annotations, err = utils.RestoreBool(cronjob.Annotations)
@@ -99,8 +99,6 @@ func (c *Cronjobs) SetState(ctx context.Context) ([]cloudscaleriov1alpha1.Scaler
 
 				continue
 			}
-		default:
-			log.Log.V(1).Info("unknown period type", "type", c.Resource.Period.Type) // case "nominal":
 		}
 
 		log.Log.V(1).Info("update cronjob", "name", cName.Name)
