@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.1](https://github.com/cloudscalerio/cloudscaler/compare/v1.2.0...v1.2.1) (2024-11-27)
+
+
+### Bug Fixes
+
+* min and max replicas usage ([02dde57](https://github.com/cloudscalerio/cloudscaler/commit/02dde5755cef6f69145cd6459807899a98c89e11))
+
 ## [1.2.0](https://github.com/cloudscalerio/cloudscaler/compare/v1.1.0...v1.2.0) (2024-11-17)
 
 
