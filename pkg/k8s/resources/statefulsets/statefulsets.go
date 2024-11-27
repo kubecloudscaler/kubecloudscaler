@@ -9,6 +9,7 @@ import (
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	v1 "k8s.io/client-go/kubernetes/typed/apps/v1"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
@@ -26,6 +27,7 @@ func (d *Statefulsets) SetState(ctx context.Context) ([]cloudscaleriov1alpha1.Sc
 	scalerStatusSuccess := []cloudscaleriov1alpha1.ScalerStatusSuccess{}
 	scalerStatusFailed := []cloudscaleriov1alpha1.ScalerStatusFailed{}
 	list := []appsV1.StatefulSet{}
+	isAlreadyRestored := false
 
 	for _, ns := range d.Resource.NsList {
 		log.Log.V(1).Info("found namespace", "ns", ns)
@@ -64,20 +66,20 @@ func (d *Statefulsets) SetState(ctx context.Context) ([]cloudscaleriov1alpha1.Sc
 		case "down":
 			log.Log.V(1).Info("scaling down", "name", dName.Name)
 
-			stateful.Annotations = utils.AddIntAnnotations(stateful.Annotations, d.Resource.Period, d.Resource.Period.MinReplicas)
+			stateful.Annotations = utils.AddIntAnnotations(stateful.Annotations, d.Resource.Period, stateful.Spec.Replicas)
 
-			stateful.Spec.Replicas = d.Resource.Period.MinReplicas
+			stateful.Spec.Replicas = ptr.To(d.Resource.Period.MinReplicas)
 
 		case "up":
 			log.Log.V(1).Info("scaling up", "name", dName.Name)
 
-			stateful.Annotations = utils.AddIntAnnotations(stateful.Annotations, d.Resource.Period, d.Resource.Period.MaxReplicas)
-			stateful.Spec.Replicas = d.Resource.Period.MaxReplicas
+			stateful.Annotations = utils.AddIntAnnotations(stateful.Annotations, d.Resource.Period, stateful.Spec.Replicas)
+			stateful.Spec.Replicas = ptr.To(d.Resource.Period.MaxReplicas)
 
 		default:
 			log.Log.V(1).Info("restoring", "name", dName.Name)
 
-			stateful.Spec.Replicas, stateful.Annotations, err = utils.RestoreInt(stateful.Annotations)
+			isAlreadyRestored, stateful.Spec.Replicas, stateful.Annotations, err = utils.RestoreIntAnnotations(stateful.Annotations)
 			if err != nil {
 				scalerStatusFailed = append(
 					scalerStatusFailed,
@@ -88,6 +90,11 @@ func (d *Statefulsets) SetState(ctx context.Context) ([]cloudscaleriov1alpha1.Sc
 					},
 				)
 
+				continue
+			}
+
+			if isAlreadyRestored {
+				log.Log.V(1).Info("nothing to do", "name", dName.Name)
 				continue
 			}
 		}

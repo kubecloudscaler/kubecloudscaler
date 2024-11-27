@@ -9,6 +9,7 @@ import (
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	v1 "k8s.io/client-go/kubernetes/typed/apps/v1"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
@@ -26,6 +27,7 @@ func (d *Deployments) SetState(ctx context.Context) ([]cloudscaleriov1alpha1.Sca
 	scalerStatusSuccess := []cloudscaleriov1alpha1.ScalerStatusSuccess{}
 	scalerStatusFailed := []cloudscaleriov1alpha1.ScalerStatusFailed{}
 	list := []appsV1.Deployment{}
+	isAlreadyRestored := false
 
 	for _, ns := range d.Resource.NsList {
 		log.Log.V(1).Info("found namespace", "ns", ns)
@@ -64,19 +66,19 @@ func (d *Deployments) SetState(ctx context.Context) ([]cloudscaleriov1alpha1.Sca
 		case "down":
 			log.Log.V(1).Info("scaling down", "name", dName.Name)
 
-			deploy.Annotations = utils.AddIntAnnotations(deploy.Annotations, d.Resource.Period, d.Resource.Period.MinReplicas)
-			deploy.Spec.Replicas = d.Resource.Period.MinReplicas
+			deploy.Annotations = utils.AddIntAnnotations(deploy.Annotations, d.Resource.Period, deploy.Spec.Replicas)
+			deploy.Spec.Replicas = ptr.To(d.Resource.Period.MinReplicas)
 
 		case "up":
 			log.Log.V(1).Info("scaling up", "name", dName.Name)
 
-			deploy.Annotations = utils.AddIntAnnotations(deploy.Annotations, d.Resource.Period, d.Resource.Period.MaxReplicas)
-			deploy.Spec.Replicas = d.Resource.Period.MaxReplicas
+			deploy.Annotations = utils.AddIntAnnotations(deploy.Annotations, d.Resource.Period, deploy.Spec.Replicas)
+			deploy.Spec.Replicas = ptr.To(d.Resource.Period.MaxReplicas)
 
 		default:
 			log.Log.V(1).Info("restoring", "name", dName.Name)
 
-			deploy.Spec.Replicas, deploy.Annotations, err = utils.RestoreInt(deploy.Annotations)
+			isAlreadyRestored, deploy.Spec.Replicas, deploy.Annotations, err = utils.RestoreIntAnnotations(deploy.Annotations)
 			if err != nil {
 				scalerStatusFailed = append(
 					scalerStatusFailed,
@@ -89,11 +91,18 @@ func (d *Deployments) SetState(ctx context.Context) ([]cloudscaleriov1alpha1.Sca
 
 				continue
 			}
+
+			if isAlreadyRestored {
+				log.Log.V(1).Info("nothing to do", "name", dName.Name)
+				continue
+			}
 		}
 
 		log.Log.V(1).Info("update deployment", "name", dName.Name)
 
-		_, err = d.Client.Deployments(dName.Namespace).Update(ctx, deploy, metaV1.UpdateOptions{})
+		_, err = d.Client.Deployments(dName.Namespace).Update(ctx, deploy, metaV1.UpdateOptions{
+			FieldManager: "cloudscaler",
+		})
 		if err != nil {
 			scalerStatusFailed = append(
 				scalerStatusFailed,

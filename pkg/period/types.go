@@ -15,6 +15,6 @@ type Period struct {
 	GetEndTime   time.Time
 	GracePeriod  time.Duration
 	Once         *bool
-	MinReplicas  *int32
-	MaxReplicas  *int32
+	MinReplicas  int32
+	MaxReplicas  int32
 }

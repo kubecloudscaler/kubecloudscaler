@@ -10,6 +10,7 @@ import (
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	v2 "k8s.io/client-go/kubernetes/typed/autoscaling/v2"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
@@ -27,13 +28,14 @@ func (d *HorizontalPodAutoscalers) SetState(ctx context.Context) ([]cloudscaleri
 	scalerStatusSuccess := []cloudscaleriov1alpha1.ScalerStatusSuccess{}
 	scalerStatusFailed := []cloudscaleriov1alpha1.ScalerStatusFailed{}
 	list := []autoscaleV2.HorizontalPodAutoscaler{}
+	isAlreadyRestored := false
 
 	for _, ns := range d.Resource.NsList {
 		log.Log.V(1).Info("found namespace", "ns", ns)
 
 		deployList, err := d.Client.HorizontalPodAutoscalers(ns).List(ctx, d.Resource.ListOptions)
 		if err != nil {
-			log.Log.V(1).Error(err, "error listing deployments")
+			log.Log.V(1).Error(err, "error listing hpas")
 
 			return scalerStatusSuccess, scalerStatusFailed, err
 		}
@@ -41,10 +43,10 @@ func (d *HorizontalPodAutoscalers) SetState(ctx context.Context) ([]cloudscaleri
 		list = append(list, deployList.Items...)
 	}
 
-	log.Log.V(1).Info("deployments", "number", len(list))
+	log.Log.V(1).Info("hpas", "number", len(list))
 
 	for _, dName := range list {
-		log.Log.V(1).Info("deployment", "name", dName.Name)
+		log.Log.V(1).Info("hpa", "name", dName.Name)
 		var deploy *autoscaleV2.HorizontalPodAutoscaler
 
 		deploy, err := d.Client.HorizontalPodAutoscalers(dName.Namespace).Get(ctx, dName.Name, metaV1.GetOptions{})
@@ -52,7 +54,7 @@ func (d *HorizontalPodAutoscalers) SetState(ctx context.Context) ([]cloudscaleri
 			scalerStatusFailed = append(
 				scalerStatusFailed,
 				cloudscaleriov1alpha1.ScalerStatusFailed{
-					Kind:   "deployment",
+					Kind:   "hpa",
 					Name:   dName.Name,
 					Reason: err.Error(),
 				},
@@ -65,26 +67,26 @@ func (d *HorizontalPodAutoscalers) SetState(ctx context.Context) ([]cloudscaleri
 		case "down":
 			log.Log.V(1).Info("scaling down", "name", dName.Name)
 
-			deploy.Annotations = utils.AddIntAnnotations(deploy.Annotations, d.Resource.Period, d.Resource.Period.MinReplicas)
-
-			deploy.Spec.MinReplicas = d.Resource.Period.MinReplicas
+			deploy.Annotations = utils.AddMinMaxAnnotations(deploy.Annotations, d.Resource.Period, deploy.Spec.MinReplicas, deploy.Spec.MaxReplicas)
+			deploy.Spec.MinReplicas = ptr.To(d.Resource.Period.MinReplicas)
+			deploy.Spec.MaxReplicas = d.Resource.Period.MaxReplicas
 
 		case "up":
 			log.Log.V(1).Info("scaling up", "name", dName.Name)
 
-			deploy.Annotations = utils.AddIntAnnotations(deploy.Annotations, d.Resource.Period, d.Resource.Period.MaxReplicas)
-			deploy.Spec.MinReplicas = d.Resource.Period.MinReplicas
-			deploy.Spec.MaxReplicas = *d.Resource.Period.MaxReplicas
+			deploy.Annotations = utils.AddMinMaxAnnotations(deploy.Annotations, d.Resource.Period, deploy.Spec.MinReplicas, deploy.Spec.MaxReplicas)
+			deploy.Spec.MinReplicas = ptr.To(d.Resource.Period.MinReplicas)
+			deploy.Spec.MaxReplicas = d.Resource.Period.MaxReplicas
 
 		default:
 			log.Log.V(1).Info("restoring", "name", dName.Name)
 
-			deploy.Spec.MinReplicas, deploy.Annotations, err = utils.RestoreInt(deploy.Annotations)
+			isAlreadyRestored, deploy.Spec.MinReplicas, deploy.Spec.MaxReplicas, deploy.Annotations, err = utils.RestoreMinMaxAnnotations(deploy.Annotations)
 			if err != nil {
 				scalerStatusFailed = append(
 					scalerStatusFailed,
 					cloudscaleriov1alpha1.ScalerStatusFailed{
-						Kind:   "deployment",
+						Kind:   "hpa",
 						Name:   dName.Name,
 						Reason: err.Error(),
 					},
@@ -92,9 +94,14 @@ func (d *HorizontalPodAutoscalers) SetState(ctx context.Context) ([]cloudscaleri
 
 				continue
 			}
+
+			if isAlreadyRestored {
+				log.Log.V(1).Info("nothing to do", "name", dName.Name)
+				continue
+			}
 		}
 
-		log.Log.V(1).Info("update deployment", "name", dName.Name)
+		log.Log.V(1).Info("update hpa", "name", dName.Name)
 
 		_, err = d.
 			Client.
@@ -104,7 +111,7 @@ func (d *HorizontalPodAutoscalers) SetState(ctx context.Context) ([]cloudscaleri
 			scalerStatusFailed = append(
 				scalerStatusFailed,
 				cloudscaleriov1alpha1.ScalerStatusFailed{
-					Kind:   "deployment",
+					Kind:   "hpa",
 					Name:   dName.Name,
 					Reason: err.Error(),
 				},
@@ -116,7 +123,7 @@ func (d *HorizontalPodAutoscalers) SetState(ctx context.Context) ([]cloudscaleri
 		scalerStatusSuccess = append(
 			scalerStatusSuccess,
 			cloudscaleriov1alpha1.ScalerStatusSuccess{
-				Kind: "deployment",
+				Kind: "hpa",
 				Name: dName.Name,
 			},
 		)

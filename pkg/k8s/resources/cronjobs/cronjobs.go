@@ -27,6 +27,7 @@ func (c *Cronjobs) SetState(ctx context.Context) ([]cloudscaleriov1alpha1.Scaler
 	scalerStatusSuccess := []cloudscaleriov1alpha1.ScalerStatusSuccess{}
 	scalerStatusFailed := []cloudscaleriov1alpha1.ScalerStatusFailed{}
 	list := []batchV1.CronJob{}
+	isAlreadyRestored := false
 
 	// list all objects in all needed namespaces
 	for _, ns := range c.Resource.NsList {
@@ -86,7 +87,7 @@ func (c *Cronjobs) SetState(ctx context.Context) ([]cloudscaleriov1alpha1.Scaler
 		default:
 			log.Log.V(1).Info("restoring", "name", cName.Name)
 
-			cronjob.Spec.Suspend, cronjob.Annotations, err = utils.RestoreBool(cronjob.Annotations)
+			isAlreadyRestored, cronjob.Spec.Suspend, cronjob.Annotations, err = utils.RestoreBoolAnnotations(cronjob.Annotations)
 			if err != nil {
 				scalerStatusFailed = append(
 					scalerStatusFailed,
@@ -97,6 +98,11 @@ func (c *Cronjobs) SetState(ctx context.Context) ([]cloudscaleriov1alpha1.Scaler
 					},
 				)
 
+				continue
+			}
+
+			if isAlreadyRestored {
+				log.Log.V(1).Info("nothing to do", "name", cName.Name)
 				continue
 			}
 		}

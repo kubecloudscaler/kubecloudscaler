@@ -2,6 +2,7 @@ package utils
 
 import (
 	"context"
+	"fmt"
 	"slices"
 	"strconv"
 	"strings"
@@ -64,7 +65,7 @@ func SetNamespaceList(ctx context.Context, config *Config) ([]string, error) {
 	return nsList, nil
 }
 
-func addAnnotations(annotations map[string]string, period *periodPkg.Period, value string) map[string]string {
+func addAnnotations(annotations map[string]string, period *periodPkg.Period) map[string]string {
 	if annotations == nil {
 		annotations = make(map[string]string)
 	}
@@ -73,11 +74,6 @@ func addAnnotations(annotations map[string]string, period *periodPkg.Period, val
 	annotations[AnnotationsPrefix+"/"+PeriodStartTime] = period.GetStartTime.String()
 	annotations[AnnotationsPrefix+"/"+PeriodEndTime] = period.GetEndTime.String()
 	ptr.Deref(period.Period.Timezone, annotations[AnnotationsPrefix+"/"+PeriodTimezone])
-
-	_, isExists := annotations[AnnotationsPrefix+"/"+AnnotationsOrigValue]
-	if !isExists {
-		annotations[AnnotationsPrefix+"/"+AnnotationsOrigValue] = value
-	}
 
 	return annotations
 }
@@ -158,48 +154,115 @@ func InitConfig(ctx context.Context, config *Config) (*K8sResource, error) {
 	return resource, nil
 }
 
-func AddBoolAnnotations(annot map[string]string, curPeriod *periodPkg.Period, value bool) map[string]string {
-	return addAnnotations(annot, curPeriod, strconv.FormatBool(value))
+func AddMinMaxAnnotations(annot map[string]string, curPeriod *periodPkg.Period, min *int32, max int32) map[string]string {
+	annotations := addAnnotations(annot, curPeriod)
+
+	_, isExists := annotations[AnnotationsPrefix+"/"+AnnotationsOrigValue]
+	if !isExists {
+		annotations[AnnotationsPrefix+"/"+AnnotationsMinOrigValue] = strconv.FormatInt(int64(ptr.Deref(min, int32(0))), 10)
+		annotations[AnnotationsPrefix+"/"+AnnotationsMaxOrigValue] = fmt.Sprintf("%d", max)
+	}
+
+	return annotations
 }
 
-func RestoreBool(annot map[string]string) (*bool, map[string]string, error) {
+func RestoreMinMaxAnnotations(annot map[string]string) (bool, *int32, int32, map[string]string, error) {
 	var (
-		repAsBool bool
-		err       error
+		minAsInt      int
+		maxAsInt      int
+		err           error
+		isMinRestored bool
+		isMaxRestored bool
+	)
+
+	rep, isExists := annot[AnnotationsPrefix+"/"+AnnotationsMinOrigValue]
+	if isExists {
+		minAsInt, err = strconv.Atoi(rep)
+		if err != nil {
+			return true, nil, 0, annot, err
+		}
+	} else {
+		isMinRestored = true
+	}
+
+	rep, isExists = annot[AnnotationsPrefix+"/"+AnnotationsMaxOrigValue]
+	if isExists {
+		maxAsInt, err = strconv.Atoi(rep)
+		if err != nil {
+			return true, nil, 0, annot, err
+		}
+	} else {
+		isMaxRestored = true
+	}
+
+	isRestored := isMinRestored && isMaxRestored
+	annot = RemoveAnnotations(annot)
+
+	return isRestored, ptr.To(int32(minAsInt)), int32(maxAsInt), annot, nil
+}
+
+func AddBoolAnnotations(annot map[string]string, curPeriod *periodPkg.Period, value bool) map[string]string {
+	annotations := addAnnotations(annot, curPeriod)
+
+	_, isExists := annotations[AnnotationsPrefix+"/"+AnnotationsOrigValue]
+	if !isExists {
+		annotations[AnnotationsPrefix+"/"+AnnotationsOrigValue] = strconv.FormatBool(value)
+	}
+
+	return annotations
+}
+
+func RestoreBoolAnnotations(annot map[string]string) (bool, *bool, map[string]string, error) {
+	var (
+		repAsBool  bool
+		err        error
+		isRestored bool
 	)
 
 	rep, isExists := annot[AnnotationsPrefix+"/"+AnnotationsOrigValue]
 	if isExists {
 		repAsBool, err = strconv.ParseBool(rep)
 		if err != nil {
-			return nil, annot, err
+			return false, nil, annot, err
 		}
+	} else {
+		isRestored = true
 	}
 
 	annot = RemoveAnnotations(annot)
 
-	return ptr.To(repAsBool), annot, nil
+	return isRestored, ptr.To(repAsBool), annot, nil
 }
 
 func AddIntAnnotations(annot map[string]string, curPeriod *periodPkg.Period, value *int32) map[string]string {
-	return addAnnotations(annot, curPeriod, strconv.FormatInt(int64(ptr.Deref(value, int32(0))), 10))
+	annotations := addAnnotations(annot, curPeriod)
+
+	_, isExists := annotations[AnnotationsPrefix+"/"+AnnotationsOrigValue]
+	if !isExists {
+		annotations[AnnotationsPrefix+"/"+AnnotationsOrigValue] = strconv.FormatInt(int64(ptr.Deref(value, int32(0))), 10)
+	}
+
+	return annotations
 }
 
-func RestoreInt(annot map[string]string) (*int32, map[string]string, error) {
+func RestoreIntAnnotations(annot map[string]string) (bool, *int32, map[string]string, error) {
 	var (
-		repAsInt int
-		err      error
+		repAsInt   int
+		err        error
+		isRestored bool
 	)
 
 	rep, isExists := annot[AnnotationsPrefix+"/"+AnnotationsOrigValue]
 	if isExists {
 		repAsInt, err = strconv.Atoi(rep)
 		if err != nil {
-			return nil, annot, err
+			return true, nil, annot, err
 		}
+	} else {
+		isRestored = true
 	}
 
 	annot = RemoveAnnotations(annot)
 
-	return ptr.To(int32(repAsInt)), annot, nil
+	return isRestored, ptr.To(int32(repAsInt)), annot, nil
 }

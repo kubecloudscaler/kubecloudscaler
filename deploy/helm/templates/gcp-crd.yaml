@@ -48,10 +48,12 @@ spec:
                 items:
                   properties:
                     maxReplicas:
+                      default: 1
                       description: Maximum replicas
                       format: int32
                       type: integer
                     minReplicas:
+                      default: 1
                       description: Minimum replicas
                       format: int32
                       type: integer

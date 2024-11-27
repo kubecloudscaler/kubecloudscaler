@@ -29,6 +29,13 @@ func New(period *cloudscaleriov1alpha1.ScalerPeriod) (*Period, error) {
 		periodType = PeriodRecurringName
 	}
 
+	curPeriod.MinReplicas = ptr.Deref(period.MinReplicas, int32(1))
+	curPeriod.MaxReplicas = ptr.Deref(period.MaxReplicas, curPeriod.MinReplicas)
+
+	if curPeriod.MinReplicas > curPeriod.MaxReplicas {
+		return nil, ErrMinReplicasGreaterThanMax
+	}
+
 	curPeriod.IsActive, curPeriod.GetStartTime, curPeriod.GetEndTime, curPeriod.Once, err = isPeriodActive(
 		periodType,
 		convertedPeriod,
@@ -50,8 +57,6 @@ func New(period *cloudscaleriov1alpha1.ScalerPeriod) (*Period, error) {
 	}
 
 	curPeriod.Hash = fmt.Sprintf("%x", sha1.Sum(periodData))
-	curPeriod.MinReplicas = period.MinReplicas
-	curPeriod.MaxReplicas = period.MaxReplicas
 
 	return curPeriod, nil
 }
