@@ -10,6 +10,13 @@ menu:
     - name: Documentation
       pageRef: /docs
       weight: 1
+      params:
+        icon: book-open
+    - name: GitHub
+      weight: 5
+      url: "https://github.com/cloudscalerio/cloudscaler"
+      params:
+        icon: github
 markup:
   goldmark:
     renderer:
