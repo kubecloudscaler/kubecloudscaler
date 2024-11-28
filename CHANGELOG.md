@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.2](https://github.com/cloudscalerio/cloudscaler/compare/v1.2.1...v1.2.2) (2024-11-28)
+
+
+### Bug Fixes
+
+* **deps:** update all non-major dependencies ([c9062be](https://github.com/cloudscalerio/cloudscaler/commit/c9062beb74fdf20e8c36a466b997cfcbfc6dcdff))
+
 ## [1.2.1](https://github.com/cloudscalerio/cloudscaler/compare/v1.2.0...v1.2.1) (2024-11-27)
 
 
