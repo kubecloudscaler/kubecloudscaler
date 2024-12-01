@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.2](https://github.com/k8scloudscaler/k8scloudscaler/compare/v1.3.1...v1.3.2) (2024-12-01)
+
+
+### Bug Fixes
+
+* crd group must contains at least one dot ([5b14983](https://github.com/k8scloudscaler/k8scloudscaler/commit/5b14983a17ec88c52bc98414dc5195ade95df2bc))
+
 ## [1.3.1](https://github.com/k8scloudscaler/k8scloudscaler/compare/v1.3.0...v1.3.1) (2024-12-01)
 
 
