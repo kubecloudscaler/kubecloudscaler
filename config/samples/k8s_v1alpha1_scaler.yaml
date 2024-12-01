@@ -20,13 +20,13 @@ spec:
           days:
             - all
           startTime: "01:10"
-          endTime: "23:50"
+          endTime: "21:50"
           timezone: "Europe/Paris"
           once: false
           reverse: false
           gracePeriod: 5s
-      # minReplicas: 0
-      # maxReplicas: 10
+      minReplicas: 0
+      maxReplicas: 10
       type: "down"
   labelSelector:
     matchLabels:
