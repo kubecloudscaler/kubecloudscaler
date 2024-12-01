@@ -2,7 +2,7 @@
 # This file is used to track the info used to scaffold your project
 # and allow the plugins properly work.
 # More info: https://book.kubebuilder.io/reference/project-config.html
-domain: k8scloudscaler
+domain: k8scloudscaler.io
 layout:
   - go.kubebuilder.io/v4
 projectName: cloudscaler
@@ -11,14 +11,14 @@ resources:
   - api:
       crdVersion: v1
     controller: true
-    domain: k8scloudscaler
+    domain: k8scloudscaler.io
     kind: K8s
     path: github.com/k8scloudscaler/k8scloudscaler/api/v1alpha1
     version: v1alpha1
   - api:
       crdVersion: v1
     controller: true
-    domain: k8scloudscaler
+    domain: k8scloudscaler.io
     kind: Gcp
     path: github.com/k8scloudscaler/k8scloudscaler/api/v1alpha1
     version: v1alpha1

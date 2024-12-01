@@ -4,9 +4,9 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.15.0
-  name: k8s.k8scloudscaler
+  name: k8s.k8scloudscaler.io
 spec:
-  group: k8scloudscaler
+  group: k8scloudscaler.io
   names:
     kind: K8s
     listKind: K8sList

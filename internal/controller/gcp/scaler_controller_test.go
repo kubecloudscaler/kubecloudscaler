@@ -45,7 +45,7 @@ var _ = Describe("Scaler Controller", func() {
 			Spec: k8scloudscalerv1alpha1.GcpSpec{
 				Periods: []*k8scloudscalerv1alpha1.ScalerPeriod{
 					{
-						Type: "restore",
+						Type: "down",
 						Time: k8scloudscalerv1alpha1.TimePeriod{
 							Recurring: &k8scloudscalerv1alpha1.RecurringPeriod{
 								Days: []string{
@@ -73,7 +73,7 @@ var _ = Describe("Scaler Controller", func() {
 					Spec: k8scloudscalerv1alpha1.GcpSpec{
 						Periods: []*k8scloudscalerv1alpha1.ScalerPeriod{
 							{
-								Type: "restore",
+								Type: "down",
 								Time: k8scloudscalerv1alpha1.TimePeriod{
 									Recurring: &k8scloudscalerv1alpha1.RecurringPeriod{
 										Days: []string{
@@ -98,7 +98,7 @@ var _ = Describe("Scaler Controller", func() {
 				Spec: k8scloudscalerv1alpha1.GcpSpec{
 					Periods: []*k8scloudscalerv1alpha1.ScalerPeriod{
 						{
-							Type: "restore",
+							Type: "down",
 							Time: k8scloudscalerv1alpha1.TimePeriod{
 								Recurring: &k8scloudscalerv1alpha1.RecurringPeriod{
 									Days: []string{

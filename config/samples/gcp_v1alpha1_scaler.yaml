@@ -1,4 +1,4 @@
-apiVersion: k8scloudscaler/v1alpha1
+apiVersion: k8scloudscaler.io/v1alpha1
 kind: gcp
 metadata:
   labels:
