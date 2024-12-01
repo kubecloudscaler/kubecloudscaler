@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/cloudscalerio/cloudscaler/pkg/k8s/resources/cronjobs"
-	"github.com/cloudscalerio/cloudscaler/pkg/k8s/resources/deployments"
-	"github.com/cloudscalerio/cloudscaler/pkg/k8s/resources/statefulsets"
-	// "github.com/cloudscalerio/cloudscaler/pkg/k8s/resources/horizontalpodautoscalers"
+	"github.com/k8scloudscaler/k8scloudscaler/pkg/k8s/resources/cronjobs"
+	"github.com/k8scloudscaler/k8scloudscaler/pkg/k8s/resources/deployments"
+	"github.com/k8scloudscaler/k8scloudscaler/pkg/k8s/resources/statefulsets"
+	// "github.com/k8scloudscaler/k8scloudscaler/pkg/k8s/resources/horizontalpodautoscalers"
 )
 
 func NewResource(ctx context.Context, resourceName string, config Config) (IResource, error) {

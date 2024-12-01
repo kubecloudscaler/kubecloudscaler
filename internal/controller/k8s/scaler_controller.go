@@ -22,11 +22,11 @@ import (
 	"slices"
 	"time"
 
-	cloudscaleriov1alpha1 "github.com/cloudscalerio/cloudscaler/api/v1alpha1"
-	"github.com/cloudscalerio/cloudscaler/internal/utils"
-	k8sUtils "github.com/cloudscalerio/cloudscaler/pkg/k8s/utils"
-	k8sClient "github.com/cloudscalerio/cloudscaler/pkg/k8s/utils/client"
-	"github.com/cloudscalerio/cloudscaler/pkg/resources"
+	k8scloudscalerv1alpha1 "github.com/k8scloudscaler/k8scloudscaler/api/v1alpha1"
+	"github.com/k8scloudscaler/k8scloudscaler/internal/utils"
+	k8sUtils "github.com/k8scloudscaler/k8scloudscaler/pkg/k8s/utils"
+	k8sClient "github.com/k8scloudscaler/k8scloudscaler/pkg/k8s/utils/client"
+	"github.com/k8scloudscaler/k8scloudscaler/pkg/resources"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -57,7 +57,7 @@ func (r *ScalerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	_ = log.FromContext(ctx)
 
 	// get the scaler object
-	scaler := &cloudscaleriov1alpha1.K8s{}
+	scaler := &k8scloudscalerv1alpha1.K8s{}
 	if err := r.Get(ctx, req.NamespacedName, scaler); err != nil {
 		log.Log.Error(err, "unable to fetch Scaler")
 
@@ -98,8 +98,8 @@ func (r *ScalerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	}
 
 	var (
-		recSuccess []cloudscaleriov1alpha1.ScalerStatusSuccess
-		recFailed  []cloudscaleriov1alpha1.ScalerStatusFailed
+		recSuccess []k8scloudscalerv1alpha1.ScalerStatusSuccess
+		recFailed  []k8scloudscalerv1alpha1.ScalerStatusFailed
 	)
 
 	// filter resources type and execute the needed actions
@@ -148,13 +148,13 @@ func (r *ScalerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 // SetupWithManager sets up the controller with the Manager.
 func (r *ScalerReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&cloudscaleriov1alpha1.K8s{}).
+		For(&k8scloudscalerv1alpha1.K8s{}).
 		WithEventFilter(utils.IgnoreDeletionPredicate()).
 		Named("k8sScaler").
 		Complete(r)
 }
 
-func (r *ScalerReconciler) validResourceList(ctx context.Context, scaler *cloudscaleriov1alpha1.K8s) ([]string, error) {
+func (r *ScalerReconciler) validResourceList(ctx context.Context, scaler *k8scloudscalerv1alpha1.K8s) ([]string, error) {
 	_ = log.FromContext(ctx)
 
 	var (

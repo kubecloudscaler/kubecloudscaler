@@ -56,7 +56,7 @@ dockers:
     goarch: arm64
     use: buildx
     image_templates:
-      - "ghcr.io/cloudscalerio/{{ .ProjectName }}:{{ .Tag }}-arm64v8"
+      - "ghcr.io/k8scloudscaler/{{ .ProjectName }}:{{ .Tag }}-arm64v8"
     build_flag_templates:
       - --platform=linux/arm64/v8
 
@@ -67,27 +67,27 @@ dockers:
     use: buildx
 
     image_templates:
-      - "ghcr.io/cloudscalerio/{{ .ProjectName }}:{{ .Tag }}-amd64"
+      - "ghcr.io/k8scloudscaler/{{ .ProjectName }}:{{ .Tag }}-amd64"
     build_flag_templates:
       - --platform=linux/amd64
 
 docker_manifests:
-  - name_template: ghcr.io/cloudscalerio/{{ .ProjectName }}:{{ .Tag }}
+  - name_template: ghcr.io/k8scloudscaler/{{ .ProjectName }}:{{ .Tag }}
     image_templates:
-      - ghcr.io/cloudscalerio/{{ .ProjectName }}:{{ .Tag }}-amd64
-      - ghcr.io/cloudscalerio/{{ .ProjectName }}:{{ .Tag }}-arm64v8
-  - name_template: ghcr.io/cloudscalerio/{{ .ProjectName }}:v{{ .Major }}
+      - ghcr.io/k8scloudscaler/{{ .ProjectName }}:{{ .Tag }}-amd64
+      - ghcr.io/k8scloudscaler/{{ .ProjectName }}:{{ .Tag }}-arm64v8
+  - name_template: ghcr.io/k8scloudscaler/{{ .ProjectName }}:v{{ .Major }}
     image_templates:
-      - ghcr.io/cloudscalerio/{{ .ProjectName }}:{{ .Tag }}-amd64
-      - ghcr.io/cloudscalerio/{{ .ProjectName }}:{{ .Tag }}-arm64v8
-  - name_template: ghcr.io/cloudscalerio/{{ .ProjectName }}:v{{ .Major }}.{{ .Minor }}
+      - ghcr.io/k8scloudscaler/{{ .ProjectName }}:{{ .Tag }}-amd64
+      - ghcr.io/k8scloudscaler/{{ .ProjectName }}:{{ .Tag }}-arm64v8
+  - name_template: ghcr.io/k8scloudscaler/{{ .ProjectName }}:v{{ .Major }}.{{ .Minor }}
     image_templates:
-      - ghcr.io/cloudscalerio/{{ .ProjectName }}:{{ .Tag }}-amd64
-      - ghcr.io/cloudscalerio/{{ .ProjectName }}:{{ .Tag }}-arm64v8
-  - name_template: ghcr.io/cloudscalerio/{{ .ProjectName }}:latest
+      - ghcr.io/k8scloudscaler/{{ .ProjectName }}:{{ .Tag }}-amd64
+      - ghcr.io/k8scloudscaler/{{ .ProjectName }}:{{ .Tag }}-arm64v8
+  - name_template: ghcr.io/k8scloudscaler/{{ .ProjectName }}:latest
     image_templates:
-      - ghcr.io/cloudscalerio/{{ .ProjectName }}:{{ .Tag }}-amd64
-      - ghcr.io/cloudscalerio/{{ .ProjectName }}:{{ .Tag }}-arm64v8
+      - ghcr.io/k8scloudscaler/{{ .ProjectName }}:{{ .Tag }}-amd64
+      - ghcr.io/k8scloudscaler/{{ .ProjectName }}:{{ .Tag }}-arm64v8
 
 release:
   mode: replace

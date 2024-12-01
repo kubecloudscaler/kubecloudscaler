@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	periodPkg "github.com/cloudscalerio/cloudscaler/pkg/period"
+	periodPkg "github.com/k8scloudscaler/k8scloudscaler/pkg/period"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/log"

@@ -3,8 +3,8 @@ package resources
 import (
 	"context"
 
-	cloudscaleriov1alpha1 "github.com/cloudscalerio/cloudscaler/api/v1alpha1"
-	k8sUtils "github.com/cloudscalerio/cloudscaler/pkg/k8s/utils"
+	k8scloudscalerv1alpha1 "github.com/k8scloudscaler/k8scloudscaler/api/v1alpha1"
+	k8sUtils "github.com/k8scloudscaler/k8scloudscaler/pkg/k8s/utils"
 )
 
 type Config struct {
@@ -12,5 +12,5 @@ type Config struct {
 }
 
 type IResource interface {
-	SetState(ctx context.Context) ([]cloudscaleriov1alpha1.ScalerStatusSuccess, []cloudscaleriov1alpha1.ScalerStatusFailed, error)
+	SetState(ctx context.Context) ([]k8scloudscalerv1alpha1.ScalerStatusSuccess, []k8scloudscalerv1alpha1.ScalerStatusFailed, error)
 }

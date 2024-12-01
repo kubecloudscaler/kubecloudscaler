@@ -8,11 +8,11 @@ import (
 	"strings"
 	"time"
 
-	cloudscaleriov1alpha1 "github.com/cloudscalerio/cloudscaler/api/v1alpha1"
+	k8scloudscalerv1alpha1 "github.com/k8scloudscaler/k8scloudscaler/api/v1alpha1"
 	"k8s.io/utils/ptr"
 )
 
-func New(period *cloudscaleriov1alpha1.ScalerPeriod) (*Period, error) {
+func New(period *k8scloudscalerv1alpha1.ScalerPeriod) (*Period, error) {
 	var err error
 
 	curPeriod := &Period{
@@ -127,7 +127,7 @@ func getTime(period, periodType string, timeLocation *time.Location) (time.Time,
 
 func isPeriodActive(
 	periodType string,
-	period *cloudscaleriov1alpha1.RecurringPeriod,
+	period *k8scloudscalerv1alpha1.RecurringPeriod,
 ) (bool, time.Time, time.Time, *bool, error) {
 	var (
 		err error
@@ -184,12 +184,12 @@ func isPeriodActive(
 	return isActive, startTime, endTime, period.Once, nil
 }
 
-func convertFixedToRecurring(fixed *cloudscaleriov1alpha1.FixedPeriod) *cloudscaleriov1alpha1.RecurringPeriod {
+func convertFixedToRecurring(fixed *k8scloudscalerv1alpha1.FixedPeriod) *k8scloudscalerv1alpha1.RecurringPeriod {
 	if fixed == nil {
 		return nil
 	}
 
-	return &cloudscaleriov1alpha1.RecurringPeriod{
+	return &k8scloudscalerv1alpha1.RecurringPeriod{
 		Days: []string{
 			"all",
 		},

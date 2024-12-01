@@ -1,4 +1,4 @@
-baseURL: https://cloudscalerio.github.io/cloudscaler/
+baseURL: https://k8scloudscaler.github.io/k8scloudscaler/
 languageCode: en-us
 title: Cloudscaler
 
@@ -14,7 +14,7 @@ menu:
         icon: book-open
     - name: GitHub
       weight: 5
-      url: "https://github.com/cloudscalerio/cloudscaler"
+      url: "https://github.com/k8scloudscaler/k8scloudscaler"
       params:
         icon: github
 markup:

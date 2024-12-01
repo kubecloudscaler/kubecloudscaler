@@ -150,7 +150,7 @@ helm: manifests generate kustomize helmify
 
 .PHONY: doc
 doc: manifests generate gen-crd-docs
-	$(GEN_CRD_DOCS) --templates-dir=./hack/api-docs/templates --source-path=${GOPATH}/src/github.com/cloudscalerio/cloudscaler/api --config="./hack/api-docs/config.yaml" --renderer=markdown --output-path=./docs/content/docs/api.md
+	$(GEN_CRD_DOCS) --templates-dir=./hack/api-docs/templates --source-path=${GOPATH}/src/github.com/k8scloudscaler/k8scloudscaler/api --config="./hack/api-docs/config.yaml" --renderer=markdown --output-path=./docs/content/docs/api.md
 ##@ Dependencies
 
 ## Location to install dependencies to

@@ -1,4 +1,4 @@
-![Release Status](https://github.com/cloudscalerio/cloudscaler/actions/workflows/release.yml/badge.svg) ![Documentation Status](https://github.com/cloudscalerio/cloudscaler/actions/workflows/doc.yml/badge.svg)
+![Release Status](https://github.com/k8scloudscaler/k8scloudscaler/actions/workflows/release.yml/badge.svg) ![Documentation Status](https://github.com/k8scloudscaler/k8scloudscaler/actions/workflows/doc.yml/badge.svg)
 
 # Cloudscaler
 
@@ -13,7 +13,7 @@ This project is inspired by [kube-downscaler](https://codeberg.org/hjacobs/kube-
 1. **Install the Chart**
 
     ```bash
-    helm install cloudscaler oci://ghcr.io/cloudscalerio/cloudscaler/cloudscaler --namespace cloudscaler-system
+    helm install cloudscaler oci://ghcr.io/k8scloudscaler/k8scloudscaler/k8scloudscaler --namespace cloudscaler-system
     ```
 
 2. **Create a Scaler Custom Resource (CR)**
@@ -46,7 +46,7 @@ This project is inspired by [kube-downscaler](https://codeberg.org/hjacobs/kube-
 
 ## Documentation
 
-Full documentation is available [here](https://cloudscalerio.github.io/cloudscaler/).
+Full documentation is available [here](https://k8scloudscaler.github.io/k8scloudscaler/).
 
 ## License
 

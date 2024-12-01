@@ -10,7 +10,7 @@ weight: 1
 ### Build the Docker Image
 
   ```shell
-  make docker-build docker-push IMG=ghcr.io/cloudscalerio/cloudscaler:latest
+  make docker-build docker-push IMG=ghcr.io/k8scloudscaler/k8scloudscaler:latest
   ```
 
 ### Install CRDs
@@ -22,7 +22,7 @@ weight: 1
 ### Deploy the Operator
 
   ```shell
-  make deploy IMG=ghcr.io/cloudscalerio/cloudscaler:latest
+  make deploy IMG=ghcr.io/k8scloudscaler/k8scloudscaler:latest
   ```
 
 ### Apply Sample Configurations
@@ -45,7 +45,7 @@ weight: 1
 ### Install the Chart
 
   ```shell
-  helm install cloudscaler oci://ghcr.io/cloudscalerio/cloudscaler/cloudscaler --namespace cloudscaler-system
+  helm install cloudscaler oci://ghcr.io/k8scloudscaler/k8scloudscaler/k8scloudscaler --namespace cloudscaler-system
   ```
 
 ### Create a Scaler Custom Resource (CR)
@@ -84,7 +84,7 @@ weight: 1
 ### Clone the Repository
 
   ```shell
-  git clone https://github.com/cloudscalerio/cloudscaler.git
+  git clone https://github.com/k8scloudscaler/k8scloudscaler.git
   cd cloudscaler
   ```
 
