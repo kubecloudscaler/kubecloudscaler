@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.3.3](https://github.com/k8scloudscaler/k8scloudscaler/compare/v1.3.2...v1.3.3) (2024-12-01)
+
+
+### Bug Fixes
+
+* doc ([6b637f9](https://github.com/k8scloudscaler/k8scloudscaler/commit/6b637f9e65807de9159294beb3e122ae1fe1e287))
+* mv to k8scloudscaler.cloud ([3bec1ba](https://github.com/k8scloudscaler/k8scloudscaler/commit/3bec1ba0e35025b0a8987cbec0b6c0ba3e535b80))
+
 ## [1.3.2](https://github.com/k8scloudscaler/k8scloudscaler/compare/v1.3.1...v1.3.2) (2024-12-01)
 
 
