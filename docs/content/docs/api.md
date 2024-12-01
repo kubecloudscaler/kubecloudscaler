@@ -158,8 +158,8 @@ _Appears in:_
 | --- | --- | --- | --- |
 | `type` _string_ |  |  | Enum: [down up] <br /> |
 | `time` _[TimePeriod](#timeperiod)_ |  |  |  |
-| `minReplicas` _integer_ | Minimum replicas | 1 |  |
-| `maxReplicas` _integer_ | Maximum replicas | 1 |  |
+| `minReplicas` _integer_ | Minimum replicas |  |  |
+| `maxReplicas` _integer_ | Maximum replicas |  |  |
 
 
 #### ScalerStatus
