@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.0](https://github.com/k8scloudscaler/k8scloudscaler/compare/v1.2.2...v1.3.0) (2024-12-01)
+
+
+### Features
+
+* change project name to k8scloudscaler ([276b7e9](https://github.com/k8scloudscaler/k8scloudscaler/commit/276b7e9646f7abc07dc060d761141e67f135d150))
+
 ## [1.2.2](https://github.com/k8scloudscaler/k8scloudscaler/compare/v1.2.1...v1.2.2) (2024-11-28)
 
 
