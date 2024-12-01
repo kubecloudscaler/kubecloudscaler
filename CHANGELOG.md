@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.1](https://github.com/k8scloudscaler/k8scloudscaler/compare/v1.3.0...v1.3.1) (2024-12-01)
+
+
+### Bug Fixes
+
+* crd names ([7ccbc11](https://github.com/k8scloudscaler/k8scloudscaler/commit/7ccbc119516673c0c4371d7da369f16f4ff43453))
+
 ## [1.3.0](https://github.com/k8scloudscaler/k8scloudscaler/compare/v1.2.2...v1.3.0) (2024-12-01)
 
 
