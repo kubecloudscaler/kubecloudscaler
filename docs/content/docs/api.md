@@ -3,10 +3,10 @@ title: API Reference
 ---
 
 **Packages**
-- [k8scloudscaler.io/v1alpha1](#k8scloudscaleriov1alpha1)
+- [k8scloudscaler.cloud/v1alpha1](#k8scloudscalercloudv1alpha1)
 
 
-## k8scloudscaler.io/v1alpha1
+## k8scloudscaler.cloud/v1alpha1
 
 
 Package v1alpha1 contains API Schema definitions for the k8s v1alpha1 API group
@@ -51,7 +51,7 @@ Gcp is the Schema for the scalers API
 
 | Field | Description | Default | Validation |
 | --- | --- | --- | --- |
-| `apiVersion` _string_ | `k8scloudscaler.io/v1alpha1` | | |
+| `apiVersion` _string_ | `k8scloudscaler.cloud/v1alpha1` | | |
 | `kind` _string_ | `Gcp` | | |
 | `metadata` _[ObjectMeta](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#objectmeta-v1-meta)_ | Refer to Kubernetes API documentation for fields of `metadata`. |  |  |
 | `spec` _[GcpSpec](#gcpspec)_ |  |  |  |
@@ -87,7 +87,7 @@ Scaler is the Schema for the scalers API
 
 | Field | Description | Default | Validation |
 | --- | --- | --- | --- |
-| `apiVersion` _string_ | `k8scloudscaler.io/v1alpha1` | | |
+| `apiVersion` _string_ | `k8scloudscaler.cloud/v1alpha1` | | |
 | `kind` _string_ | `K8s` | | |
 | `metadata` _[ObjectMeta](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#objectmeta-v1-meta)_ | Refer to Kubernetes API documentation for fields of `metadata`. |  |  |
 | `spec` _[K8sSpec](#k8sspec)_ |  |  |  |
