@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.3.4](https://github.com/k8scloudscaler/k8scloudscaler/compare/v1.3.3...v1.3.4) (2024-12-01)
+
+
+### Bug Fixes
+
+* annotations ([532fe31](https://github.com/k8scloudscaler/k8scloudscaler/commit/532fe3134b733f261c30f98e03cbb5959a934215))
+* do not use default value for min and maxreplicas ([f510919](https://github.com/k8scloudscaler/k8scloudscaler/commit/f5109193347e09957016218efc793e13d5cf94b1))
+
 ## [1.3.3](https://github.com/k8scloudscaler/k8scloudscaler/compare/v1.3.2...v1.3.3) (2024-12-01)
 
 
