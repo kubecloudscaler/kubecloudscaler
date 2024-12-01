@@ -6,10 +6,8 @@ type ScalerPeriod struct {
 	Type string     `json:"type"`
 	Time TimePeriod `json:"time"`
 	// Minimum replicas
-	// +kubebuilder:default:=1
 	MinReplicas *int32 `json:"minReplicas,omitempty"`
 	// Maximum replicas
-	// +kubebuilder:default:=1
 	MaxReplicas *int32 `json:"maxReplicas,omitempty"`
 }
 
