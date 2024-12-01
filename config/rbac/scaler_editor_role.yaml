@@ -8,7 +8,7 @@ metadata:
   name: scaler-editor-role
 rules:
   - apiGroups:
-      - k8s.cloudscaler.io
+      - k8s.k8scloudscaler
     resources:
       - scalers
     verbs:
@@ -20,7 +20,7 @@ rules:
       - update
       - watch
   - apiGroups:
-      - k8s.cloudscaler.io
+      - k8s.k8scloudscaler
     resources:
       - scalers/status
     verbs:

@@ -1,6 +1,6 @@
 baseURL: https://k8scloudscaler.github.io/k8scloudscaler/
 languageCode: en-us
-title: Cloudscaler
+title: K8sCloudScaler
 
 module:
   imports:

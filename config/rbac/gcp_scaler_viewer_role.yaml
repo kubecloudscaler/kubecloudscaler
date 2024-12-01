@@ -8,7 +8,7 @@ metadata:
   name: gcp-scaler-viewer-role
 rules:
   - apiGroups:
-      - gcp.cloudscaler.io
+      - gcp.k8scloudscaler
     resources:
       - scalers
     verbs:
@@ -16,7 +16,7 @@ rules:
       - list
       - watch
   - apiGroups:
-      - gcp.cloudscaler.io
+      - gcp.k8scloudscaler
     resources:
       - scalers/status
     verbs:

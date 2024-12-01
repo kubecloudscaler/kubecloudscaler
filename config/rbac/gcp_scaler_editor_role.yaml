@@ -8,7 +8,7 @@ metadata:
   name: gcp-scaler-editor-role
 rules:
   - apiGroups:
-      - gcp.cloudscaler.io
+      - gcp.k8scloudscaler
     resources:
       - scalers
     verbs:
@@ -20,7 +20,7 @@ rules:
       - update
       - watch
   - apiGroups:
-      - gcp.cloudscaler.io
+      - gcp.k8scloudscaler
     resources:
       - scalers/status
     verbs:

@@ -99,7 +99,7 @@ func PrepareSearch(ctx context.Context, config *Config) ([]string, metaV1.ListOp
 		return []string{}, metaV1.ListOptions{}, err
 	}
 
-	// set a default label selector to ignore resources with the label "cloudscaler.io/ignore"
+	// set a default label selector to ignore resources with the label "k8scloudscaler/ignore"
 	labelSelectors := metaV1.LabelSelector{
 		MatchLabels: make(map[string]string),
 		MatchExpressions: []metaV1.LabelSelectorRequirement{

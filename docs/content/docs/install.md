@@ -45,14 +45,14 @@ weight: 1
 ### Install the Chart
 
   ```shell
-  helm install cloudscaler oci://ghcr.io/k8scloudscaler/k8scloudscaler/k8scloudscaler --namespace cloudscaler-system
+  helm install k8scloudscaler oci://ghcr.io/k8scloudscaler/k8scloudscaler/k8scloudscaler --namespace k8scloudscaler-system
   ```
 
 ### Create a Scaler Custom Resource (CR)
 
   ```yaml
   # Example: Downscales all deployments (excluding kube-system) to 0 from 19:00 to 21:00 (Paris time) daily.
-  apiVersion: cloudscaler.io/v1alpha1
+  apiVersion: k8scloudscaler/v1alpha1
   kind: K8s
   metadata:
     name: k8s-sample

@@ -20,7 +20,7 @@ This project is inspired by [kube-downscaler](https://codeberg.org/hjacobs/kube-
 
     ```yaml
     # Example: Downscales all deployments (excluding kube-system) to 0 from 19:00 to 21:00 (Paris time) daily.
-    apiVersion: cloudscaler.io/v1alpha1
+    apiVersion: k8scloudscaler/v1alpha1
     kind: K8s
     metadata:
       name: k8s-sample

@@ -1,4 +1,4 @@
-apiVersion: cloudscaler.io/v1alpha1
+apiVersion: k8scloudscaler/v1alpha1
 kind: K8s
 metadata:
   labels:
