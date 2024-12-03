@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.5](https://github.com/k8scloudscaler/k8scloudscaler/compare/v1.3.4...v1.3.5) (2024-12-03)
+
+
+### Bug Fixes
+
+* **deps:** update module sigs.k8s.io/controller-runtime to v0.19.3 ([4b44d3d](https://github.com/k8scloudscaler/k8scloudscaler/commit/4b44d3d2a294371cf3e04bb573a7d23446a8a43f))
+
 ## [1.3.4](https://github.com/k8scloudscaler/k8scloudscaler/compare/v1.3.3...v1.3.4) (2024-12-01)
 
 
