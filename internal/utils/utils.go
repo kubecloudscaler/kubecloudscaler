@@ -3,8 +3,8 @@ package utils
 import (
 	"fmt"
 
-	k8scloudscalerv1alpha1 "github.com/k8scloudscaler/k8scloudscaler/api/v1alpha1"
-	periodPkg "github.com/k8scloudscaler/k8scloudscaler/pkg/period"
+	kubecloudscalerv1alpha1 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha1"
+	periodPkg "github.com/kubecloudscaler/kubecloudscaler/pkg/period"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -24,12 +24,12 @@ func IgnoreDeletionPredicate() predicate.Predicate {
 	}
 }
 
-func ValidatePeriod(periods []*k8scloudscalerv1alpha1.ScalerPeriod, status *k8scloudscalerv1alpha1.ScalerStatus) (*periodPkg.Period, error) {
+func ValidatePeriod(periods []*kubecloudscalerv1alpha1.ScalerPeriod, status *kubecloudscalerv1alpha1.ScalerStatus) (*periodPkg.Period, error) {
 	// check we are in an active period
-	restorePeriod := &k8scloudscalerv1alpha1.ScalerPeriod{
+	restorePeriod := &kubecloudscalerv1alpha1.ScalerPeriod{
 		Type: "restore",
-		Time: k8scloudscalerv1alpha1.TimePeriod{
-			Recurring: &k8scloudscalerv1alpha1.RecurringPeriod{
+		Time: kubecloudscalerv1alpha1.TimePeriod{
+			Recurring: &kubecloudscalerv1alpha1.RecurringPeriod{
 				Days:      []string{"all"},
 				StartTime: "00:00",
 				EndTime:   "00:00",
@@ -77,7 +77,7 @@ func ValidatePeriod(periods []*k8scloudscalerv1alpha1.ScalerPeriod, status *k8sc
 	log.Log.V(1).Info(fmt.Sprintf("is period:\n  type => %s\n  def => %v\n", onPeriod.Type, onPeriod.Period))
 
 	// prepare status
-	status.CurrentPeriod = &k8scloudscalerv1alpha1.ScalerStatusPeriod{}
+	status.CurrentPeriod = &kubecloudscalerv1alpha1.ScalerStatusPeriod{}
 	status.CurrentPeriod.Spec = onPeriod.Period
 	status.CurrentPeriod.SpecSHA = onPeriod.Hash
 

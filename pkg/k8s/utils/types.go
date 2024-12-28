@@ -1,7 +1,7 @@
 package utils
 
 import (
-	periodPkg "github.com/k8scloudscaler/k8scloudscaler/pkg/period"
+	periodPkg "github.com/kubecloudscaler/kubecloudscaler/pkg/period"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
