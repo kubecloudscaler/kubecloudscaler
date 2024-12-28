@@ -10,7 +10,7 @@ controllerManager:
         drop:
         - ALL
     image:
-      repository: ghcr.io/k8scloudscaler/k8scloudscaler
+      repository: ghcr.io/kubecloudscaler/kubecloudscaler
       tag: latest
     resources:
       limits:

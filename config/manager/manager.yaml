@@ -63,7 +63,7 @@ spec:
           args:
             - --leader-elect
             - --health-probe-bind-address=:8081
-          image: ghcr.io/k8scloudscaler/k8scloudscaler:latest
+          image: ghcr.io/kubecloudscaler/kubecloudscaler:latest
           name: manager
           securityContext:
             allowPrivilegeEscalation: false

@@ -3,7 +3,7 @@
 # It should be run by config/default
 resources:
   - bases/kubecloudscaler.cloud_gcps.yaml
-  - bases/kubecloudscalerr.cloud_k8s.yaml
+  - bases/kubecloudscaler.cloud_k8s.yaml
 # +kubebuilder:scaffold:crdkustomizeresource
 
 patches:
