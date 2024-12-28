@@ -4,9 +4,9 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.15.0
-  name: gcps.k8scloudscaler.cloud
+  name: gcps.kubecloudscaler.cloud
 spec:
-  group: k8scloudscaler.cloud
+  group: kubecloudscaler.cloud
   names:
     kind: Gcp
     listKind: GcpList

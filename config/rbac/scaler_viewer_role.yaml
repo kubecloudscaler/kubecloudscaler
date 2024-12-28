@@ -8,7 +8,7 @@ metadata:
   name: scaler-viewer-role
 rules:
   - apiGroups:
-      - k8s.k8scloudscaler
+      - k8s.kubecloudscaler
     resources:
       - scalers
     verbs:
@@ -16,7 +16,7 @@ rules:
       - list
       - watch
   - apiGroups:
-      - k8s.k8scloudscaler
+      - k8s.kubecloudscalerr
     resources:
       - scalers/status
     verbs:

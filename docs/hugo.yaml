@@ -1,6 +1,6 @@
-baseURL: https://k8scloudscaler.cloud
+baseURL: https://kubecloudscaler.cloud
 languageCode: en-us
-title: K8sCloudScaler
+title: kubecloudscaler
 
 module:
   imports:
@@ -14,7 +14,7 @@ menu:
         icon: book-open
     - name: GitHub
       weight: 5
-      url: "https://github.com/k8scloudscaler/k8scloudscaler"
+      url: "https://github.com/kubecloudscaler/kubecloudscaler"
       params:
         icon: github
 markup:
