@@ -28,6 +28,6 @@ go.work
 
 dist/
 docs/public
-docs/go.mod
-docs/go.sum
+# docs/go.mod
+# docs/go.sum
 docs/.hugo_build.lock
