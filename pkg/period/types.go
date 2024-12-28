@@ -3,11 +3,11 @@ package period
 import (
 	"time"
 
-	k8scloudscalerv1alpha1 "github.com/k8scloudscaler/k8scloudscaler/api/v1alpha1"
+	kubecloudscalerv1alpha1 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha1"
 )
 
 type Period struct {
-	Period       *k8scloudscalerv1alpha1.RecurringPeriod
+	Period       *kubecloudscalerv1alpha1.RecurringPeriod
 	Type         string
 	IsActive     bool
 	Hash         string

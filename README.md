@@ -1,4 +1,4 @@
-![Release Status](https://github.com/k8scloudscaler/k8scloudscaler/actions/workflows/release.yml/badge.svg) ![Documentation Status](https://github.com/k8scloudscaler/k8scloudscaler/actions/workflows/doc.yml/badge.svg) [![Apache 2.0 License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://choosealicense.com/licenses/apache-2.0/) [![GoLang](https://img.shields.io/badge/1.22.0-blue.svg?logo=go)]()
+![Release Status](https://github.com/kubecloudscaler/kubecloudscaler/actions/workflows/release.yml/badge.svg) ![Documentation Status](https://github.com/kubecloudscaler/kubecloudscaler/actions/workflows/doc.yml/badge.svg) [![Apache 2.0 License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://choosealicense.com/licenses/apache-2.0/) [![GoLang](https://img.shields.io/badge/1.22.0-blue.svg?logo=go)]()
 
 # Cloudscaler
 
@@ -13,14 +13,14 @@ This project is inspired by [kube-downscaler](https://codeberg.org/hjacobs/kube-
 1. **Install the Chart**
 
     ```bash
-    helm install cloudscaler oci://ghcr.io/k8scloudscaler/k8scloudscaler/k8scloudscaler --namespace cloudscaler-system
+    helm install cloudscaler oci://ghcr.io/kubecloudscaler/kubecloudscaler/kubecloudscaler --namespace cloudscaler-system
     ```
 
 2. **Create a Scaler Custom Resource (CR)**
 
     ```yaml
     # Example: Downscales all deployments (excluding kube-system) to 0 from 19:00 to 21:00 (Paris time) daily.
-    apiVersion: k8scloudscaler/v1alpha1
+    apiVersion: kubecloudscaler/v1alpha1
     kind: K8s
     metadata:
       name: k8s-sample
@@ -46,7 +46,7 @@ This project is inspired by [kube-downscaler](https://codeberg.org/hjacobs/kube-
 
 ## Documentation
 
-Full documentation is available [here](https://k8scloudscaler.cloud).
+Full documentation is available [here](https://kubecloudscaler.cloud).
 
 ## License
 

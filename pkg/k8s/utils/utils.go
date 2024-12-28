@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	periodPkg "github.com/k8scloudscaler/k8scloudscaler/pkg/period"
+	periodPkg "github.com/kubecloudscaler/kubecloudscaler/pkg/period"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -99,7 +99,7 @@ func PrepareSearch(ctx context.Context, config *Config) ([]string, metaV1.ListOp
 		return []string{}, metaV1.ListOptions{}, err
 	}
 
-	// set a default label selector to ignore resources with the label "k8scloudscaler/ignore"
+	// set a default label selector to ignore resources with the label "kubecloudscaler/ignore"
 	labelSelectors := metaV1.LabelSelector{
 		MatchLabels: make(map[string]string),
 		MatchExpressions: []metaV1.LabelSelectorRequirement{

@@ -3,8 +3,8 @@ package statefulsets
 import (
 	"context"
 
-	k8scloudscalerv1alpha1 "github.com/k8scloudscaler/k8scloudscaler/api/v1alpha1"
-	"github.com/k8scloudscaler/k8scloudscaler/pkg/k8s/utils"
+	kubecloudscalerv1alpha1 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha1"
+	"github.com/kubecloudscaler/kubecloudscaler/pkg/k8s/utils"
 	appsV1 "k8s.io/api/apps/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -22,10 +22,10 @@ func (d *Statefulsets) init(client *kubernetes.Clientset) {
 	d.Client = client.AppsV1()
 }
 
-func (d *Statefulsets) SetState(ctx context.Context) ([]k8scloudscalerv1alpha1.ScalerStatusSuccess, []k8scloudscalerv1alpha1.ScalerStatusFailed, error) {
+func (d *Statefulsets) SetState(ctx context.Context) ([]kubecloudscalerv1alpha1.ScalerStatusSuccess, []kubecloudscalerv1alpha1.ScalerStatusFailed, error) {
 	_ = log.FromContext(ctx)
-	scalerStatusSuccess := []k8scloudscalerv1alpha1.ScalerStatusSuccess{}
-	scalerStatusFailed := []k8scloudscalerv1alpha1.ScalerStatusFailed{}
+	scalerStatusSuccess := []kubecloudscalerv1alpha1.ScalerStatusSuccess{}
+	scalerStatusFailed := []kubecloudscalerv1alpha1.ScalerStatusFailed{}
 	list := []appsV1.StatefulSet{}
 	isAlreadyRestored := false
 
@@ -52,7 +52,7 @@ func (d *Statefulsets) SetState(ctx context.Context) ([]k8scloudscalerv1alpha1.S
 		if err != nil {
 			scalerStatusFailed = append(
 				scalerStatusFailed,
-				k8scloudscalerv1alpha1.ScalerStatusFailed{
+				kubecloudscalerv1alpha1.ScalerStatusFailed{
 					Kind:   "deployment",
 					Name:   dName.Name,
 					Reason: err.Error(),
@@ -83,7 +83,7 @@ func (d *Statefulsets) SetState(ctx context.Context) ([]k8scloudscalerv1alpha1.S
 			if err != nil {
 				scalerStatusFailed = append(
 					scalerStatusFailed,
-					k8scloudscalerv1alpha1.ScalerStatusFailed{
+					kubecloudscalerv1alpha1.ScalerStatusFailed{
 						Kind:   "deployment",
 						Name:   dName.Name,
 						Reason: err.Error(),
@@ -105,7 +105,7 @@ func (d *Statefulsets) SetState(ctx context.Context) ([]k8scloudscalerv1alpha1.S
 		if err != nil {
 			scalerStatusFailed = append(
 				scalerStatusFailed,
-				k8scloudscalerv1alpha1.ScalerStatusFailed{
+				kubecloudscalerv1alpha1.ScalerStatusFailed{
 					Kind:   "deployment",
 					Name:   dName.Name,
 					Reason: err.Error(),
@@ -117,7 +117,7 @@ func (d *Statefulsets) SetState(ctx context.Context) ([]k8scloudscalerv1alpha1.S
 
 		scalerStatusSuccess = append(
 			scalerStatusSuccess,
-			k8scloudscalerv1alpha1.ScalerStatusSuccess{
+			kubecloudscalerv1alpha1.ScalerStatusSuccess{
 				Kind: "deployment",
 				Name: dName.Name,
 			},

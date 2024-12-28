@@ -35,9 +35,9 @@ import (
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
-	k8scloudscalerv1alpha1 "github.com/k8scloudscaler/k8scloudscaler/api/v1alpha1"
-	gcpcontroller "github.com/k8scloudscaler/k8scloudscaler/internal/controller/gcp"
-	k8scontroller "github.com/k8scloudscaler/k8scloudscaler/internal/controller/k8s"
+	kubecloudscalerv1alpha1 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha1"
+	gcpcontroller "github.com/kubecloudscaler/kubecloudscaler/internal/controller/gcp"
+	k8scontroller "github.com/kubecloudscaler/kubecloudscaler/internal/controller/k8s"
 	// +kubebuilder:scaffold:imports
 )
 
@@ -49,7 +49,7 @@ var (
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
-	utilruntime.Must(k8scloudscalerv1alpha1.AddToScheme(scheme))
+	utilruntime.Must(kubecloudscalerv1alpha1.AddToScheme(scheme))
 	// +kubebuilder:scaffold:scheme
 }
 
@@ -127,7 +127,7 @@ func main() {
 		WebhookServer:          webhookServer,
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
-		LeaderElectionID:       "437b2c63.k8scloudscaler",
+		LeaderElectionID:       "437b2c63.kubecloudscaler",
 		// LeaderElectionReleaseOnCancel defines if the leader should step down voluntarily
 		// when the Manager ends. This requires the binary to immediately end when the
 		// Manager is stopped, otherwise, this setting is unsafe. Setting this significantly
