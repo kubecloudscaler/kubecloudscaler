@@ -10,7 +10,7 @@ weight: 1
 ### Build the Docker Image
 
   ```shell
-  make docker-build docker-push IMG=ghcr.io/k8scloudscaler/k8scloudscaler:latest
+  make docker-build docker-push IMG=ghcr.io/kubecloudscaler/kubecloudscaler:latest
   ```
 
 ### Install CRDs
@@ -22,7 +22,7 @@ weight: 1
 ### Deploy the Operator
 
   ```shell
-  make deploy IMG=ghcr.io/k8scloudscaler/k8scloudscaler:latest
+  make deploy IMG=ghcr.io/kubecloudscaler/kubecloudscaler:latest
   ```
 
 ### Apply Sample Configurations
@@ -45,14 +45,14 @@ weight: 1
 ### Install the Chart
 
   ```shell
-  helm install k8scloudscaler oci://ghcr.io/k8scloudscaler/k8scloudscaler/k8scloudscaler --namespace k8scloudscaler-system
+  helm install kubecloudscaler oci://ghcr.io/kubecloudscaler/kubecloudscaler/kubecloudscaler --namespace kubecloudscaler-system
   ```
 
 ### Create a Scaler Custom Resource (CR)
 
   ```yaml
   # Example: Downscales all deployments (excluding kube-system) to 0 from 19:00 to 21:00 (Paris time) daily.
-  apiVersion: k8scloudscaler/v1alpha1
+  apiVersion: kubecloudscaler/v1alpha1
   kind: K8s
   metadata:
     name: k8s-sample
@@ -84,7 +84,7 @@ weight: 1
 ### Clone the Repository
 
   ```shell
-  git clone https://github.com/k8scloudscaler/k8scloudscaler.git
+  git clone https://github.com/kubecloudscaler/kubecloudscaler.git
   cd cloudscaler
   ```
 

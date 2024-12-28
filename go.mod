@@ -1,4 +1,4 @@
-module github.com/k8scloudscaler/k8scloudscaler
+module github.com/kubecloudscaler/kubecloudscaler
 
 go 1.22.0
 

@@ -1,7 +1,7 @@
 package utils
 
 const (
-	AnnotationsPrefix       = "k8scloudscaler.cloud"
+	AnnotationsPrefix       = "kubecloudscaler.cloud"
 	AnnotationsOrigValue    = "original-value"
 	AnnotationsMinOrigValue = "min-original-value"
 	AnnotationsMaxOrigValue = "max-original-value"

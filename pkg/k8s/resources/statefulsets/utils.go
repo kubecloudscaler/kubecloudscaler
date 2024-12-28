@@ -3,7 +3,7 @@ package statefulsets
 import (
 	"context"
 
-	"github.com/k8scloudscaler/k8scloudscaler/pkg/k8s/utils"
+	"github.com/kubecloudscaler/kubecloudscaler/pkg/k8s/utils"
 )
 
 func New(ctx context.Context, config *utils.Config) (*Statefulsets, error) {

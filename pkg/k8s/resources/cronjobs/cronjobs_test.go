@@ -3,10 +3,10 @@ package cronjobs_test
 import (
 	"context"
 
-	k8scloudscalerv1alpha1 "github.com/k8scloudscaler/k8scloudscaler/api/v1alpha1"
-	"github.com/k8scloudscaler/k8scloudscaler/pkg/k8s/resources/cronjobs"
-	"github.com/k8scloudscaler/k8scloudscaler/pkg/k8s/utils"
-	periodPkg "github.com/k8scloudscaler/k8scloudscaler/pkg/period"
+	kubecloudscalerv1alpha1 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha1"
+	"github.com/kubecloudscaler/kubecloudscaler/pkg/k8s/resources/cronjobs"
+	"github.com/kubecloudscaler/kubecloudscaler/pkg/k8s/utils"
+	periodPkg "github.com/kubecloudscaler/kubecloudscaler/pkg/period"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	batchV1 "k8s.io/api/batch/v1"
@@ -49,7 +49,7 @@ var _ = Describe("Cronjobs", func() {
 				NsList: []string{"ns1", "ns2"},
 				Period: &periodPkg.Period{
 					Type:   "down",
-					Period: &k8scloudscalerv1alpha1.RecurringPeriod{},
+					Period: &kubecloudscalerv1alpha1.RecurringPeriod{},
 				},
 			},
 		}

@@ -19,8 +19,8 @@ package gcp
 import (
 	"context"
 
-	k8scloudscalerv1alpha1 "github.com/k8scloudscaler/k8scloudscaler/api/v1alpha1"
-	"github.com/k8scloudscaler/k8scloudscaler/internal/utils"
+	kubecloudscalerv1alpha1 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha1"
+	"github.com/kubecloudscaler/kubecloudscaler/internal/utils"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -33,9 +33,9 @@ type ScalerReconciler struct {
 	Scheme *runtime.Scheme
 }
 
-// +kubebuilder:rbac:groups=gcp.k8scloudscaler,resources=scalers,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=gcp.k8scloudscaler,resources=scalers/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=gcp.k8scloudscaler,resources=scalers/finalizers,verbs=update
+// +kubebuilder:rbac:groups=gcp.kubecloudscaler,resources=scalers,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=gcp.kubecloudscaler,resources=scalers/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=gcp.kubecloudscaler,resources=scalers/finalizers,verbs=update
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -57,7 +57,7 @@ func (r *ScalerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 // SetupWithManager sets up the controller with the Manager.
 func (r *ScalerReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&k8scloudscalerv1alpha1.Gcp{}).
+		For(&kubecloudscalerv1alpha1.Gcp{}).
 		WithEventFilter(utils.IgnoreDeletionPredicate()).
 		Named("gcpScaler").
 		Complete(r)
