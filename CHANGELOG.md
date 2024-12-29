@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.10](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.3.9...v1.3.10) (2024-12-29)
+
+
+### Bug Fixes
+
+* binary name ([4fe31b6](https://github.com/kubecloudscaler/kubecloudscaler/commit/4fe31b635c063083b65141921bfa7cf24ba2cb13))
+
 ## [1.3.9](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.3.8...v1.3.9) (2024-12-29)
 
 
