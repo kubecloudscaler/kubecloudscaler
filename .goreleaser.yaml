@@ -24,7 +24,7 @@ builds:
       - amd64
       - arm64
     goamd64:
-      - v3
+      - v2
     main: ./cmd
 
 archives:
@@ -63,7 +63,7 @@ dockers:
   - id: linux-amd64
     goos: linux
     goarch: amd64
-    goamd64: "v3"
+    goamd64: "v2"
     use: buildx
 
     image_templates:
