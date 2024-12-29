@@ -57,7 +57,7 @@ rules:
 - apiGroups:
   - kubecloudscaler.cloud
   resources:
-  - gcp
+  - gcps
   verbs:
   - create
   - delete
@@ -69,13 +69,13 @@ rules:
 - apiGroups:
   - kubecloudscaler.cloud
   resources:
-  - gcp/finalizers
+  - gcps/finalizers
   verbs:
   - update
 - apiGroups:
   - kubecloudscaler.cloud
   resources:
-  - gcp/status
+  - gcps/status
   verbs:
   - get
   - patch
