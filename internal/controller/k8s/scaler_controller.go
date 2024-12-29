@@ -40,9 +40,9 @@ type ScalerReconciler struct {
 	Scheme *runtime.Scheme
 }
 
-// +kubebuilder:rbac:groups=k8s.kubecloudscaler,resources=scalers,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=k8s.kubecloudscaler,resources=scalers/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=k8s.kubecloudscaler,resources=scalers/finalizers,verbs=update
+// +kubebuilder:rbac:groups=kubecloudscaler.cloud,resources=k8s,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=kubecloudscaler.cloud,resources=k8s/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=kubecloudscaler.cloud,resources=k8s/finalizers,verbs=update
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.

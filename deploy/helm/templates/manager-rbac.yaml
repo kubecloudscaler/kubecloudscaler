@@ -55,9 +55,9 @@ rules:
   - get
   - list
 - apiGroups:
-  - gcp.kubecloudscaler
+  - kubecloudscaler.cloud
   resources:
-  - scalers
+  - gcp
   verbs:
   - create
   - delete
@@ -67,23 +67,23 @@ rules:
   - update
   - watch
 - apiGroups:
-  - gcp.kubecloudscaler
+  - kubecloudscaler.cloud
   resources:
-  - scalers/finalizers
+  - gcp/finalizers
   verbs:
   - update
 - apiGroups:
-  - gcp.kubecloudscaler
+  - kubecloudscaler.cloud
   resources:
-  - scalers/status
+  - gcp/status
   verbs:
   - get
   - patch
   - update
 - apiGroups:
-  - k8s.kubecloudscaler
+  - kubecloudscaler.cloud
   resources:
-  - scalers
+  - k8s
   verbs:
   - create
   - delete
@@ -93,15 +93,15 @@ rules:
   - update
   - watch
 - apiGroups:
-  - k8s.kubecloudscaler
+  - kubecloudscaler.cloud
   resources:
-  - scalers/finalizers
+  - k8s/finalizers
   verbs:
   - update
 - apiGroups:
-  - k8s.kubecloudscaler
+  - kubecloudscaler.cloud
   resources:
-  - scalers/status
+  - k8s/status
   verbs:
   - get
   - patch

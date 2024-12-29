@@ -5,11 +5,12 @@
 domain: kubecloudscaler.cloud
 layout:
   - go.kubebuilder.io/v4
-projectName: cloudscaler
+projectName: kubecloudscaler
 repo: github.com/kubecloudscaler/kubecloudscaler
 resources:
   - api:
       crdVersion: v1
+      namespaced: false
     controller: true
     domain: kubecloudscaler.cloud
     kind: K8s
@@ -17,6 +18,7 @@ resources:
     version: v1alpha1
   - api:
       crdVersion: v1
+      namespaced: false
     controller: true
     domain: kubecloudscaler.cloud
     kind: Gcp
