@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.11](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.3.10...v1.3.11) (2024-12-29)
+
+
+### Bug Fixes
+
+* build amd64 v2 instead of v3 ([4e32be8](https://github.com/kubecloudscaler/kubecloudscaler/commit/4e32be81032fa8bba4030d057c4cd8947ec79b3a))
+
 ## [1.3.10](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.3.9...v1.3.10) (2024-12-29)
 
 
