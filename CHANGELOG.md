@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.8](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.3.7...v1.3.8) (2024-12-29)
+
+
+### Bug Fixes
+
+* revert doc from cloudflare pages ([0fe03bb](https://github.com/kubecloudscaler/kubecloudscaler/commit/0fe03bb31edc5681e0b3cccb077318ec34cec1d5))
+
 ## [1.3.7](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.3.6...v1.3.7) (2024-12-28)
 
 
