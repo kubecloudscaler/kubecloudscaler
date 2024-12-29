@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.9](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.3.8...v1.3.9) (2024-12-29)
+
+
+### Bug Fixes
+
+* build doc ([d0960a4](https://github.com/kubecloudscaler/kubecloudscaler/commit/d0960a458d2273dcbf87b58a80e5a18883ad6eda))
+
 ## [1.3.8](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.3.7...v1.3.8) (2024-12-29)
 
 
