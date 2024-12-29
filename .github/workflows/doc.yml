@@ -54,8 +54,6 @@ jobs:
           HUGO_CACHEDIR: ${{ runner.temp }}/hugo_cache
           HUGO_ENVIRONMENT: production
         run: |
-          hugo mod init -s ./docs docs
-          hugo mod tidy -s ./docs
           hugo \
             --minify \
             --baseURL "${{ steps.pages.outputs.base_url }}/" \
