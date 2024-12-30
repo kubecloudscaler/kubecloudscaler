@@ -1,7 +1,7 @@
 package period
 
 import (
-	"crypto/sha1"
+	"crypto/sha1" //nolint: gosec
 	"encoding/json"
 	"fmt"
 	"slices"
@@ -46,17 +46,17 @@ func New(period *kubecloudscalerv1alpha1.ScalerPeriod) (*Period, error) {
 
 	curPeriod.GracePeriod, err = time.ParseDuration(ptr.Deref(convertedPeriod.GracePeriod, defaultGracePeriod))
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error parsing grace period: %w", err)
 	}
 
 	curPeriod.Period = convertedPeriod
 
 	periodData, err := json.Marshal(period)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error marshalling period: %w", err)
 	}
 
-	curPeriod.Hash = fmt.Sprintf("%x", sha1.Sum(periodData))
+	curPeriod.Hash = fmt.Sprintf("%x", sha1.Sum(periodData)) //nolint: gosec
 
 	return curPeriod, nil
 }
@@ -69,7 +69,7 @@ func isDay(day string, localTime *time.Time) (bool, error) {
 	localDay := int(localTime.Weekday())
 	sanitizedDay := strings.ToLower(day)
 
-	if strings.Count(day, "") <= 3 {
+	if strings.Count(day, "") <= dayStringLength {
 		sanitizedDay = "bad"
 	}
 
@@ -119,7 +119,7 @@ func getTime(period, periodType string, timeLocation *time.Location) (time.Time,
 			return outTime, ErrFixedTimeFormat
 		}
 	default:
-		return time.Time{}, fmt.Errorf("unknown period type: %s", periodType)
+		return time.Time{}, fmt.Errorf("%w: %s", ErrUnknownPeriodType, periodType)
 	}
 
 	return outTime, nil
@@ -139,7 +139,7 @@ func isPeriodActive(
 	if period.Timezone != nil {
 		timeLocation, err = time.LoadLocation(ptr.Deref(period.Timezone, defaultTimezone))
 		if err != nil {
-			return false, time.Time{}, time.Time{}, nil, err
+			return false, time.Time{}, time.Time{}, nil, fmt.Errorf("error loading timezone: %w", err)
 		}
 	}
 

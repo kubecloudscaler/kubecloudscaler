@@ -6,12 +6,10 @@
 ### ⚠ BREAKING CHANGES
 
 * align releases
-* initial release
 
 ### Features
 
 * align releases ([7932210](https://github.com/kubecloudscaler/kubecloudscaler/commit/79322101ef45f29e1016ec88357f7a4cd16e5a23))
-* initial release ([93e4376](https://github.com/kubecloudscaler/kubecloudscaler/commit/93e437653a19d13eead7322ab918767251374189))
 
 
 ### Bug Fixes

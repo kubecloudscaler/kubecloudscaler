@@ -11,4 +11,5 @@ var (
 	ErrRecurringTimeFormat       = errors.New("bad time format for recurring period")
 	ErrStartAfterEnd             = errors.New("start time is after end time")
 	ErrMinReplicasGreaterThanMax = errors.New("minReplicas is greater than maxReplicas")
+	ErrUnknownPeriodType         = errors.New("unknown period type")
 )

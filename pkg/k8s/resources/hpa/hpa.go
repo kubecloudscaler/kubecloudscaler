@@ -28,7 +28,6 @@ func (d *HorizontalPodAutoscalers) SetState(ctx context.Context) ([]kubecloudsca
 	scalerStatusSuccess := []kubecloudscalerv1alpha1.ScalerStatusSuccess{}
 	scalerStatusFailed := []kubecloudscalerv1alpha1.ScalerStatusFailed{}
 	list := []autoscaleV2.HorizontalPodAutoscaler{}
-	isAlreadyRestored := false
 
 	for _, ns := range d.Resource.NsList {
 		log.Log.V(1).Info("found namespace", "ns", ns)
@@ -37,7 +36,7 @@ func (d *HorizontalPodAutoscalers) SetState(ctx context.Context) ([]kubecloudsca
 		if err != nil {
 			log.Log.V(1).Error(err, "error listing hpas")
 
-			return scalerStatusSuccess, scalerStatusFailed, err
+			return scalerStatusSuccess, scalerStatusFailed, fmt.Errorf("error listing hpas: %w", err)
 		}
 
 		list = append(list, deployList.Items...)
@@ -80,6 +79,8 @@ func (d *HorizontalPodAutoscalers) SetState(ctx context.Context) ([]kubecloudsca
 
 		default:
 			log.Log.V(1).Info("restoring", "name", dName.Name)
+
+			var isAlreadyRestored bool
 
 			isAlreadyRestored, deploy.Spec.MinReplicas, deploy.Spec.MaxReplicas, deploy.Annotations, err = utils.RestoreMinMaxAnnotations(deploy.Annotations)
 			if err != nil {
@@ -133,8 +134,6 @@ func (d *HorizontalPodAutoscalers) SetState(ctx context.Context) ([]kubecloudsca
 }
 
 func (d *HorizontalPodAutoscalers) addAnnotations(deploy *autoscaleV2.HorizontalPodAutoscaler) {
-	// deploy.Annotations = utils.AddAnnotations(deploy.Annotations, d.Resource.Period)
-
 	_, isExists := deploy.Annotations[utils.AnnotationsPrefix+"/original-minreplicas"]
 	if !isExists {
 		deploy.Annotations[utils.AnnotationsPrefix+"/original-minreplicas"] = fmt.Sprintf("%d", *deploy.Spec.MinReplicas)
