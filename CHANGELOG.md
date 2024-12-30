@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.0.0](https://github.com/kubecloudscaler/kubecloudscaler/compare/v0.0.1...v1.0.0) (2024-12-30)
+
+
+### ⚠ BREAKING CHANGES
+
+* initial release
+
+### Features
+
+* initial release ([93e4376](https://github.com/kubecloudscaler/kubecloudscaler/commit/93e437653a19d13eead7322ab918767251374189))
+
 ## [1.3.13](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.3.12...v1.3.13) (2024-12-30)
 
 
