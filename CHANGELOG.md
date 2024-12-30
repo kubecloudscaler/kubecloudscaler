@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.3.13](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.3.12...v1.3.13) (2024-12-30)
+
+
+### Bug Fixes
+
+* metrics rbac ([43d06a3](https://github.com/kubecloudscaler/kubecloudscaler/commit/43d06a336e7db2e2671c8359c5ab0cefa5552883))
+* rbac ([7e22447](https://github.com/kubecloudscaler/kubecloudscaler/commit/7e22447e91056496ba64f9d3b19227aa5231c1b4))
+
 ## [1.3.12](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.3.11...v1.3.12) (2024-12-29)
 
 
