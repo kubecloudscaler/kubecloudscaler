@@ -1,0 +1,100 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        with:
+          fetch-depth: 0
+
+      - uses: googleapis/release-please-action@7987652d64b4581673a76e33ad5e98e3dd56832f # v4
+        id: release
+        with:
+          token: ${{ secrets.CLOUDSCALER_TOKEN }}
+          # skip-github-release: "true"
+    outputs:
+      release-created: ${{ steps.release.outputs.release_created }}
+      release-tag: ${{ steps.release.outputs.tag_name }}
+      release-version: ${{ steps.release.outputs.version }}
+
+  goreleaser:
+    needs:
+      - release-please
+    runs-on: ubuntu-latest
+    if: ${{ needs.release-please.outputs.release-created == 'true' }}
+    outputs:
+      release-tag: ${{ needs.release-please.outputs.release-tag }}
+      release-version: ${{ needs.release-please.outputs.release-version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@49b3bc8e6bdd4a60e6116a5414239cba5943d3cf # v3
+
+      - name: Docker Login
+        uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567 # v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.CLOUDSCALER_TOKEN }}
+
+      - name: Set up Go
+        uses: actions/setup-go@3041bf56c941b39c61721a86cd11f3bb1338122a # v5
+        with:
+          go-version-file: 'go.mod'
+
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@9ed2f89a662bf1735a48bc8557fd212fa902bebf # v6
+        with:
+          args: release --clean
+        env:
+          GITHUB_TOKEN: ${{ secrets.CLOUDSCALER_TOKEN }}
+
+  helm:
+    needs:
+      - goreleaser
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        with:
+          fetch-depth: 0
+
+      - name: Update values.yaml
+        uses: fjogeleit/yaml-update-action@main
+        with:
+          changes: |
+            {
+              "deploy/helm/values.yaml": {
+                "controllerManager.manager.image.tag": "${{ needs.goreleaser.outputs.release-tag }}"
+              },
+              "deploy/helm/Chart.yaml": {
+                "appVersion": "${{ needs.goreleaser.outputs.release-tag }}",
+                "version": "${{ needs.goreleaser.outputs.release-version }}"
+              }
+            }
+          commitChange: false
+
+      - name: Install Helm
+        uses: azure/setup-helm@fe7b79cd5ee1e45176fcad797de68ecaf3ca4814 # v4
+        env:
+          GITHUB_TOKEN: "${{ secrets.CLOUDSCALER_TOKEN }}"
+
+      - name: Build and Push the Helm Charts to GitHub Container Registry
+        uses: JimCronqvist/action-helm-chart-repo@master
+        with:
+          chartsPath: deploy/helm
+          token: ${{ secrets.CLOUDSCALER_TOKEN }}

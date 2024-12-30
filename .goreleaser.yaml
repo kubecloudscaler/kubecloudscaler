@@ -1,0 +1,94 @@
+# This is an example .goreleaser.yml file with some sensible defaults.
+# Make sure to check the documentation at https://goreleaser.com
+
+# The lines below are called `modelines`. See `:help modeline`
+# Feel free to remove those if you don't want/need to use them.
+# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
+# vim: set ts=2 sw=2 tw=0 fo=cnqoj
+
+version: 2
+
+before:
+  hooks:
+    # You may remove this if you don't use go modules.
+    - go mod tidy
+    # you may remove this if you don't need go generate
+    - go generate ./...
+
+builds:
+  - env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+    goarch:
+      - amd64
+      - arm64
+    goamd64:
+      - v2
+    main: ./cmd
+
+archives:
+  - format: tar.gz
+    # this name template makes the OS and Arch compatible with the results of `uname`.
+    name_template: >-
+      {{ .ProjectName }}_
+      {{- title .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else }}{{ .Arch }}{{ end }}
+    # use zip for windows archives
+    format_overrides:
+      - goos: windows
+        format: zip
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^Merge pull request"
+  use: github
+
+# .goreleaser.yaml
+dockers:
+  - id: linux-arm64
+    goos: linux
+    goarch: arm64
+    use: buildx
+    image_templates:
+      - "ghcr.io/kubecloudscaler/{{ .ProjectName }}:{{ .Tag }}-arm64v8"
+    build_flag_templates:
+      - --platform=linux/arm64/v8
+
+  - id: linux-amd64
+    goos: linux
+    goarch: amd64
+    goamd64: "v2"
+    use: buildx
+
+    image_templates:
+      - "ghcr.io/kubecloudscaler/{{ .ProjectName }}:{{ .Tag }}-amd64"
+    build_flag_templates:
+      - --platform=linux/amd64
+
+docker_manifests:
+  - name_template: ghcr.io/kubecloudscaler/{{ .ProjectName }}:{{ .Tag }}
+    image_templates:
+      - ghcr.io/kubecloudscaler/{{ .ProjectName }}:{{ .Tag }}-amd64
+      - ghcr.io/kubecloudscaler/{{ .ProjectName }}:{{ .Tag }}-arm64v8
+  - name_template: ghcr.io/kubecloudscaler/{{ .ProjectName }}:v{{ .Major }}
+    image_templates:
+      - ghcr.io/kubecloudscaler/{{ .ProjectName }}:{{ .Tag }}-amd64
+      - ghcr.io/kubecloudscaler/{{ .ProjectName }}:{{ .Tag }}-arm64v8
+  - name_template: ghcr.io/kubecloudscaler/{{ .ProjectName }}:v{{ .Major }}.{{ .Minor }}
+    image_templates:
+      - ghcr.io/kubecloudscaler/{{ .ProjectName }}:{{ .Tag }}-amd64
+      - ghcr.io/kubecloudscaler/{{ .ProjectName }}:{{ .Tag }}-arm64v8
+  - name_template: ghcr.io/kubecloudscaler/{{ .ProjectName }}:latest
+    image_templates:
+      - ghcr.io/kubecloudscaler/{{ .ProjectName }}:{{ .Tag }}-amd64
+      - ghcr.io/kubecloudscaler/{{ .ProjectName }}:{{ .Tag }}-arm64v8
+
+release:
+  mode: replace
+  replace_existing_artifacts: true

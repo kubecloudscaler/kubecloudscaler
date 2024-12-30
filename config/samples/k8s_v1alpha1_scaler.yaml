@@ -1,0 +1,33 @@
+apiVersion: kubecloudscaler.cloud/v1alpha1
+kind: K8s
+metadata:
+  labels:
+    app.kubernetes.io/name: cloudscaler
+    app.kubernetes.io/managed-by: kustomize
+  name: k8s-sample
+spec:
+  disableEvents: false
+  resources:
+    - deployments
+    # - hpa
+  namespaces:
+    - home
+  # - kube-system
+  excludeNamespaces: []
+  periods:
+    - time:
+        recurring:
+          days:
+            - all
+          startTime: "01:10"
+          endTime: "21:50"
+          timezone: "Europe/Paris"
+          once: false
+          reverse: false
+          gracePeriod: 5s
+      minReplicas: 0
+      # maxReplicas: 10
+      type: "down"
+  labelSelector:
+    matchLabels:
+      app.kubernetes.io/name: backuppc

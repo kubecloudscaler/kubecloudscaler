@@ -1,0 +1,11 @@
+processor:
+  # ignoreGroupVersions:
+  #   - "GVK"
+  ignoreTypes:
+    - "(K8s|Gcp)List$"
+  ignoreFields:
+    # - "status$"
+    - "TypeMeta$"
+
+render:
+  kubernetesVersion: 1.31

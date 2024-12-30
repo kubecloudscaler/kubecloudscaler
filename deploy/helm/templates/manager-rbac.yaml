@@ -1,0 +1,123 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "helm.fullname" . }}-manager-role
+  labels:
+  {{- include "helm.labels" . | nindent 4 }}
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - get
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - get
+  - list
+  - patch
+  - update
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets
+  verbs:
+  - get
+  - list
+  - patch
+  - update
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - get
+  - list
+  - patch
+  - update
+- apiGroups:
+  - batch
+  resources:
+  - cronjobs
+  verbs:
+  - get
+  - list
+  - patch
+  - update
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  verbs:
+  - get
+  - list
+- apiGroups:
+  - kubecloudscaler.cloud
+  resources:
+  - gcps
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - kubecloudscaler.cloud
+  resources:
+  - gcps/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - kubecloudscaler.cloud
+  resources:
+  - gcps/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - kubecloudscaler.cloud
+  resources:
+  - k8s
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - kubecloudscaler.cloud
+  resources:
+  - k8s/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - kubecloudscaler.cloud
+  resources:
+  - k8s/status
+  verbs:
+  - get
+  - patch
+  - update
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "helm.fullname" . }}-manager-rolebinding
+  labels:
+  {{- include "helm.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: '{{ include "helm.fullname" . }}-manager-role'
+subjects:
+- kind: ServiceAccount
+  name: '{{ include "helm.fullname" . }}-controller-manager'
+  namespace: '{{ .Release.Namespace }}'
