@@ -42,7 +42,7 @@ jobs:
           fetch-depth: 0
 
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@49b3bc8e6bdd4a60e6116a5414239cba5943d3cf # v3
+        uses: docker/setup-qemu-action@5964de0df58d5ad28b04d8fe2e6b80ad47105b91 # v3
 
       - name: Docker Login
         uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567 # v3
