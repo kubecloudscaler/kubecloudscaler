@@ -8,6 +8,13 @@ rules:
 - apiGroups:
   - ""
   resources:
+  - pods
+  verbs:
+  - get
+  - list
+- apiGroups:
+  - ""
+  resources:
   - secrets
   verbs:
   - get
@@ -15,14 +22,6 @@ rules:
   - apps
   resources:
   - deployments
-  verbs:
-  - get
-  - list
-  - patch
-  - update
-- apiGroups:
-  - apps
-  resources:
   - statefulsets
   verbs:
   - get
@@ -48,41 +47,9 @@ rules:
   - patch
   - update
 - apiGroups:
-  - ""
-  resources:
-  - pods
-  verbs:
-  - get
-  - list
-- apiGroups:
   - kubecloudscaler.cloud
   resources:
   - gcps
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - kubecloudscaler.cloud
-  resources:
-  - gcps/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - kubecloudscaler.cloud
-  resources:
-  - gcps/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - kubecloudscaler.cloud
-  resources:
   - k8s
   verbs:
   - create
@@ -95,12 +62,14 @@ rules:
 - apiGroups:
   - kubecloudscaler.cloud
   resources:
+  - gcps/finalizers
   - k8s/finalizers
   verbs:
   - update
 - apiGroups:
   - kubecloudscaler.cloud
   resources:
+  - gcps/status
   - k8s/status
   verbs:
   - get
