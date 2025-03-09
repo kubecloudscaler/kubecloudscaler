@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.0.2](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.0.1...v1.0.2) (2025-03-09)
+
+
+### Bug Fixes
+
+* bump controller-gen ([362a9ac](https://github.com/kubecloudscaler/kubecloudscaler/commit/362a9acc9fe92c54ca0ddfc65ef5c961cb58f5cb))
+* **deps:** update all non-major dependencies ([1e83362](https://github.com/kubecloudscaler/kubecloudscaler/commit/1e833624d9dc729a7dcddaee02afca544bc433a7))
+* **deps:** update all non-major dependencies ([10b1881](https://github.com/kubecloudscaler/kubecloudscaler/commit/10b1881a4b9750c5531d832e85019f72bbc8e3e6))
+
 ## [1.0.1](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.0.0...v1.0.1) (2025-01-04)
 
 
