@@ -67,6 +67,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   helm:
+    permissions:
+      contents: read
+      packages: write
     needs:
       - goreleaser
     runs-on: ubuntu-latest
