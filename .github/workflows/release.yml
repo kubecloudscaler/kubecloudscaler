@@ -8,6 +8,7 @@ on:
 permissions:
   contents: write
   pull-requests: write
+  packages: write
 
 jobs:
   release-please:
@@ -19,9 +20,9 @@ jobs:
 
       - uses: googleapis/release-please-action@7987652d64b4581673a76e33ad5e98e3dd56832f # v4
         id: release
-        with:
-          token: ${{ secrets.CLOUDSCALER_TOKEN }}
-          # skip-github-release: "true"
+        # with:
+        #   token: ${{ secrets.CLOUDSCALER_TOKEN }}
+        #   # skip-github-release: "true"
     outputs:
       release-created: ${{ steps.release.outputs.release_created }}
       release-tag: ${{ steps.release.outputs.tag_name }}
@@ -49,7 +50,8 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
-          password: ${{ secrets.CLOUDSCALER_TOKEN }}
+          # password: ${{ secrets.CLOUDSCALER_TOKEN }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up Go
         uses: actions/setup-go@f111f3307d8850f501ac008e886eec1fd1932a34 # v5
@@ -61,7 +63,8 @@ jobs:
         with:
           args: release --clean
         env:
-          GITHUB_TOKEN: ${{ secrets.CLOUDSCALER_TOKEN }}
+          # GITHUB_TOKEN: ${{ secrets.CLOUDSCALER_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   helm:
     needs:
@@ -91,10 +94,12 @@ jobs:
       - name: Install Helm
         uses: azure/setup-helm@b9e51907a09c216f16ebe8536097933489208112 # v4
         env:
-          GITHUB_TOKEN: "${{ secrets.CLOUDSCALER_TOKEN }}"
+          # GITHUB_TOKEN: "${{ secrets.CLOUDSCALER_TOKEN }}"
+          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
 
       - name: Build and Push the Helm Charts to GitHub Container Registry
         uses: JimCronqvist/action-helm-chart-repo@master
         with:
           chartsPath: deploy/helm
-          token: ${{ secrets.CLOUDSCALER_TOKEN }}
+          # token: ${{ secrets.CLOUDSCALER_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
