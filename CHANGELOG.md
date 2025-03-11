@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.0.1](https://github.com/kubecloudscaler/kubecloudscaler/compare/operator-v2.0.0...operator-v2.0.1) (2025-03-11)
+
+
+### Bug Fixes
+
+* release ([34058a0](https://github.com/kubecloudscaler/kubecloudscaler/commit/34058a054a5d7878eadfdd2aa122c3d16172706f))
+
 ## [2.0.0](https://github.com/kubecloudscaler/kubecloudscaler/compare/operator-v1.0.2...operator-v2.0.0) (2025-03-11)
 
 
