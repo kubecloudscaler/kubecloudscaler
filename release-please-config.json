@@ -1,7 +1,22 @@
 {
   "packages": {
     ".": {
+      "component": "operator",
       "release-type": "go"
+    },
+    "helm": {
+      "release-type": "helm",
+      "component": "helm"
     }
-  }
+  },
+  "plugins": [
+    {
+      "type": "linked-versions",
+      "groupName": "operator",
+      "components": [
+        "operator",
+        "helm"
+      ]
+    }
+  ]
 }

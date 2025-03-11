@@ -77,21 +77,19 @@ jobs:
         with:
           changes: |
             {
-              "deploy/helm/values.yaml": {
+              "helm/values.yaml": {
                 "controllerManager.manager.image.tag": "${{ needs.goreleaser.outputs.release-tag }}"
               },
-              "deploy/helm/Chart.yaml": {
-                "appVersion": "${{ needs.goreleaser.outputs.release-tag }}",
-                "version": "${{ needs.goreleaser.outputs.release-version }}"
+              "helm/Chart.yaml": {
+                "appVersion": "${{ needs.goreleaser.outputs.release-tag }}"
               }
             }
           commitChange: false
 
-      - name: Install Helm
-        uses: azure/setup-helm@b9e51907a09c216f16ebe8536097933489208112 # v4
-
-      - name: Build and Push the Helm Charts to GitHub Container Registry
-        uses: JimCronqvist/action-helm-chart-repo@master
+      - name: Run chart-releaser
+        uses: bitdeps/helm-oci-charts-releaser@main
         with:
-          chartsPath: deploy/helm
-          token: ${{ secrets.GITHUB_TOKEN }}
+            oci_registry: ghcr.io/kubecloudscaler/charts
+            oci_username: username
+            oci_password: ${{ secrets.GITHUB_TOKEN }}
+            github_token: ${{ secrets.GITHUB_TOKEN }}
