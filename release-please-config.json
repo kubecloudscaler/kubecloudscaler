@@ -1,4 +1,11 @@
 {
+  "extra-files": [
+    {
+      "type": "yaml",
+      "path": "helm/Chart.yaml",
+      "jsonpath": "$.appVersion"
+    }
+  ],
   "packages": {
     ".": {
       "component": "operator",
