@@ -72,20 +72,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Update values.yaml
-        uses: fjogeleit/yaml-update-action@main
-        with:
-          changes: |
-            {
-              "helm/values.yaml": {
-                "controllerManager.manager.image.tag": "${{ needs.goreleaser.outputs.release-tag }}"
-              },
-              "helm/Chart.yaml": {
-                "appVersion": "${{ needs.goreleaser.outputs.release-tag }}"
-              }
-            }
-          commitChange: false
-
       - name: Run chart-releaser
         uses: bitdeps/helm-oci-charts-releaser@main
         with:
