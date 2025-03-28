@@ -2,6 +2,7 @@ package cronjobs
 
 import (
 	"context"
+	"fmt"
 
 	kubecloudscalerv1alpha1 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha1"
 	"github.com/kubecloudscaler/kubecloudscaler/pkg/k8s/utils"
@@ -27,7 +28,6 @@ func (c *Cronjobs) SetState(ctx context.Context) ([]kubecloudscalerv1alpha1.Scal
 	scalerStatusSuccess := []kubecloudscalerv1alpha1.ScalerStatusSuccess{}
 	scalerStatusFailed := []kubecloudscalerv1alpha1.ScalerStatusFailed{}
 	list := []batchV1.CronJob{}
-	isAlreadyRestored := false
 
 	// list all objects in all needed namespaces
 	for _, ns := range c.Resource.NsList {
@@ -37,7 +37,7 @@ func (c *Cronjobs) SetState(ctx context.Context) ([]kubecloudscalerv1alpha1.Scal
 		if err != nil {
 			log.Log.V(1).Error(err, "error listing deployments")
 
-			return scalerStatusSuccess, scalerStatusFailed, err
+			return scalerStatusSuccess, scalerStatusFailed, fmt.Errorf("error listing cronjobs: %w", err)
 		}
 
 		list = append(list, cronList.Items...)
@@ -86,6 +86,8 @@ func (c *Cronjobs) SetState(ctx context.Context) ([]kubecloudscalerv1alpha1.Scal
 
 		default:
 			log.Log.V(1).Info("restoring", "name", cName.Name)
+
+			isAlreadyRestored := false
 
 			isAlreadyRestored, cronjob.Spec.Suspend, cronjob.Annotations, err = utils.RestoreBoolAnnotations(cronjob.Annotations)
 			if err != nil {

@@ -1,6 +1,6 @@
 module github.com/kubecloudscaler/kubecloudscaler
 
-go 1.23.0
+go 1.24.1
 
 require (
 	github.com/onsi/ginkgo/v2 v2.23.3

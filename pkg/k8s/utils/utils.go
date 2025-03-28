@@ -27,7 +27,7 @@ func SetNamespaceList(ctx context.Context, config *Config) ([]string, error) {
 		if err != nil {
 			log.Log.V(1).Info("error listing namespaces")
 
-			return []string{}, err
+			return []string{}, fmt.Errorf("error listing namespaces: %w", err)
 		}
 
 		for _, ns := range nsListItems.Items {
@@ -179,7 +179,7 @@ func RestoreMinMaxAnnotations(annot map[string]string) (bool, *int32, int32, map
 	if isExists {
 		minAsInt, err = strconv.Atoi(rep)
 		if err != nil {
-			return true, nil, 0, annot, err
+			return true, nil, 0, annot, fmt.Errorf("error parsing min value: %w", err)
 		}
 	} else {
 		isMinRestored = true
@@ -189,7 +189,7 @@ func RestoreMinMaxAnnotations(annot map[string]string) (bool, *int32, int32, map
 	if isExists {
 		maxAsInt, err = strconv.Atoi(rep)
 		if err != nil {
-			return true, nil, 0, annot, err
+			return true, nil, 0, annot, fmt.Errorf("error parsing max value: %w", err)
 		}
 	} else {
 		isMaxRestored = true
@@ -223,7 +223,7 @@ func RestoreBoolAnnotations(annot map[string]string) (bool, *bool, map[string]st
 	if isExists {
 		repAsBool, err = strconv.ParseBool(rep)
 		if err != nil {
-			return false, nil, annot, err
+			return false, nil, annot, fmt.Errorf("error parsing bool value: %w", err)
 		}
 	} else {
 		isRestored = true
@@ -256,7 +256,7 @@ func RestoreIntAnnotations(annot map[string]string) (bool, *int32, map[string]st
 	if isExists {
 		repAsInt, err = strconv.Atoi(rep)
 		if err != nil {
-			return true, nil, annot, err
+			return true, nil, annot, fmt.Errorf("error parsing int value: %w", err)
 		}
 	} else {
 		isRestored = true

@@ -1,5 +1,7 @@
 package resources
 
+import "errors"
+
 var (
 	AvailableResources = []string{
 		"deployments",
@@ -8,4 +10,5 @@ var (
 		// "horizontalpodautoscalers",
 		// "hpa",
 	}
+	ErrResourceNotFound = errors.New("resource not found")
 )

@@ -2,6 +2,7 @@ package deployments
 
 import (
 	"context"
+	"fmt"
 
 	kubecloudscalerv1alpha1 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha1"
 	"github.com/kubecloudscaler/kubecloudscaler/pkg/k8s/utils"
@@ -27,7 +28,6 @@ func (d *Deployments) SetState(ctx context.Context) ([]kubecloudscalerv1alpha1.S
 	scalerStatusSuccess := []kubecloudscalerv1alpha1.ScalerStatusSuccess{}
 	scalerStatusFailed := []kubecloudscalerv1alpha1.ScalerStatusFailed{}
 	list := []appsV1.Deployment{}
-	isAlreadyRestored := false
 
 	for _, ns := range d.Resource.NsList {
 		log.Log.V(1).Info("found namespace", "ns", ns)
@@ -36,7 +36,7 @@ func (d *Deployments) SetState(ctx context.Context) ([]kubecloudscalerv1alpha1.S
 		if err != nil {
 			log.Log.V(1).Error(err, "error listing deployments")
 
-			return scalerStatusSuccess, scalerStatusFailed, err
+			return scalerStatusSuccess, scalerStatusFailed, fmt.Errorf("error listing deployments: %w", err)
 		}
 
 		list = append(list, deployList.Items...)
@@ -77,6 +77,8 @@ func (d *Deployments) SetState(ctx context.Context) ([]kubecloudscalerv1alpha1.S
 
 		default:
 			log.Log.V(1).Info("restoring", "name", dName.Name)
+
+			isAlreadyRestored := false
 
 			isAlreadyRestored, deploy.Spec.Replicas, deploy.Annotations, err = utils.RestoreIntAnnotations(deploy.Annotations)
 			if err != nil {

@@ -20,19 +20,19 @@ func NewResource(ctx context.Context, resourceName string, config Config) (IReso
 	case "deployments":
 		resource, err = deployments.New(ctx, config.K8s)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("error creating deployments resource: %w", err)
 		}
 
 	case "statefulsets":
 		resource, err = statefulsets.New(ctx, config.K8s)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("error creating statefulsets resource: %w", err)
 		}
 
 	case "cronjobs":
 		resource, err = cronjobs.New(ctx, config.K8s)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("error creating cronjobs resource: %w", err)
 		}
 	// case "horizontalpodautoscalers":
 	// case "hpa":
@@ -41,7 +41,7 @@ func NewResource(ctx context.Context, resourceName string, config Config) (IReso
 	// 		Config: config.K8s,
 	// 	}
 	default:
-		return nil, fmt.Errorf("resource %s not found", resourceName)
+		return nil, fmt.Errorf("%w: %s", ErrResourceNotFound, resourceName)
 	}
 
 	return resource, nil

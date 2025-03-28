@@ -6,4 +6,5 @@ const (
 	PeriodRecurringName = "recurring"
 	defaultTimezone     = "UTC"
 	defaultGracePeriod  = "0s"
+	dayStringLength     = 3
 )
