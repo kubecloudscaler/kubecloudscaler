@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.0.1](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.0.0...v1.0.1) (2025-03-28)
+
+
+### Bug Fixes
+
+* **deps:** update all non-major dependencies ([1eaf0b4](https://github.com/kubecloudscaler/kubecloudscaler/commit/1eaf0b4bc83306cf31836f40b7b44d1d1bbf10fe))
+* **deps:** update all non-major dependencies ([4a692ea](https://github.com/kubecloudscaler/kubecloudscaler/commit/4a692ea9ef987a58ac580a8e17e1b182835bc72f))
+* **deps:** update k8s.io/utils digest to 1f6e0b7 ([8e7a72b](https://github.com/kubecloudscaler/kubecloudscaler/commit/8e7a72b097d44fcee1a2bcdff473097e66cc8f70))
+* **deps:** update k8s.io/utils digest to 1f6e0b7 ([44eab2d](https://github.com/kubecloudscaler/kubecloudscaler/commit/44eab2d29b6214132db3c699352e457e68c2d782))
+* linter ([d381f9d](https://github.com/kubecloudscaler/kubecloudscaler/commit/d381f9d0d62c5e1652fc56c85a87085cacfea57b))
+
 ## [1.0.0](https://github.com/kubecloudscaler/kubecloudscaler/compare/v0.0.1...v1.0.0) (2025-03-11)
 
 
