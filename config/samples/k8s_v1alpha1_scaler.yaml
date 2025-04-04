@@ -19,8 +19,8 @@ spec:
         recurring:
           days:
             - all
-          startTime: "01:10"
-          endTime: "21:50"
+          startTime: "00:00"
+          endTime: "11:00"
           timezone: "Europe/Paris"
           once: false
           reverse: false
