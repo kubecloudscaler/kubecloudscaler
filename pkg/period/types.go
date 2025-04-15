@@ -7,14 +7,15 @@ import (
 )
 
 type Period struct {
-	Period       *kubecloudscalerv1alpha1.RecurringPeriod
-	Type         string
-	IsActive     bool
-	Hash         string
-	GetStartTime time.Time
-	GetEndTime   time.Time
-	GracePeriod  time.Duration
-	Once         *bool
-	MinReplicas  int32
-	MaxReplicas  int32
+	Period           *kubecloudscalerv1alpha1.RecurringPeriod
+	Type             string
+	IsActive         bool
+	Hash             string
+	GetStartTime     time.Time
+	GetEndTime       time.Time
+	StartGracePeriod time.Duration
+	EndGracePeriod   time.Duration
+	Once             *bool
+	MinReplicas      int32
+	MaxReplicas      int32
 }

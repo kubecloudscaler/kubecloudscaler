@@ -38,8 +38,13 @@ func (in *FixedPeriod) DeepCopyInto(out *FixedPeriod) {
 		*out = new(bool)
 		**out = **in
 	}
-	if in.GracePeriod != nil {
-		in, out := &in.GracePeriod, &out.GracePeriod
+	if in.StartGracePeriod != nil {
+		in, out := &in.StartGracePeriod, &out.StartGracePeriod
+		*out = new(string)
+		**out = **in
+	}
+	if in.EndGracePeriod != nil {
+		in, out := &in.EndGracePeriod, &out.EndGracePeriod
 		*out = new(string)
 		**out = **in
 	}
@@ -263,6 +268,16 @@ func (in *RecurringPeriod) DeepCopyInto(out *RecurringPeriod) {
 		*out = make([]string, len(*in))
 		copy(*out, *in)
 	}
+	if in.StartGracePeriod != nil {
+		in, out := &in.StartGracePeriod, &out.StartGracePeriod
+		*out = new(string)
+		**out = **in
+	}
+	if in.EndGracePeriod != nil {
+		in, out := &in.EndGracePeriod, &out.EndGracePeriod
+		*out = new(string)
+		**out = **in
+	}
 	if in.Timezone != nil {
 		in, out := &in.Timezone, &out.Timezone
 		*out = new(string)
@@ -271,11 +286,6 @@ func (in *RecurringPeriod) DeepCopyInto(out *RecurringPeriod) {
 	if in.Once != nil {
 		in, out := &in.Once, &out.Once
 		*out = new(bool)
-		**out = **in
-	}
-	if in.GracePeriod != nil {
-		in, out := &in.GracePeriod, &out.GracePeriod
-		*out = new(string)
 		**out = **in
 	}
 	if in.Reverse != nil {

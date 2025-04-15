@@ -28,6 +28,32 @@ spec:
       minReplicas: 0
       # maxReplicas: 10
       type: "down"
+    - time:
+        recurring:
+          days:
+            - all
+          startTime: "20:00"
+          endTime: "20:15"
+          timezone: "Europe/Paris"
+          once: false
+          reverse: false
+          gracePeriod: 5s
+      minReplicas: 0
+      # maxReplicas: 10
+      type: "down"
+    - time:
+        recurring:
+          days:
+            - all
+          startTime: "20:20"
+          endTime: "21:55"
+          timezone: "Europe/Paris"
+          once: false
+          reverse: false
+          gracePeriod: 5s
+      minReplicas: 0
+      # maxReplicas: 10
+      type: "down"
   labelSelector:
     matchLabels:
       app.kubernetes.io/name: backuppc
