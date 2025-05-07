@@ -1,9 +1,9 @@
 controllerManager:
   manager:
     args:
-      - '--metrics-bind-address=:8443'
-      - '--leader-elect'
-      - '--health-probe-bind-address=:8081'
+      - --metrics-bind-address=:8443
+      - --leader-elect
+      - --health-probe-bind-address=:8081
     containerSecurityContext:
       allowPrivilegeEscalation: false
       capabilities:

@@ -45,7 +45,7 @@ weight: 1
 ### Install the Chart
 
   ```shell
-  helm install kubecloudscaler oci://ghcr.io/kubecloudscaler/kubecloudscaler/kubecloudscaler --namespace kubecloudscaler-system
+  helm install kubecloudscaler oci://ghcr.io/kubecloudscaler/charts/kubecloudscaler --namespace kubecloudscaler-system
   ```
 
 ### Create a Scaler Custom Resource (CR)

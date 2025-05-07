@@ -5,11 +5,6 @@
       "type": "yaml",
       "path": "helm/Chart.yaml",
       "jsonpath": "$.appVersion"
-    },
-    {
-      "type": "yaml",
-      "path": "helm/values.yaml",
-      "jsonpath": "$.controllerManager.manager.image.tag"
     }
   ],
   "packages": {
