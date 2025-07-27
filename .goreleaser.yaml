@@ -84,6 +84,10 @@ docker_manifests:
     image_templates:
       - ghcr.io/kubecloudscaler/{{ .ProjectName }}:{{ .Tag }}-amd64
       - ghcr.io/kubecloudscaler/{{ .ProjectName }}:{{ .Tag }}-arm64v8
+  - name_template: ghcr.io/kubecloudscaler/{{ .ProjectName }}:{{ .RawVersion }}
+    image_templates:
+      - ghcr.io/kubecloudscaler/{{ .ProjectName }}:{{ .Tag }}-amd64
+      - ghcr.io/kubecloudscaler/{{ .ProjectName }}:{{ .Tag }}-arm64v8
   - name_template: ghcr.io/kubecloudscaler/{{ .ProjectName }}:latest
     image_templates:
       - ghcr.io/kubecloudscaler/{{ .ProjectName }}:{{ .Tag }}-amd64
