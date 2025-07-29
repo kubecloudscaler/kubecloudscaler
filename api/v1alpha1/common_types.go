@@ -2,6 +2,7 @@
 package v1alpha1
 
 type ScalerPeriod struct {
+	Name string `json:"name,omitempty"`
 	// +kubebuilder:validation:Enum=down;up
 	Type string     `json:"type"`
 	Time TimePeriod `json:"time"`
@@ -20,13 +21,23 @@ type RecurringPeriod struct {
 	Days []string `json:"days"`
 	// +kubebuilder:validation:Pattern=`^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$`
 	StartTime string `json:"startTime"`
+	// TimeRef is a reference to a named time period in the chosen scaler.
+	// The format is <scaler kind>/<scaler name>@<named scalerPeriod>
+	// +kubebuilder:validation:Pattern=`^[\w\-]+\/[\w\-]+@[\w.\-_]+$`
+	StartTimeRef string `json:"startTimeRef,omitempty"`
+	// +kubebuilder:validation:Pattern=`^\d*s$`
+	StartGracePeriod *string `json:"startGracePeriod,omitempty"`
 	// +kubebuilder:validation:Pattern=`^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$`
-	EndTime  string  `json:"endTime"`
-	Timezone *string `json:"timezone,omitempty"`
+	EndTime string `json:"endTime"`
+	// TimeRef is a reference to a named time period in the chosen scaler.
+	// The format is <scaler kind>/<scaler name>@<named scalerPeriod>
+	// +kubebuilder:validation:Pattern=`^[\w\-]+\/[\w\-]+@[\w.\-_]+$`
+	EndTimeRef string `json:"endTimeRef,omitempty"`
+	// +kubebuilder:validation:Pattern=`^\d*s$`
+	EndGracePeriod *string `json:"endgracePeriod,omitempty"`
+	Timezone       *string `json:"timezone,omitempty"`
 	// Run once at StartTime
 	Once *bool `json:"once,omitempty"`
-	// +kubebuilder:validation:Pattern=`^\d*s$`
-	GracePeriod *string `json:"gracePeriod,omitempty"`
 	// Reverse the period
 	Reverse *bool `json:"reverse,omitempty"`
 }
@@ -41,7 +52,9 @@ type FixedPeriod struct {
 	Once *bool `json:"once,omitempty"`
 	// Grace period in seconds for deployments before scaling down
 	// +kubebuilder:validation:Pattern=`^\d*s$`
-	GracePeriod *string `json:"gracePeriod,omitempty"`
+	StartGracePeriod *string `json:"startGracePeriod,omitempty"`
+	// +kubebuilder:validation:Pattern=`^\d*s$`
+	EndGracePeriod *string `json:"endGracePeriod,omitempty"`
 	// Reverse the period
 	Reverse *bool `json:"reverse,omitempty"`
 }

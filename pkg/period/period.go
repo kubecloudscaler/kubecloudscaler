@@ -44,9 +44,14 @@ func New(period *kubecloudscalerv1alpha1.ScalerPeriod) (*Period, error) {
 		return nil, err
 	}
 
-	curPeriod.GracePeriod, err = time.ParseDuration(ptr.Deref(convertedPeriod.GracePeriod, defaultGracePeriod))
+	curPeriod.StartGracePeriod, err = time.ParseDuration(ptr.Deref(convertedPeriod.StartGracePeriod, defaultGracePeriod))
 	if err != nil {
-		return nil, fmt.Errorf("error parsing grace period: %w", err)
+		return nil, fmt.Errorf("error parsing start grace period: %w", err)
+	}
+
+	curPeriod.EndGracePeriod, err = time.ParseDuration(ptr.Deref(convertedPeriod.EndGracePeriod, defaultGracePeriod))
+	if err != nil {
+		return nil, fmt.Errorf("error parsing end grace period: %w", err)
 	}
 
 	curPeriod.Period = convertedPeriod
@@ -193,10 +198,11 @@ func convertFixedToRecurring(fixed *kubecloudscalerv1alpha1.FixedPeriod) *kubecl
 		Days: []string{
 			"all",
 		},
-		StartTime:   fixed.StartTime,
-		EndTime:     fixed.EndTime,
-		Timezone:    fixed.Timezone,
-		Once:        fixed.Once,
-		GracePeriod: fixed.GracePeriod,
+		StartTime:        fixed.StartTime,
+		EndTime:          fixed.EndTime,
+		Timezone:         fixed.Timezone,
+		Once:             fixed.Once,
+		StartGracePeriod: fixed.StartGracePeriod,
+		EndGracePeriod:   fixed.EndGracePeriod,
 	}
 }
