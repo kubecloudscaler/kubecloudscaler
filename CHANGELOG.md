@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.0.1](https://github.com/kubecloudscaler/kubecloudscaler/compare/v2.0.0...v2.0.1) (2025-08-03)
+
+
+### Bug Fixes
+
+* fieldManager ([a6dfedc](https://github.com/kubecloudscaler/kubecloudscaler/commit/a6dfedc484223a9f342679097fb20537588ac54e))
+
 ## [2.0.0](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.0.3...v2.0.0) (2025-08-03)
 
 
