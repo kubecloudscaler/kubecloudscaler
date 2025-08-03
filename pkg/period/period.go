@@ -167,12 +167,17 @@ func isPeriodActive(
 		return false, time.Time{}, time.Time{}, nil, err
 	}
 
+	if period.EndTime == "00:00" {
+		// if the end time is 00:00, it means the period ends at the end of the day
+		period.EndTime = "23:59"
+	}
+
 	endTime, err := getTime(period.EndTime, periodType, timeLocation)
 	if err != nil {
 		return false, time.Time{}, time.Time{}, nil, err
 	}
 
-	endTime = endTime.Add(time.Nanosecond * -10) // end time is inclusive, so we subtract 10 nanoseconds
+	endTime = endTime.Add(time.Second * 59) // end time is inclusive, so we add 59 seconds
 
 	if startTime.After(endTime) {
 		return false, time.Time{}, time.Time{}, nil, ErrStartAfterEnd
