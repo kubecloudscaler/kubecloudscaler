@@ -26,8 +26,10 @@ import (
 	"github.com/kubecloudscaler/kubecloudscaler/internal/utils"
 	k8sUtils "github.com/kubecloudscaler/kubecloudscaler/pkg/k8s/utils"
 	k8sClient "github.com/kubecloudscaler/kubecloudscaler/pkg/k8s/utils/client"
+	periodPkg "github.com/kubecloudscaler/kubecloudscaler/pkg/period"
 	"github.com/kubecloudscaler/kubecloudscaler/pkg/resources"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -189,4 +191,33 @@ func (r *ScalerReconciler) validResourceList(ctx context.Context, scaler *kubecl
 	}
 
 	return output, nil
+}
+
+func (r *ScalerReconciler) cleanRef(ctx context.Context, scaler *kubecloudscalerv1alpha1.K8s) (*kubecloudscalerv1alpha1.K8s, error) {
+	for i, period := range scaler.Spec.Periods {
+		if period.Time.Recurring.StartTimeRef != nil {
+			scalerKind, scalerName, PeriodName := periodPkg.ParseTimeRef(period.Time.Recurring.StartTimeRef)
+
+			switch scalerKind {
+			case "k8s":
+				refScaler := &kubecloudscalerv1alpha1.K8s{}
+				if err := r.Get(ctx,
+					types.NamespacedName{
+						Name:      scalerName,
+						Namespace: "",
+					},
+					refScaler); err != nil {
+					log.Log.Error(err, "unable to fetch Scaler")
+
+					return &kubecloudscalerv1alpha1.K8s{}, err
+				}
+				for _, refPeriod := range refScaler.Spec.Periods {
+					if refPeriod.Name == PeriodName {
+						scaler.Spec.Periods[i].Time.Recurring.StartTime = refPeriod.Time.Recurring.StartTime
+						break
+					}
+				}
+			}
+		}
+	}
 }
