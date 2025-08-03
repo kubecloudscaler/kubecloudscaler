@@ -11,7 +11,7 @@ controllerManager:
           - ALL
     image:
       repository: ghcr.io/kubecloudscaler/kubecloudscaler
-      tag: 1.0.2
+      tag: 1.0.3
     imagePullPolicy: IfNotPresent
     resources:
       limits:
