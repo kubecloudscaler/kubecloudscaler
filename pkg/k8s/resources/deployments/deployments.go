@@ -103,7 +103,7 @@ func (d *Deployments) SetState(ctx context.Context) ([]kubecloudscalerv1alpha1.S
 		log.Log.V(1).Info("update deployment", "name", dName.Name)
 
 		_, err = d.Client.Deployments(dName.Namespace).Update(ctx, deploy, metaV1.UpdateOptions{
-			FieldManager: "cloudscaler",
+			FieldManager: utils.FieldManager,
 		})
 		if err != nil {
 			scalerStatusFailed = append(

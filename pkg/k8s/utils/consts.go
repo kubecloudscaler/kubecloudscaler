@@ -9,4 +9,5 @@ const (
 	PeriodStartTime         = "period-start-time"
 	PeriodEndTime           = "period-end-time"
 	PeriodTimezone          = "period-timezone"
+	FieldManager            = "kubecloudscaler"
 )
