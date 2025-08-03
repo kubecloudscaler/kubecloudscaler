@@ -24,7 +24,7 @@ type RecurringPeriod struct {
 	// TimeRef is a reference to a named time period in the chosen scaler.
 	// The format is <scaler kind>/<scaler name>@<named scalerPeriod>
 	// +kubebuilder:validation:Pattern=`^[\w\-]+\/[\w\-]+@[\w.\-_]+$`
-	StartTimeRef string `json:"startTimeRef,omitempty"`
+	StartTimeRef *string `json:"startTimeRef,omitempty"`
 	// +kubebuilder:validation:Pattern=`^\d*s$`
 	StartGracePeriod *string `json:"startGracePeriod,omitempty"`
 	// +kubebuilder:validation:Pattern=`^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$`
@@ -32,7 +32,7 @@ type RecurringPeriod struct {
 	// TimeRef is a reference to a named time period in the chosen scaler.
 	// The format is <scaler kind>/<scaler name>@<named scalerPeriod>
 	// +kubebuilder:validation:Pattern=`^[\w\-]+\/[\w\-]+@[\w.\-_]+$`
-	EndTimeRef string `json:"endTimeRef,omitempty"`
+	EndTimeRef *string `json:"endTimeRef,omitempty"`
 	// +kubebuilder:validation:Pattern=`^\d*s$`
 	EndGracePeriod *string `json:"endgracePeriod,omitempty"`
 	Timezone       *string `json:"timezone,omitempty"`
