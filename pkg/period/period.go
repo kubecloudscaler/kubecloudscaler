@@ -172,6 +172,8 @@ func isPeriodActive(
 		return false, time.Time{}, time.Time{}, nil, err
 	}
 
+	endTime = endTime.Add(time.Nanosecond * -10) // end time is inclusive, so we subtract 10 nanoseconds
+
 	if startTime.After(endTime) {
 		return false, time.Time{}, time.Time{}, nil, ErrStartAfterEnd
 	}
