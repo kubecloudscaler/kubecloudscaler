@@ -111,7 +111,9 @@ func (c *Cronjobs) SetState(ctx context.Context) ([]kubecloudscalerv1alpha1.Scal
 
 		log.Log.V(1).Info("update cronjob", "name", cName.Name)
 
-		_, err = c.Client.CronJobs(cName.Namespace).Update(ctx, cronjob, metaV1.UpdateOptions{})
+		_, err = c.Client.CronJobs(cName.Namespace).Update(ctx, cronjob, metaV1.UpdateOptions{
+			FieldManager: utils.FieldManager,
+		})
 		if err != nil {
 			scalerStatusFailed = append(
 				scalerStatusFailed,

@@ -107,7 +107,9 @@ func (d *HorizontalPodAutoscalers) SetState(ctx context.Context) ([]kubecloudsca
 		_, err = d.
 			Client.
 			HorizontalPodAutoscalers(dName.Namespace).
-			Update(ctx, deploy, metaV1.UpdateOptions{})
+			Update(ctx, deploy, metaV1.UpdateOptions{
+				FieldManager: utils.FieldManager,
+			})
 		if err != nil {
 			scalerStatusFailed = append(
 				scalerStatusFailed,

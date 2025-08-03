@@ -105,6 +105,16 @@ If no resources are specified, all **deployments** will be selected. Allowed res
 
 Any resource type can be filtered out by using a [labelSelector](https://kubernetes.io/docs/reference/kubernetes-api/common-definitions/label-selector/#LabelSelector) parameter.
 
-{{< callout type="info" >}}
+{{< callout type="warning" >}}
   Deployments and HorizontalPodAutoscalers are mutually exclusive
 {{< /callout >}}
+
+#### SelfHealing
+
+If you use [Argo-CD](https://argo-cd.readthedocs.io/en/stable/user-guide/diffing/) to maintain the state of your cluster, you may want to ignore the differences in the `managedFields` of the resources to avoid out-of-sync issues. This can be done by adding the following to your ArgoCD configuration:
+
+```yaml
+resource.customizations.ignoreDifferences.all: |
+  managedFieldsManagers:
+    - kubecloudscaler
+```

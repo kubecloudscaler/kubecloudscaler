@@ -6,28 +6,4 @@ metadata:
     app.kubernetes.io/managed-by: kustomize
   name: k8s-sample
 spec:
-  disableEvents: false
-  resources:
-    - deployments
-    # - hpa
-  namespaces:
-    - home
-  # - kube-system
-  excludeNamespaces: []
-  periods:
-    - time:
-        recurring:
-          days:
-            - all
-          startTime: "00:00"
-          endTime: "11:00"
-          timezone: "Europe/Paris"
-          once: false
-          reverse: false
-          gracePeriod: 5s
-      minReplicas: 0
-      # maxReplicas: 10
-      type: "down"
-  labelSelector:
-    matchLabels:
-      app.kubernetes.io/name: backuppc
+  # TODO(user): Add fields here

@@ -103,7 +103,9 @@ func (d *Statefulsets) SetState(ctx context.Context) ([]kubecloudscalerv1alpha1.
 
 		log.Log.V(1).Info("update deployment", "name", dName.Name)
 
-		_, err = d.Client.StatefulSets(dName.Namespace).Update(ctx, stateful, metaV1.UpdateOptions{})
+		_, err = d.Client.StatefulSets(dName.Namespace).Update(ctx, stateful, metaV1.UpdateOptions{
+			FieldManager: utils.FieldManager,
+		})
 		if err != nil {
 			scalerStatusFailed = append(
 				scalerStatusFailed,
