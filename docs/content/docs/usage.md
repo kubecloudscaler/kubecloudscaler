@@ -7,6 +7,10 @@ weight: 2
 
 Each *scaler definition* may include one or more *period definitions*. These *periods* are evaluated **sequentially**, with the **first matching period** taking precedence. A *period* can also be set to "*reversed*" with the `reverse` field, meaning it is considered **inactive** between its **startTime** and **endTime**, but **active** outside of that range (*before* the *startTime* and *after* the *endTime*).
 
+{{< callout type="info" >}}
+  *endTime* is inclusive, meaning that the period will be active until the last second before the specified endTime. This means that if you set an *endTime* of `00:00`, the period will be active until `23:59`.
+{{< /callout >}}
+
 Any Period with the `once` field set to **true** will be applied only when entering or living the given time range. If the resources are scaled manually, cloudscaler will not change their state.
 
 ### Recurring periods
