@@ -190,9 +190,12 @@ spec:
                       - name
                       type: object
                     type: array
+                  type:
+                    type: string
                 required:
                 - spec
                 - specSHA
+                - type
                 type: object
             type: object
         type: object

@@ -55,6 +55,7 @@ type ScalerStatus struct {
 type ScalerStatusPeriod struct {
 	Spec       *RecurringPeriod      `json:"spec"`
 	SpecSHA    string                `json:"specSHA"`
+	Type       string                `json:"type"`
 	Successful []ScalerStatusSuccess `json:"success,omitempty"`
 	Failed     []ScalerStatusFailed  `json:"failed,omitempty"`
 }

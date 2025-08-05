@@ -19,7 +19,7 @@ func IgnoreDeletionPredicate() predicate.Predicate {
 		},
 		DeleteFunc: func(e event.DeleteEvent) bool {
 			// Evaluates to false if the object has been confirmed deleted.
-			return !e.DeleteStateUnknown
+			return false
 		},
 	}
 }
@@ -32,7 +32,7 @@ func ValidatePeriod(periods []*kubecloudscalerv1alpha1.ScalerPeriod, status *kub
 			Recurring: &kubecloudscalerv1alpha1.RecurringPeriod{
 				Days:      []string{"all"},
 				StartTime: "00:00",
-				EndTime:   "00:00",
+				EndTime:   "23:59",
 				Once:      ptr.To(false),
 			},
 		},
@@ -80,6 +80,7 @@ func ValidatePeriod(periods []*kubecloudscalerv1alpha1.ScalerPeriod, status *kub
 	status.CurrentPeriod = &kubecloudscalerv1alpha1.ScalerStatusPeriod{}
 	status.CurrentPeriod.Spec = onPeriod.Period
 	status.CurrentPeriod.SpecSHA = onPeriod.Hash
+	status.CurrentPeriod.Type = onPeriod.Type
 
 	return onPeriod, nil
 }
