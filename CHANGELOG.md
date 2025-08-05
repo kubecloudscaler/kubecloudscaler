@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.4](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.0.3...v1.0.4) (2025-08-05)
+
+
+### Bug Fixes
+
+* add period type to status ([e6a8744](https://github.com/kubecloudscaler/kubecloudscaler/commit/e6a87442553681ff720406ff85d7a2076610f575))
+
 ## [1.0.3](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.0.2...v1.0.3) (2025-08-04)
 
 
