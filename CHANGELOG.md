@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.6](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.0.5...v1.0.6) (2025-08-16)
+
+
+### Bug Fixes
+
+* allow remote cluster ([34b52cb](https://github.com/kubecloudscaler/kubecloudscaler/commit/34b52cb6d11a7beb6ffc766884f3f6b0280b246a))
+
 ## [1.0.5](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.0.4...v1.0.5) (2025-08-16)
 
 
