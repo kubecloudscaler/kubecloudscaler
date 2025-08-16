@@ -19,7 +19,7 @@ type Deployments struct {
 	Client   v1.AppsV1Interface
 }
 
-func (d *Deployments) init(client *kubernetes.Clientset) {
+func (d *Deployments) init(client kubernetes.Interface) {
 	d.Client = client.AppsV1()
 }
 

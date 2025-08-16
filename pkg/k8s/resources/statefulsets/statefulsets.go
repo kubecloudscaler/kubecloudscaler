@@ -19,7 +19,7 @@ type Statefulsets struct {
 	Client   v1.AppsV1Interface
 }
 
-func (d *Statefulsets) init(client *kubernetes.Clientset) {
+func (d *Statefulsets) init(client kubernetes.Interface) {
 	d.Client = client.AppsV1()
 }
 
@@ -34,18 +34,18 @@ func (d *Statefulsets) SetState(ctx context.Context) ([]kubecloudscalerv1alpha1.
 
 		statefulList, err := d.Client.StatefulSets(ns).List(ctx, d.Resource.ListOptions)
 		if err != nil {
-			log.Log.V(1).Error(err, "error listing deployments")
+			log.Log.V(1).Error(err, "error listing statefulsets")
 
-			return scalerStatusSuccess, scalerStatusFailed, fmt.Errorf("error listing deployments: %w", err)
+			return scalerStatusSuccess, scalerStatusFailed, fmt.Errorf("error listing statefulsets: %w", err)
 		}
 
 		list = append(list, statefulList.Items...)
 	}
 
-	log.Log.V(1).Info("deployments", "number", len(list))
+	log.Log.V(1).Info("statefulsets", "number", len(list))
 
 	for _, dName := range list {
-		log.Log.V(1).Info("deployment", "name", dName.Name)
+		log.Log.V(1).Info("statefulset", "name", dName.Name)
 		var stateful *appsV1.StatefulSet
 
 		stateful, err := d.Client.StatefulSets(dName.Namespace).Get(ctx, dName.Name, metaV1.GetOptions{})
@@ -53,7 +53,7 @@ func (d *Statefulsets) SetState(ctx context.Context) ([]kubecloudscalerv1alpha1.
 			scalerStatusFailed = append(
 				scalerStatusFailed,
 				kubecloudscalerv1alpha1.ScalerStatusFailed{
-					Kind:   "deployment",
+					Kind:   "statefulset",
 					Name:   dName.Name,
 					Reason: err.Error(),
 				},
@@ -86,7 +86,7 @@ func (d *Statefulsets) SetState(ctx context.Context) ([]kubecloudscalerv1alpha1.
 				scalerStatusFailed = append(
 					scalerStatusFailed,
 					kubecloudscalerv1alpha1.ScalerStatusFailed{
-						Kind:   "deployment",
+						Kind:   "statefulset",
 						Name:   dName.Name,
 						Reason: err.Error(),
 					},
@@ -101,7 +101,7 @@ func (d *Statefulsets) SetState(ctx context.Context) ([]kubecloudscalerv1alpha1.
 			}
 		}
 
-		log.Log.V(1).Info("update deployment", "name", dName.Name)
+		log.Log.V(1).Info("update statefulset", "name", dName.Name)
 
 		_, err = d.Client.StatefulSets(dName.Namespace).Update(ctx, stateful, metaV1.UpdateOptions{
 			FieldManager: utils.FieldManager,
@@ -110,7 +110,7 @@ func (d *Statefulsets) SetState(ctx context.Context) ([]kubecloudscalerv1alpha1.
 			scalerStatusFailed = append(
 				scalerStatusFailed,
 				kubecloudscalerv1alpha1.ScalerStatusFailed{
-					Kind:   "deployment",
+					Kind:   "statefulset",
 					Name:   dName.Name,
 					Reason: err.Error(),
 				},
@@ -122,7 +122,7 @@ func (d *Statefulsets) SetState(ctx context.Context) ([]kubecloudscalerv1alpha1.
 		scalerStatusSuccess = append(
 			scalerStatusSuccess,
 			kubecloudscalerv1alpha1.ScalerStatusSuccess{
-				Kind: "deployment",
+				Kind: "statefulset",
 				Name: dName.Name,
 			},
 		)

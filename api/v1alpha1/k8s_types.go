@@ -62,6 +62,8 @@ type K8sSpec struct {
 	DeploymentTimeAnnotation string `json:"deploymentTimeAnnotation,omitempty"`
 	// Disable events
 	DisableEvents bool `json:"disableEvents,omitempty"`
+	// AuthSecret name
+	AuthSecret *string `json:"authSecret,omitempty"`
 }
 
 // +kubebuilder:object:root=true

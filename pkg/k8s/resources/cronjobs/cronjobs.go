@@ -19,7 +19,7 @@ type Cronjobs struct {
 	Client   v1.BatchV1Interface
 }
 
-func (c *Cronjobs) init(client *kubernetes.Clientset) {
+func (c *Cronjobs) init(client kubernetes.Interface) {
 	c.Client = client.BatchV1()
 }
 
@@ -35,7 +35,7 @@ func (c *Cronjobs) SetState(ctx context.Context) ([]kubecloudscalerv1alpha1.Scal
 
 		cronList, err := c.Client.CronJobs(ns).List(ctx, c.Resource.ListOptions)
 		if err != nil {
-			log.Log.V(1).Error(err, "error listing deployments")
+			log.Log.V(1).Error(err, "error listing cronjobs")
 
 			return scalerStatusSuccess, scalerStatusFailed, fmt.Errorf("error listing cronjobs: %w", err)
 		}
@@ -53,7 +53,7 @@ func (c *Cronjobs) SetState(ctx context.Context) ([]kubecloudscalerv1alpha1.Scal
 			scalerStatusFailed = append(
 				scalerStatusFailed,
 				kubecloudscalerv1alpha1.ScalerStatusFailed{
-					Kind:   "deployment",
+					Kind:   "cronjob",
 					Name:   cName.Name,
 					Reason: err.Error(),
 				},
