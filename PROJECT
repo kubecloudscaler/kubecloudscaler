@@ -2,26 +2,30 @@
 # This file is used to track the info used to scaffold your project
 # and allow the plugins properly work.
 # More info: https://book.kubebuilder.io/reference/project-config.html
+cliVersion: 4.7.1
 domain: kubecloudscaler.cloud
 layout:
-  - go.kubebuilder.io/v4
+- go.kubebuilder.io/v4
+- helm.kubebuilder.io/v1-alpha
+- grafana.kubebuilder.io/v1-alpha
+plugins:
+  grafana.kubebuilder.io/v1-alpha: {}
+  helm.kubebuilder.io/v1-alpha: {}
 projectName: kubecloudscaler
 repo: github.com/kubecloudscaler/kubecloudscaler
 resources:
-  - api:
-      crdVersion: v1
-      namespaced: false
-    controller: true
-    domain: kubecloudscaler.cloud
-    kind: K8s
-    path: github.com/kubecloudscaler/kubecloudscaler/api/v1alpha1
-    version: v1alpha1
-  - api:
-      crdVersion: v1
-      namespaced: false
-    controller: true
-    domain: kubecloudscaler.cloud
-    kind: Gcp
-    path: github.com/kubecloudscaler/kubecloudscaler/api/v1alpha1
-    version: v1alpha1
+- api:
+    crdVersion: v1
+  controller: true
+  domain: kubecloudscaler.cloud
+  kind: K8s
+  path: github.com/kubecloudscaler/kubecloudscaler/api/v1alpha1
+  version: v1alpha1
+- api:
+    crdVersion: v1
+  controller: true
+  domain: kubecloudscaler.cloud
+  kind: Gcp
+  path: github.com/kubecloudscaler/kubecloudscaler/api/v1alpha1
+  version: v1alpha1
 version: "3"

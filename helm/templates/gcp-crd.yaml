@@ -3,7 +3,7 @@ kind: CustomResourceDefinition
 metadata:
   name: gcps.kubecloudscaler.cloud
   annotations:
-    controller-gen.kubebuilder.io/version: v0.17.1
+    controller-gen.kubebuilder.io/version: v0.18.0
   labels:
   {{- include "helm.labels" . | nindent 4 }}
 spec:
