@@ -64,6 +64,12 @@ func (r *ScalerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{RequeueAfter: utils.ReconcileErrorDuration}, nil
 	}
 
+	if scaler.Spec.AuthSecret != nil {
+		log.Log.Info("auth secret found, currently not able to handle it")
+
+		return ctrl.Result{Requeue: false}, nil
+	}
+
 	// get the k8s client in case of remote cluster
 	kubeClient, err := k8sClient.GetClient()
 	if err != nil {

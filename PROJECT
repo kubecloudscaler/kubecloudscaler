@@ -6,11 +6,9 @@ cliVersion: 4.7.1
 domain: kubecloudscaler.cloud
 layout:
 - go.kubebuilder.io/v4
-- helm.kubebuilder.io/v1-alpha
 - grafana.kubebuilder.io/v1-alpha
 plugins:
   grafana.kubebuilder.io/v1-alpha: {}
-  helm.kubebuilder.io/v1-alpha: {}
 projectName: kubecloudscaler
 repo: github.com/kubecloudscaler/kubecloudscaler
 resources:
