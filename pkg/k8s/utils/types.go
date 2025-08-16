@@ -15,7 +15,7 @@ type K8sResource struct {
 type Config struct {
 	Namespaces                   []string              `json:"namespaces,omitempty"`
 	ExcludeNamespaces            []string              `json:"excludeNamespaces,omitempty"`
-	Client                       *kubernetes.Clientset `json:"client"`
+	Client                       kubernetes.Interface  `json:"client"`
 	LabelSelector                *metaV1.LabelSelector `json:"labelSelector,omitempty"`
 	Period                       *periodPkg.Period     `json:"period,omitempty"`
 	ForceExcludeSystemNamespaces bool                  `json:"forceExcludeSystemNamespaces,omitempty"`

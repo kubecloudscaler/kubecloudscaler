@@ -19,7 +19,7 @@ type Statefulsets struct {
 	Client   v1.AppsV1Interface
 }
 
-func (d *Statefulsets) init(client *kubernetes.Clientset) {
+func (d *Statefulsets) init(client kubernetes.Interface) {
 	d.Client = client.AppsV1()
 }
 

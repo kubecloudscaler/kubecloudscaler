@@ -19,7 +19,7 @@ type Cronjobs struct {
 	Client   v1.BatchV1Interface
 }
 
-func (c *Cronjobs) init(client *kubernetes.Clientset) {
+func (c *Cronjobs) init(client kubernetes.Interface) {
 	c.Client = client.BatchV1()
 }
 
