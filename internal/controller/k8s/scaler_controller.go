@@ -28,7 +28,6 @@ import (
 	k8sClient "github.com/kubecloudscaler/kubecloudscaler/pkg/k8s/utils/client"
 	"github.com/kubecloudscaler/kubecloudscaler/pkg/resources"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/kubernetes"
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -39,32 +38,6 @@ import (
 type ScalerReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
-	// k8sClientGetter allows injection of the k8s client for testing
-	k8sClientGetter func() (kubernetes.Interface, error)
-}
-
-// NewScalerReconciler creates a new ScalerReconciler with default dependencies
-func NewScalerReconciler(client client.Client, scheme *runtime.Scheme) *ScalerReconciler {
-	return &ScalerReconciler{
-		Client: client,
-		Scheme: scheme,
-		k8sClientGetter: func() (kubernetes.Interface, error) {
-			client, err := k8sClient.GetClient()
-			if err != nil {
-				return nil, err
-			}
-			return client, nil
-		},
-	}
-}
-
-// NewScalerReconcilerWithClient creates a new ScalerReconciler with custom k8s client
-func NewScalerReconcilerWithClient(client client.Client, scheme *runtime.Scheme, k8sClientGetter func() (kubernetes.Interface, error)) *ScalerReconciler {
-	return &ScalerReconciler{
-		Client:          client,
-		Scheme:          scheme,
-		k8sClientGetter: k8sClientGetter,
-	}
 }
 
 // +kubebuilder:rbac:groups=kubecloudscaler.cloud,resources=k8s,verbs=get;list;watch;create;update;patch;delete
@@ -92,7 +65,7 @@ func (r *ScalerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	}
 
 	// get the k8s client in case of remote cluster
-	kubeClient, err := r.k8sClientGetter()
+	kubeClient, err := k8sClient.GetClient()
 	if err != nil {
 		log.Log.Error(err, "unable to get k8s client")
 
