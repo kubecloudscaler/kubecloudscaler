@@ -117,6 +117,7 @@ _Appears in:_
 | `labelSelector` _[LabelSelector](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#labelselector-v1-meta)_ | Labels selectors |  |  |
 | `deploymentTimeAnnotation` _string_ | Deployment time annotation |  |  |
 | `disableEvents` _boolean_ | Disable events |  |  |
+| `authSecret` _string_ | AuthSecret name |  |  |
 
 
 #### RecurringPeriod
@@ -213,6 +214,7 @@ _Appears in:_
 | --- | --- | --- | --- |
 | `spec` _[RecurringPeriod](#recurringperiod)_ |  |  |  |
 | `specSHA` _string_ |  |  |  |
+| `type` _string_ |  |  |  |
 | `success` _[ScalerStatusSuccess](#scalerstatussuccess) array_ |  |  |  |
 | `failed` _[ScalerStatusFailed](#scalerstatusfailed) array_ |  |  |  |
 

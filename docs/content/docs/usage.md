@@ -117,6 +117,94 @@ periods:
 
 ## Resource Management
 
+### Kubernetes cluster authentication
+
+KubeCloudScaler can manage resources in both local and remote Kubernetes clusters. There are three authentication methods available:
+
+#### 1. InCluster (Default)
+- **What it does**: KubeCloudScaler manages resources only in the local cluster where it's deployed
+- **When to use**: Default mode for single-cluster deployments
+- **Configuration**: No additional setup required
+
+**Example**: This is the simplest setup - just deploy KubeCloudScaler and it will automatically detect and use the current cluster's service account.
+
+#### 2. KUBECONFIG Environment Variable
+- **What it does**: Uses a kubeconfig file to connect to remote clusters
+- **When to use**: When you have kubeconfig files for remote clusters
+- **Configuration**:
+  1. Mount a secret containing the kubeconfig as a volume
+  2. Set the `KUBECONFIG` environment variable to point to the mounted file
+
+**Example**:
+```yaml
+# Create a secret with your kubeconfig
+apiVersion: v1
+kind: Secret
+metadata:
+  name: remote-cluster-kubeconfig
+type: Opaque
+data:
+  kubeconfig: <base64-encoded-kubeconfig-content>
+---
+# Deploy KubeCloudScaler with the kubeconfig mounted
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kubecloudscaler
+spec:
+  template:
+    spec:
+      containers:
+      - name: kubecloudscaler
+        env:
+        - name: KUBECONFIG
+          value: /etc/kubeconfig/config
+        volumeMounts:
+        - name: kubeconfig-volume
+          mountPath: /etc/kubeconfig
+      volumes:
+      - name: kubeconfig-volume
+        secret:
+          secretName: remote-cluster-kubeconfig
+```
+
+#### 3. Service Account Token (authSecret)
+- **What it does**: Uses a service account token to authenticate with remote clusters
+- **When to use**: When you need long-lived authentication to remote clusters
+- **Configuration**:
+  1. Create a secret containing:
+     - The service account token (copy from the automatically generated secret in the remote cluster)
+     - The CA of the remote cluster
+     - An `insecure` field if the CA is not trusted
+     - A `URL` field with the remote cluster's API server URL
+  2. Reference this secret name in the `authSecret` field of your KubeCloudScaler resource
+
+**Example**:
+```yaml
+# 1. Create a secret with the service account token and cluster URL
+apiVersion: v1
+kind: Secret
+metadata:
+  name: remote-cluster-auth
+type: Opaque
+data:
+  token: <base64-encoded-service-account-token>
+  ca.crt: <base-64-encoded-service-account-ca>
+  URL: <base64-encoded-cluster-api-url>
+  insecure: <true|false>
+---
+# 2. Reference the secret in your KubeCloudScaler resource
+apiVersion: kubecloudscaler.example.com/v1alpha1
+kind: KubeCloudScaler
+metadata:
+  name: example-scaler
+spec:
+  authSecret: remote-cluster-auth
+  # ... other configuration
+```
+
+**Note**: For more details on creating long-lived tokens, see the [Kubernetes documentation](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/#manually-create-a-long-lived-api-token-for-a-serviceaccount)
+
 ### Supported Kubernetes Resources
 
 KubeCloudScaler can manage various types of Kubernetes resources. By default, it targets all **deployments** across all namespaces (excluding `kube-system`).

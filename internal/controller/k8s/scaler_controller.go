@@ -27,7 +27,9 @@ import (
 	k8sUtils "github.com/kubecloudscaler/kubecloudscaler/pkg/k8s/utils"
 	k8sClient "github.com/kubecloudscaler/kubecloudscaler/pkg/k8s/utils/client"
 	"github.com/kubecloudscaler/kubecloudscaler/pkg/resources"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -64,14 +66,25 @@ func (r *ScalerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{RequeueAfter: utils.ReconcileErrorDuration}, nil
 	}
 
+	secret := &corev1.Secret{}
 	if scaler.Spec.AuthSecret != nil {
 		log.Log.Info("auth secret found, currently not able to handle it")
+		namespacedSecret := types.NamespacedName{
+			Namespace: req.Namespace,
+			Name:      *scaler.Spec.AuthSecret,
+		}
+
+		if err := r.Get(ctx, namespacedSecret, secret); err != nil {
+			log.Log.Error(err, "unable to fetch secret")
+		}
 
 		return ctrl.Result{Requeue: false}, nil
+	} else {
+		secret = nil
 	}
 
 	// get the k8s client in case of remote cluster
-	kubeClient, err := k8sClient.GetClient()
+	kubeClient, err := k8sClient.GetClient(secret)
 	if err != nil {
 		log.Log.Error(err, "unable to get k8s client")
 
