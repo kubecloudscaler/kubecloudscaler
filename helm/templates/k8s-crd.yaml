@@ -3,7 +3,7 @@ kind: CustomResourceDefinition
 metadata:
   name: k8s.kubecloudscaler.cloud
   annotations:
-    controller-gen.kubebuilder.io/version: v0.17.1
+    controller-gen.kubebuilder.io/version: v0.18.0
   labels:
   {{- include "helm.labels" . | nindent 4 }}
 spec:
@@ -40,6 +40,9 @@ spec:
           spec:
             description: ScalerSpec defines the desired state of Scaler
             properties:
+              authSecret:
+                description: AuthSecret name
+                type: string
               deploymentTimeAnnotation:
                 description: Deployment time annotation
                 type: string
