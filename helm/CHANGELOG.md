@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.0](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.0.6...v1.1.0) (2025-08-24)
+
+
+### Features
+
+* add restoreOnDelete field to restore resources if scaler is deleted ([496ae5f](https://github.com/kubecloudscaler/kubecloudscaler/commit/496ae5f22e254299ef27445e4da1c3f889bb900f))
+
 ## [1.0.6](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.0.5...v1.0.6) (2025-08-16)
 
 
