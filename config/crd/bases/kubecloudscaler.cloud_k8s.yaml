@@ -202,6 +202,9 @@ spec:
                 items:
                   type: string
                 type: array
+              restoreOnDelete:
+                description: Restore on delete
+                type: boolean
             required:
             - periods
             type: object

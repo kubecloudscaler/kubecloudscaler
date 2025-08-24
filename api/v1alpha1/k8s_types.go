@@ -29,18 +29,8 @@ import (
 
 // ScalerSpec defines the desired state of Scaler
 type K8sSpec struct {
-	// Secret containing k8s config to connect to distant cluster
-	// If not set, will use the incluster client
-	// AuthSecretName string `json:"authSecretName,omitempty"`
-
 	// dry-run mode
 	DryRun bool `json:"dryRun,omitempty"`
-
-	// Time
-	// // run once
-	// SingleRun bool `json:"singleRun,omitempty"`
-	// // Reconcile interval
-	// Interval int `json:"interval,omitempty"`
 
 	// Time period to scale
 	Periods []*ScalerPeriod `json:"periods"`
@@ -64,6 +54,8 @@ type K8sSpec struct {
 	DisableEvents bool `json:"disableEvents,omitempty"`
 	// AuthSecret name
 	AuthSecret *string `json:"authSecret,omitempty"`
+	// Restore on delete
+	RestoreOnDelete bool `json:"restoreOnDelete,omitempty"`
 }
 
 // +kubebuilder:object:root=true

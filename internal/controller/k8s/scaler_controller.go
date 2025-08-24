@@ -33,6 +33,7 @@ import (
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
@@ -63,7 +64,33 @@ func (r *ScalerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	if err := r.Get(ctx, req.NamespacedName, scaler); err != nil {
 		log.Log.Error(err, "unable to fetch Scaler")
 
-		return ctrl.Result{RequeueAfter: utils.ReconcileErrorDuration}, nil
+		return ctrl.Result{RequeueAfter: 0 * time.Second}, client.IgnoreNotFound(err)
+	}
+
+	scalerFinalizer := "kubecloudscaler.cloud/finalizer"
+	scalerFinalize := false
+
+	// examine DeletionTimestamp to determine if object is under deletion
+	if scaler.ObjectMeta.DeletionTimestamp.IsZero() {
+		// The object is not being deleted, so if it does not have our finalizer,
+		// then let's add the finalizer and update the object. This is equivalent
+		// to registering our finalizer.
+		if !controllerutil.ContainsFinalizer(scaler, scalerFinalizer) {
+			log.Log.Info("adding finalizer")
+			controllerutil.AddFinalizer(scaler, scalerFinalizer)
+			if err := r.Update(ctx, scaler); err != nil {
+				return ctrl.Result{RequeueAfter: 0 * time.Second}, client.IgnoreNotFound(err)
+			}
+		}
+	} else {
+		// The object is being deleted
+		if controllerutil.ContainsFinalizer(scaler, scalerFinalizer) {
+			log.Log.Info("deleting scaler with finalizer")
+			scalerFinalize = true
+		} else {
+			// Stop reconciliation as the item is being deleted
+			return ctrl.Result{RequeueAfter: 0 * time.Second}, nil
+		}
 	}
 
 	secret := &corev1.Secret{}
@@ -101,7 +128,11 @@ func (r *ScalerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		},
 	}
 
-	resourceConfig.K8s.Period, err = utils.ValidatePeriod(scaler.Spec.Periods, &scaler.Status)
+	resourceConfig.K8s.Period, err = utils.ValidatePeriod(
+		scaler.Spec.Periods,
+		&scaler.Status,
+		scaler.Spec.RestoreOnDelete && scalerFinalize,
+	)
 	if err != nil {
 		if errors.Is(err, utils.ErrRunOncePeriod) {
 			return ctrl.Result{RequeueAfter: time.Until(resourceConfig.K8s.Period.GetEndTime.Add(5 * time.Second))}, nil
@@ -151,6 +182,16 @@ func (r *ScalerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 
 		recSuccess = append(recSuccess, success...)
 		recFailed = append(recFailed, failed...)
+	}
+
+	if scalerFinalize { // remove our finalizer from the list and update it.
+		log.Log.Info("removing finalizer")
+		controllerutil.RemoveFinalizer(scaler, scalerFinalizer)
+		if err := r.Update(ctx, scaler); err != nil {
+			return ctrl.Result{RequeueAfter: 0 * time.Second}, client.IgnoreNotFound(err)
+		}
+
+		return ctrl.Result{RequeueAfter: 0 * time.Second}, nil
 	}
 
 	scaler.Status.CurrentPeriod.Successful = recSuccess
