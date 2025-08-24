@@ -118,6 +118,7 @@ _Appears in:_
 | `deploymentTimeAnnotation` _string_ | Deployment time annotation |  |  |
 | `disableEvents` _boolean_ | Disable events |  |  |
 | `authSecret` _string_ | AuthSecret name |  |  |
+| `restoreOnDelete` _boolean_ | Restore on delete |  |  |
 
 
 #### RecurringPeriod

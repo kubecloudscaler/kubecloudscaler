@@ -249,6 +249,7 @@ This example demonstrates a comprehensive scaler configuration with multiple per
 
 ```yaml
 spec:
+  restoreOnDelete: true
   resources:
     - deployments
     - statefulsets
@@ -286,10 +287,3 @@ spec:
     matchLabels:
       app.kubernetes.io/name: my-preferred-app
 ```
-
-**Configuration Breakdown**:
-- **Resources**: Targets both deployments and statefulsets
-- **Namespace**: Limited to the `default` namespace
-- **Lunch Period**: Scales down resources from 12:00-14:00 (lunch break)
-- **Night Period**: Uses reverse mode to keep resources down from 23:00-07:00 (overnight)
-- **Filtering**: Only affects resources labeled with `app.kubernetes.io/name: my-preferred-app`
