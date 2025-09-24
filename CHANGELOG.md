@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.2.0](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.1.0...v1.2.0) (2025-09-24)
+
+
+### Features
+
+* add gcp controller ([#136](https://github.com/kubecloudscaler/kubecloudscaler/issues/136)) ([debdfdb](https://github.com/kubecloudscaler/kubecloudscaler/commit/debdfdbe30bcf4d910d1ac65bd543892735fb9c2))
+
+
+### Bug Fixes
+
+* **deps:** update all non-major dependencies ([#133](https://github.com/kubecloudscaler/kubecloudscaler/issues/133)) ([4347ee4](https://github.com/kubecloudscaler/kubecloudscaler/commit/4347ee492c0c7ab25736214ac452975eb041677a))
+
 ## [1.1.0](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.0.6...v1.1.0) (2025-08-24)
 
 
