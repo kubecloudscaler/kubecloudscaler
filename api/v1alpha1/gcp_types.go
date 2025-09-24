@@ -51,6 +51,8 @@ type GcpSpec struct {
 	AuthSecret *string `json:"authSecret,omitempty"`
 	// Restore on delete
 	RestoreOnDelete bool `json:"restoreOnDelete,omitempty"`
+	// Wait for operation to complete
+	WaitForOperation bool `json:"waitForOperation,omitempty"`
 }
 
 // +kubebuilder:object:root=true

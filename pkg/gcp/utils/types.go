@@ -21,4 +21,6 @@ type Config struct {
 	ExcludeResources []string              `json:"excludeResources,omitempty"`
 	LabelSelector    *metaV1.LabelSelector `json:"labelSelector,omitempty"`
 	Period           *periodPkg.Period     `json:"period,omitempty"`
+	WaitForOperation bool                  `json:"waitForOperation,omitempty"`
+	DryRun           bool                  `json:"dryRun,omitempty"`
 }

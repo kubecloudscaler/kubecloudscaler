@@ -196,6 +196,9 @@ spec:
               restoreOnDelete:
                 description: Restore on delete
                 type: boolean
+              waitForOperation:
+                description: Wait for operation to complete
+                type: boolean
             required:
             - periods
             type: object

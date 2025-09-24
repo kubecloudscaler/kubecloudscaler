@@ -71,34 +71,44 @@ func (c *ComputeInstances) SetState(ctx context.Context) ([]kubecloudscalerv1alp
 
 	// Process each instance
 	for _, instance := range filteredInstances {
+		status := kubecloudscalerv1alpha1.ScalerStatusSuccess{
+			Kind: "ComputeInstance",
+			Name: instance.Name,
+		}
+
 		// Skip instances that are in transitional states
 		if gcpUtils.IsInstanceTransitioning(instance) {
+			status.Comment = "Instance is in transitional state"
+			success = append(success, status)
 			continue
 		}
 
 		// Determine the desired state based on the period
 		desiredState := c.getDesiredState()
 
-		// Check if the instance is already in the desired state
 		if c.isInstanceInDesiredState(instance, desiredState) {
+			status.Comment = "Instance is already in the desired state"
+			success = append(success, status)
+			continue
+		}
+
+		if c.Config.DryRun {
+			status.Comment = "Dry run mode"
+			success = append(success, status)
 			continue
 		}
 
 		// Apply the state change
-		fmt.Printf("applying state change to instance %s to %s\n", instance.Name, desiredState)
-		// if err := c.applyInstanceState(ctx, instance, desiredState); err != nil {
-		// 	failed = append(failed, kubecloudscalerv1alpha1.ScalerStatusFailed{
-		// 		Kind:   "ComputeInstance",
-		// 		Name:   instance.Name,
-		// 		Reason: err.Error(),
-		// 	})
-		// 	continue
-		// }
+		if err := c.applyInstanceState(ctx, instance, desiredState); err != nil {
+			failed = append(failed, kubecloudscalerv1alpha1.ScalerStatusFailed{
+				Kind:   "ComputeInstance",
+				Name:   instance.Name,
+				Reason: err.Error(),
+			})
+			continue
+		}
 
-		success = append(success, kubecloudscalerv1alpha1.ScalerStatusSuccess{
-			Kind: "ComputeInstance",
-			Name: instance.Name,
-		})
+		success = append(success, status)
 	}
 
 	return success, failed, nil
@@ -157,7 +167,10 @@ func (c *ComputeInstances) startInstance(ctx context.Context, instance *compute.
 	}
 
 	// Wait for the operation to complete
-	return c.waitForOperation(ctx, operation, zone)
+	if c.Config.WaitForOperation {
+		return c.waitForOperation(ctx, operation, zone)
+	}
+	return nil
 }
 
 // stopInstance stops a running instance
@@ -174,7 +187,10 @@ func (c *ComputeInstances) stopInstance(ctx context.Context, instance *compute.I
 	}
 
 	// Wait for the operation to complete
-	return c.waitForOperation(ctx, operation, zone)
+	if c.Config.WaitForOperation {
+		return c.waitForOperation(ctx, operation, zone)
+	}
+	return nil
 }
 
 // extractZoneFromInstance extracts the zone from the instance's self link

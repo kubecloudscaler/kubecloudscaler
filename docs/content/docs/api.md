@@ -81,6 +81,7 @@ _Appears in:_
 | `deploymentTimeAnnotation` _string_ | Deployment time annotation |  |  |
 | `authSecret` _string_ | AuthSecret name |  |  |
 | `restoreOnDelete` _boolean_ | Restore on delete |  |  |
+| `waitForOperation` _boolean_ | Wait for operation to complete |  |  |
 
 
 #### K8s
