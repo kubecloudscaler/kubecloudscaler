@@ -73,6 +73,14 @@ _Appears in:_
 | --- | --- | --- | --- |
 | `dryRun` _boolean_ | dry-run mode |  |  |
 | `periods` _[ScalerPeriod](#scalerperiod) array_ | Time period to scale |  |  |
+| `projectId` _string_ | Resources<br />ProjectId |  |  |
+| `region` _string_ | Region |  |  |
+| `resources` _string array_ | Resources |  |  |
+| `excludeResources` _string array_ | Exclude resources from downscaling |  |  |
+| `labelSelector` _[LabelSelector](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#labelselector-v1-meta)_ | Labels selectors |  |  |
+| `deploymentTimeAnnotation` _string_ | Deployment time annotation |  |  |
+| `authSecret` _string_ | AuthSecret name |  |  |
+| `restoreOnDelete` _boolean_ | Restore on delete |  |  |
 
 
 #### K8s
@@ -235,6 +243,7 @@ _Appears in:_
 | --- | --- | --- | --- |
 | `kind` _string_ |  |  |  |
 | `name` _string_ |  |  |  |
+| `comment` _string_ |  |  |  |
 
 
 #### TimePeriod
