@@ -32,14 +32,25 @@ type GcpSpec struct {
 	// dry-run mode
 	DryRun bool `json:"dryRun,omitempty"`
 
-	// Time
-	// // run once
-	// SingleRun bool `json:"singleRun,omitempty"`
-	// // Reconcile interval
-	// Interval int `json:"interval,omitempty"`
-
 	// Time period to scale
 	Periods []*ScalerPeriod `json:"periods"`
+	// Resources
+	// ProjectId
+	ProjectId string `json:"projectId,omitempty"`
+	// Region
+	Region string `json:"region,omitempty"`
+	// Resources
+	Resources []string `json:"resources,omitempty"`
+	// Exclude resources from downscaling
+	ExcludeResources []string `json:"excludeResources,omitempty"`
+	// Labels selectors
+	LabelSelector *metav1.LabelSelector `json:"labelSelector,omitempty"`
+	// Deployment time annotation
+	DeploymentTimeAnnotation string `json:"deploymentTimeAnnotation,omitempty"`
+	// AuthSecret name
+	AuthSecret *string `json:"authSecret,omitempty"`
+	// Restore on delete
+	RestoreOnDelete bool `json:"restoreOnDelete,omitempty"`
 }
 
 // +kubebuilder:object:root=true
