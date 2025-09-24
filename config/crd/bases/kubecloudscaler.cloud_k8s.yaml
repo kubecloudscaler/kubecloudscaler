@@ -263,6 +263,8 @@ spec:
                   success:
                     items:
                       properties:
+                        comment:
+                          type: string
                         kind:
                           type: string
                         name:

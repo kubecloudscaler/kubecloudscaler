@@ -61,8 +61,9 @@ type ScalerStatusPeriod struct {
 }
 
 type ScalerStatusSuccess struct {
-	Kind string `json:"kind"`
-	Name string `json:"name"`
+	Kind    string `json:"kind"`
+	Name    string `json:"name"`
+	Comment string `json:"comment,omitempty"`
 }
 
 type ScalerStatusFailed struct {

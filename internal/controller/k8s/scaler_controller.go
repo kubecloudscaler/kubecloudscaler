@@ -258,7 +258,7 @@ func (r *ScalerReconciler) validResourceList(ctx context.Context, scaler *kubecl
 
 	// Default to deployments if no resources are specified
 	if len(scaler.Spec.Resources) == 0 {
-		scaler.Spec.Resources = append(scaler.Spec.Resources, resources.DefaultResource)
+		scaler.Spec.Resources = append(scaler.Spec.Resources, resources.DefaultK8SResource)
 	}
 
 	// Process each resource type and validate it

@@ -1,5 +1,6 @@
 package resources
 
 const (
-	DefaultResource = "deployments"
+	DefaultK8SResource = "deployments"
+	DefaultGCPResource = "compute-instances"
 )
