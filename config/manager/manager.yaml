@@ -94,3 +94,17 @@ spec:
               memory: 64Mi
       serviceAccountName: controller-manager
       terminationGracePeriodSeconds: 10
+      # tolerations:
+      #   - key: node-role.kubernetes.io/master
+      #     operator: Exists
+      #     effect: NoSchedule
+      # nodeSelector:
+      #   kubernetes.io/arch: amd64
+      #   kubernetes.io/os: linux
+      # topologySpreadConstraints:
+      #   - maxSkew: 1
+      #     topologyKey: kubernetes.io/hostname
+      #     whenUnsatisfiable: ScheduleAnyway
+      #     labelSelector:
+      #       matchLabels:
+      #         control-plane: controller-manager

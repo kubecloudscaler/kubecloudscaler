@@ -1,17 +1,17 @@
 controllerManager:
   manager:
     args:
-      - '--metrics-bind-address=:8443'
-      - '--leader-elect'
-      - '--health-probe-bind-address=:8081'
+    - --metrics-bind-address=:8443
+    - --leader-elect
+    - --health-probe-bind-address=:8081
     containerSecurityContext:
       allowPrivilegeEscalation: false
       capabilities:
         drop:
-          - ALL
+        - ALL
     image:
       repository: ghcr.io/kubecloudscaler/kubecloudscaler
-      tag: 1.2.0
+      tag: latest
     imagePullPolicy: IfNotPresent
     resources:
       limits:
@@ -20,16 +20,21 @@ controllerManager:
       requests:
         cpu: 10m
         memory: 64Mi
+  nodeSelector: {}
   podSecurityContext:
     runAsNonRoot: true
   replicas: 1
-  serviceAccount:
-    annotations: {}
+  tolerations: []
+  topologySpreadConstraints: []
 kubernetesClusterDomain: cluster.local
 metricsService:
   ports:
-    - name: https
-      port: 8443
-      protocol: TCP
-      targetPort: 8443
+  - name: https
+    port: 8443
+    protocol: TCP
+    targetPort: 8443
   type: ClusterIP
+serviceAccount:
+  annotations: {}
+  create: true
+  name: ""
