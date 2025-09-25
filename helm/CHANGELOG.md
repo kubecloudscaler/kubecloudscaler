@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.2](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.2.1...v1.2.2) (2025-09-25)
+
+
+### Bug Fixes
+
+* helm rbac ([98e4194](https://github.com/kubecloudscaler/kubecloudscaler/commit/98e419419213d857772bff2a6c63e482ec06f2a3))
+
 ## [1.2.1](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.2.0...v1.2.1) (2025-09-25)
 
 
