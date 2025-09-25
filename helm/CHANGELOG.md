@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.1](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.2.0...v1.2.1) (2025-09-25)
+
+
+### Bug Fixes
+
+* helm chart ([71d3f66](https://github.com/kubecloudscaler/kubecloudscaler/commit/71d3f66d2ad2cff86feaa17813fe5eb19c408319))
+
 ## [1.2.0](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.1.0...v1.2.0) (2025-09-24)
 
 
