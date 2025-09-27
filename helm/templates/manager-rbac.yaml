@@ -88,5 +88,5 @@ roleRef:
   name: '{{ include "helm.fullname" . }}-manager-role'
 subjects:
 - kind: ServiceAccount
-  name: '{{ include "helm.serviceAccountName" . }}'
+  name: '{{ include "helm.fullname" . }}-controller-manager'
   namespace: '{{ .Release.Namespace }}'

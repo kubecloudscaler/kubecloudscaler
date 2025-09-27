@@ -49,5 +49,5 @@ roleRef:
   name: '{{ include "helm.fullname" . }}-leader-election-role'
 subjects:
 - kind: ServiceAccount
-  name: '{{ include "helm.serviceAccountName" . }}'
+  name: '{{ include "helm.fullname" . }}-controller-manager'
   namespace: '{{ .Release.Namespace }}'

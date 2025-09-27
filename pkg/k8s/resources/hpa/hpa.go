@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	kubecloudscalerv1alpha1 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha1"
+	"github.com/kubecloudscaler/kubecloudscaler/api/common"
 	"github.com/kubecloudscaler/kubecloudscaler/pkg/k8s/utils"
 	autoscaleV2 "k8s.io/api/autoscaling/v2"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -23,10 +23,10 @@ func (d *HorizontalPodAutoscalers) Init(client *kubernetes.Clientset) {
 	d.Client = client.AutoscalingV2()
 }
 
-func (d *HorizontalPodAutoscalers) SetState(ctx context.Context) ([]kubecloudscalerv1alpha1.ScalerStatusSuccess, []kubecloudscalerv1alpha1.ScalerStatusFailed, error) {
+func (d *HorizontalPodAutoscalers) SetState(ctx context.Context) ([]common.ScalerStatusSuccess, []common.ScalerStatusFailed, error) {
 	_ = log.FromContext(ctx)
-	scalerStatusSuccess := []kubecloudscalerv1alpha1.ScalerStatusSuccess{}
-	scalerStatusFailed := []kubecloudscalerv1alpha1.ScalerStatusFailed{}
+	scalerStatusSuccess := []common.ScalerStatusSuccess{}
+	scalerStatusFailed := []common.ScalerStatusFailed{}
 	list := []autoscaleV2.HorizontalPodAutoscaler{}
 
 	for _, ns := range d.Resource.NsList {
@@ -52,7 +52,7 @@ func (d *HorizontalPodAutoscalers) SetState(ctx context.Context) ([]kubecloudsca
 		if err != nil {
 			scalerStatusFailed = append(
 				scalerStatusFailed,
-				kubecloudscalerv1alpha1.ScalerStatusFailed{
+				common.ScalerStatusFailed{
 					Kind:   "hpa",
 					Name:   dName.Name,
 					Reason: err.Error(),
@@ -86,7 +86,7 @@ func (d *HorizontalPodAutoscalers) SetState(ctx context.Context) ([]kubecloudsca
 			if err != nil {
 				scalerStatusFailed = append(
 					scalerStatusFailed,
-					kubecloudscalerv1alpha1.ScalerStatusFailed{
+					common.ScalerStatusFailed{
 						Kind:   "hpa",
 						Name:   dName.Name,
 						Reason: err.Error(),
@@ -113,7 +113,7 @@ func (d *HorizontalPodAutoscalers) SetState(ctx context.Context) ([]kubecloudsca
 		if err != nil {
 			scalerStatusFailed = append(
 				scalerStatusFailed,
-				kubecloudscalerv1alpha1.ScalerStatusFailed{
+				common.ScalerStatusFailed{
 					Kind:   "hpa",
 					Name:   dName.Name,
 					Reason: err.Error(),
@@ -125,7 +125,7 @@ func (d *HorizontalPodAutoscalers) SetState(ctx context.Context) ([]kubecloudsca
 
 		scalerStatusSuccess = append(
 			scalerStatusSuccess,
-			kubecloudscalerv1alpha1.ScalerStatusSuccess{
+			common.ScalerStatusSuccess{
 				Kind: "hpa",
 				Name: dName.Name,
 			},

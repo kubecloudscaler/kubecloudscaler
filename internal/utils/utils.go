@@ -3,7 +3,7 @@ package utils
 import (
 	"fmt"
 
-	kubecloudscalerv1alpha1 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha1"
+	"github.com/kubecloudscaler/kubecloudscaler/api/common"
 	periodPkg "github.com/kubecloudscaler/kubecloudscaler/pkg/period"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/event"
@@ -24,12 +24,12 @@ func IgnoreDeletionPredicate() predicate.Predicate {
 	}
 }
 
-func ValidatePeriod(periods []*kubecloudscalerv1alpha1.ScalerPeriod, status *kubecloudscalerv1alpha1.ScalerStatus, forceRestore bool) (*periodPkg.Period, error) {
+func ValidatePeriod(periods []*common.ScalerPeriod, status *common.ScalerStatus, forceRestore bool) (*periodPkg.Period, error) {
 	// check we are in an active period
-	restorePeriod := &kubecloudscalerv1alpha1.ScalerPeriod{
+	restorePeriod := &common.ScalerPeriod{
 		Type: "restore",
-		Time: kubecloudscalerv1alpha1.TimePeriod{
-			Recurring: &kubecloudscalerv1alpha1.RecurringPeriod{
+		Time: common.TimePeriod{
+			Recurring: &common.RecurringPeriod{
 				Days:      []string{"all"},
 				StartTime: "00:00",
 				EndTime:   "23:59",
@@ -79,7 +79,7 @@ func ValidatePeriod(periods []*kubecloudscalerv1alpha1.ScalerPeriod, status *kub
 	log.Log.V(1).Info(fmt.Sprintf("is period:\n  type => %s\n  def => %v\n", onPeriod.Type, onPeriod.Period))
 
 	// prepare status
-	status.CurrentPeriod = &kubecloudscalerv1alpha1.ScalerStatusPeriod{}
+	status.CurrentPeriod = &common.ScalerStatusPeriod{}
 	status.CurrentPeriod.Spec = onPeriod.Period
 	status.CurrentPeriod.SpecSHA = onPeriod.Hash
 	status.CurrentPeriod.Type = onPeriod.Type

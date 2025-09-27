@@ -28,7 +28,8 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	kubecloudscalerv1alpha1 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha1"
+	"github.com/kubecloudscaler/kubecloudscaler/api/common"
+	kubecloudscalerv1alpha2 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha2"
 )
 
 var _ = Describe("Scaler Controller", func() {
@@ -41,13 +42,13 @@ var _ = Describe("Scaler Controller", func() {
 			Name:      resourceName,
 			Namespace: "default", // TODO(user):Modify as needed
 		}
-		scaler := &kubecloudscalerv1alpha1.Gcp{
-			Spec: kubecloudscalerv1alpha1.GcpSpec{
-				Periods: []*kubecloudscalerv1alpha1.ScalerPeriod{
+		scaler := &kubecloudscalerv1alpha2.Gcp{
+			Spec: kubecloudscalerv1alpha2.GcpSpec{
+				Periods: []*common.ScalerPeriod{
 					{
 						Type: "down",
-						Time: kubecloudscalerv1alpha1.TimePeriod{
-							Recurring: &kubecloudscalerv1alpha1.RecurringPeriod{
+						Time: common.TimePeriod{
+							Recurring: &common.RecurringPeriod{
 								Days: []string{
 									"all",
 								},
@@ -65,17 +66,17 @@ var _ = Describe("Scaler Controller", func() {
 			By("creating the custom resource for the Kind Scaler")
 			err := k8sClient.Get(ctx, typeNamespacedName, scaler)
 			if err != nil && errors.IsNotFound(err) {
-				resource := &kubecloudscalerv1alpha1.Gcp{
+				resource := &kubecloudscalerv1alpha2.Gcp{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      resourceName,
 						Namespace: "default",
 					},
-					Spec: kubecloudscalerv1alpha1.GcpSpec{
-						Periods: []*kubecloudscalerv1alpha1.ScalerPeriod{
+					Spec: kubecloudscalerv1alpha2.GcpSpec{
+						Periods: []*common.ScalerPeriod{
 							{
 								Type: "down",
-								Time: kubecloudscalerv1alpha1.TimePeriod{
-									Recurring: &kubecloudscalerv1alpha1.RecurringPeriod{
+								Time: common.TimePeriod{
+									Recurring: &common.RecurringPeriod{
 										Days: []string{
 											"all",
 										},
@@ -94,13 +95,13 @@ var _ = Describe("Scaler Controller", func() {
 
 		AfterEach(func() {
 			// TODO(user): Cleanup logic after each test, like removing the resource instance.
-			resource := &kubecloudscalerv1alpha1.Gcp{
-				Spec: kubecloudscalerv1alpha1.GcpSpec{
-					Periods: []*kubecloudscalerv1alpha1.ScalerPeriod{
+			resource := &kubecloudscalerv1alpha2.Gcp{
+				Spec: kubecloudscalerv1alpha2.GcpSpec{
+					Periods: []*common.ScalerPeriod{
 						{
 							Type: "down",
-							Time: kubecloudscalerv1alpha1.TimePeriod{
-								Recurring: &kubecloudscalerv1alpha1.RecurringPeriod{
+							Time: common.TimePeriod{
+								Recurring: &common.RecurringPeriod{
 									Days: []string{
 										"all",
 									},

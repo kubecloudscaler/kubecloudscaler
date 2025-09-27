@@ -17,6 +17,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"github.com/kubecloudscaler/kubecloudscaler/api/common"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -33,7 +34,7 @@ type GcpSpec struct {
 	DryRun bool `json:"dryRun,omitempty"`
 
 	// Time period to scale
-	Periods []*ScalerPeriod `json:"periods"`
+	Periods []*common.ScalerPeriod `json:"periods"`
 	// Resources
 	// ProjectId
 	ProjectId string `json:"projectId,omitempty"`
@@ -65,8 +66,8 @@ type Gcp struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   GcpSpec      `json:"spec,omitempty"`
-	Status ScalerStatus `json:"status,omitempty"`
+	Spec   GcpSpec             `json:"spec,omitempty"`
+	Status common.ScalerStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true

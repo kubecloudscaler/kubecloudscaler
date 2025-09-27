@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	kubecloudscalerv1alpha1 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha1"
+	"github.com/kubecloudscaler/kubecloudscaler/api/common"
 	gcpUtils "github.com/kubecloudscaler/kubecloudscaler/pkg/gcp/utils"
 	"github.com/kubecloudscaler/kubecloudscaler/pkg/period"
 	compute "google.golang.org/api/compute/v1"
@@ -39,10 +39,10 @@ func New(ctx context.Context, config *gcpUtils.Config) (*ComputeInstances, error
 }
 
 // SetState scales instances based on the current period
-func (c *ComputeInstances) SetState(ctx context.Context) ([]kubecloudscalerv1alpha1.ScalerStatusSuccess, []kubecloudscalerv1alpha1.ScalerStatusFailed, error) {
+func (c *ComputeInstances) SetState(ctx context.Context) ([]common.ScalerStatusSuccess, []common.ScalerStatusFailed, error) {
 	var (
-		success []kubecloudscalerv1alpha1.ScalerStatusSuccess
-		failed  []kubecloudscalerv1alpha1.ScalerStatusFailed
+		success []common.ScalerStatusSuccess
+		failed  []common.ScalerStatusFailed
 	)
 
 	// Get all zones in the region
@@ -61,7 +61,7 @@ func (c *ComputeInstances) SetState(ctx context.Context) ([]kubecloudscalerv1alp
 	filteredInstances := gcpUtils.FilterInstancesByLabels(instances, c.Config.LabelSelector)
 
 	if len(filteredInstances) == 0 {
-		success = append(success, kubecloudscalerv1alpha1.ScalerStatusSuccess{
+		success = append(success, common.ScalerStatusSuccess{
 			Kind:    "ComputeInstance",
 			Name:    "",
 			Comment: "No instances found with the label selector",
@@ -71,7 +71,7 @@ func (c *ComputeInstances) SetState(ctx context.Context) ([]kubecloudscalerv1alp
 
 	// Process each instance
 	for _, instance := range filteredInstances {
-		status := kubecloudscalerv1alpha1.ScalerStatusSuccess{
+		status := common.ScalerStatusSuccess{
 			Kind: "ComputeInstance",
 			Name: instance.Name,
 		}
@@ -100,7 +100,7 @@ func (c *ComputeInstances) SetState(ctx context.Context) ([]kubecloudscalerv1alp
 
 		// Apply the state change
 		if err := c.applyInstanceState(ctx, instance, desiredState); err != nil {
-			failed = append(failed, kubecloudscalerv1alpha1.ScalerStatusFailed{
+			failed = append(failed, common.ScalerStatusFailed{
 				Kind:   "ComputeInstance",
 				Name:   instance.Name,
 				Reason: err.Error(),

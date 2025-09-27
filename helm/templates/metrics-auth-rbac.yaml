@@ -30,5 +30,5 @@ roleRef:
   name: '{{ include "helm.fullname" . }}-metrics-auth-role'
 subjects:
 - kind: ServiceAccount
-  name: '{{ include "helm.serviceAccountName" . }}'
+  name: '{{ include "helm.fullname" . }}-controller-manager'
   namespace: '{{ .Release.Namespace }}'
