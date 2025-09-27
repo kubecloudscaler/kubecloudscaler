@@ -5,16 +5,24 @@ import (
 	"fmt"
 	"os"
 
-	compute "google.golang.org/api/compute/v1"
+	compute "cloud.google.com/go/compute/apiv1"
 	"google.golang.org/api/option"
 	corev1 "k8s.io/api/core/v1"
+
+	gcpUtils "github.com/kubecloudscaler/kubecloudscaler/pkg/gcp/utils"
 )
 
 // GetClient creates a GCP Compute Engine client
 // It supports authentication via service account key from Kubernetes secret or default credentials
-func GetClient(secret *corev1.Secret, projectId string) (*compute.Service, error) {
-	var client *compute.Service
-	var err error
+func GetClient(secret *corev1.Secret, projectId string) (*gcpUtils.ClientSet, error) {
+	var (
+		instancesClient      *compute.InstancesClient
+		regionsClient        *compute.RegionsClient
+		zoneOperationsClient *compute.ZoneOperationsClient
+		err                  error
+	)
+
+	ctx := context.Background()
 
 	if secret != nil {
 		// Use service account key from Kubernetes secret
@@ -23,38 +31,43 @@ func GetClient(secret *corev1.Secret, projectId string) (*compute.Service, error
 			return nil, fmt.Errorf("service-account-key.json not found in secret")
 		}
 
-		// Create client with service account key
-		client, err = compute.NewService(context.Background(), option.WithCredentialsJSON(serviceAccountKey))
+		instancesClient, err = compute.NewInstancesRESTClient(ctx, option.WithCredentialsJSON(serviceAccountKey))
 		if err != nil {
-			return nil, fmt.Errorf("failed to create GCP client with service account key: %w", err)
+			return nil, fmt.Errorf("failed to create Instances client: %w", err)
+		}
+
+		regionsClient, err = compute.NewRegionsRESTClient(ctx, option.WithCredentialsJSON(serviceAccountKey))
+		if err != nil {
+			return nil, fmt.Errorf("failed to create Regions client: %w", err)
+		}
+
+		zoneOperationsClient, err = compute.NewZoneOperationsRESTClient(ctx, option.WithCredentialsJSON(serviceAccountKey))
+		if err != nil {
+			return nil, fmt.Errorf("failed to create ZoneOperations client: %w", err)
 		}
 	} else {
 		// Use default credentials (Application Default Credentials)
-		// This works when running in GKE or with gcloud auth application-default login
-		client, err = compute.NewService(context.Background())
+		instancesClient, err = compute.NewInstancesRESTClient(ctx)
 		if err != nil {
-			return nil, fmt.Errorf("failed to create GCP client with default credentials: %w", err)
+			return nil, fmt.Errorf("failed to create Instances client with default credentials: %w", err)
+		}
+
+		regionsClient, err = compute.NewRegionsRESTClient(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create Regions client with default credentials: %w", err)
+		}
+
+		zoneOperationsClient, err = compute.NewZoneOperationsRESTClient(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create ZoneOperations client with default credentials: %w", err)
 		}
 	}
 
-	// Verify the client can access the project
-	if projectId != "" {
-		if err := verifyProjectAccess(client, projectId); err != nil {
-			return nil, fmt.Errorf("failed to verify project access: %w", err)
-		}
-	}
-
-	return client, nil
-}
-
-// verifyProjectAccess verifies that the client can access the specified project
-func verifyProjectAccess(client *compute.Service, projectId string) error {
-	// Try to get project information to verify access
-	_, err := client.Projects.Get(projectId).Do()
-	if err != nil {
-		return fmt.Errorf("cannot access project %s: %w", projectId, err)
-	}
-	return nil
+	return &gcpUtils.ClientSet{
+		Instances:      instancesClient,
+		Regions:        regionsClient,
+		ZoneOperations: zoneOperationsClient,
+	}, nil
 }
 
 // GetProjectFromEnv returns the project ID from environment variable

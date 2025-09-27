@@ -109,10 +109,10 @@ build: manifests generate fmt vet ## Build manager binary.
 	go build -o bin/kubecloudscaler cmd/main.go
 
 .PHONY: run
-run: manifests generate fmt vet ## Run a controller from your host.
-	go run ./cmd/main.go -zap-devel -zap-stacktrace-level=panic
+run: manifests generate fmt vet generate-certs ## Run a controller from your host.
+	go run ./cmd/main.go -zap-devel -zap-stacktrace-level=panic --webhook-cert-path=$(CERTSDIR)
 
-CERTSDIR=/tmp/k8s-webhook-server/serving-certs
+CERTSDIR=./tmp/k8s-webhook-server/serving-certs
 .PHONY: generate-certs
 generate-certs: ## Generates the certs required to run webhooks locally
 	mkdir -p $(CERTSDIR)
