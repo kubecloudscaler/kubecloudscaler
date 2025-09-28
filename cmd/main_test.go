@@ -34,7 +34,7 @@ import (
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
-	kubecloudscalerv1alpha1 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha1"
+	kubecloudscalerv1alpha2 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha2"
 )
 
 func TestMain(t *testing.T) {
@@ -233,7 +233,7 @@ var _ = Describe("Main Package", func() {
 			// Test that the scheme contains the expected types
 			testScheme := runtime.NewScheme()
 			utilruntime.Must(clientgoscheme.AddToScheme(testScheme))
-			utilruntime.Must(kubecloudscalerv1alpha1.AddToScheme(testScheme))
+			utilruntime.Must(kubecloudscalerv1alpha2.AddToScheme(testScheme))
 
 			// Verify that the scheme contains the expected types
 			// AllKnownTypes returns a map with reflect.Type keys, so we check the length

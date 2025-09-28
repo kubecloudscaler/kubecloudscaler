@@ -112,6 +112,14 @@ build: manifests generate fmt vet ## Build manager binary.
 run: manifests generate fmt vet ## Run a controller from your host.
 	go run ./cmd/main.go -zap-devel -zap-stacktrace-level=panic
 
+CERTSDIR=/tmp/k8s-webhook-server/serving-certs
+.PHONY: generate-certs
+generate-certs: ## Generates the certs required to run webhooks locally
+	mkdir -p $(CERTSDIR)
+	cd $(CERTSDIR) && \
+		openssl genrsa 2048 > tls.key && \
+		openssl req -new -x509 -nodes -sha256 -days 365 -key tls.key -out tls.crt -subj "/C=XX"
+
 # If you wish to build the manager image targeting other platforms you can use the --platform flag.
 # (i.e. docker build --platform linux/arm64). However, you must enable docker buildKit for it.
 # More info: https://docs.docker.com/develop/develop-images/build_enhancements/

@@ -3,6 +3,8 @@ kind: CustomResourceDefinition
 metadata:
   name: gcps.kubecloudscaler.cloud
   annotations:
+    cert-manager.io/inject-ca-from: '{{ .Release.Namespace }}/{{ include "helm.fullname"
+      . }}-serving-cert'
     controller-gen.kubebuilder.io/version: v0.18.0
   labels:
   {{- include "helm.labels" . | nindent 4 }}
