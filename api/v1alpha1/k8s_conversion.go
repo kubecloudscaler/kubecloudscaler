@@ -34,6 +34,17 @@ func (src *K8s) ConvertTo(dstRaw conversion.Hub) error {
 	dst.ObjectMeta = src.ObjectMeta
 
 	// Spec
+	dst.Spec.DryRun = src.Spec.DryRun
+	dst.Spec.Periods = src.Spec.Periods
+	dst.Spec.Namespaces = src.Spec.Namespaces
+	dst.Spec.ExcludeNamespaces = src.Spec.ExcludeNamespaces
+	dst.Spec.ForceExcludeSystemNamespaces = src.Spec.ForceExcludeSystemNamespaces
+	dst.Spec.DeploymentTimeAnnotation = src.Spec.DeploymentTimeAnnotation
+	dst.Spec.DisableEvents = src.Spec.DisableEvents
+	dst.Spec.AuthSecret = src.Spec.AuthSecret
+	dst.Spec.RestoreOnDelete = src.Spec.RestoreOnDelete
+
+	// convert fields from v1alpha1 to v1alpha2
 	dst.Spec.Resources.Types = src.Spec.Resources
 	dst.Spec.Resources.LabelSelector = src.Spec.LabelSelector
 
@@ -53,6 +64,17 @@ func (dst *K8s) ConvertFrom(srcRaw conversion.Hub) error {
 	dst.ObjectMeta = src.ObjectMeta
 
 	// Spec
+	dst.Spec.DryRun = src.Spec.DryRun
+	dst.Spec.Periods = src.Spec.Periods
+	dst.Spec.Namespaces = src.Spec.Namespaces
+	dst.Spec.ExcludeNamespaces = src.Spec.ExcludeNamespaces
+	dst.Spec.ForceExcludeSystemNamespaces = src.Spec.ForceExcludeSystemNamespaces
+	dst.Spec.DeploymentTimeAnnotation = src.Spec.DeploymentTimeAnnotation
+	dst.Spec.DisableEvents = src.Spec.DisableEvents
+	dst.Spec.AuthSecret = src.Spec.AuthSecret
+	dst.Spec.RestoreOnDelete = src.Spec.RestoreOnDelete
+
+	// convert fields from v1alpha2 to v1alpha1
 	dst.Spec.Resources = src.Spec.Resources.Types
 	dst.Spec.LabelSelector = src.Spec.Resources.LabelSelector
 

@@ -34,6 +34,15 @@ func (src *Gcp) ConvertTo(dstRaw conversion.Hub) error {
 	dst.ObjectMeta = src.ObjectMeta
 
 	// Spec
+	dst.Spec.DryRun = src.Spec.DryRun
+	dst.Spec.Periods = src.Spec.Periods
+	dst.Spec.ProjectId = src.Spec.ProjectId
+	dst.Spec.Region = src.Spec.Region
+	dst.Spec.AuthSecret = src.Spec.AuthSecret
+	dst.Spec.RestoreOnDelete = src.Spec.RestoreOnDelete
+	dst.Spec.WaitForOperation = src.Spec.WaitForOperation
+
+	// convert fields from v1alpha1 to v1alpha2
 	dst.Spec.Resources.Types = src.Spec.Resources
 	dst.Spec.Resources.LabelSelector = src.Spec.LabelSelector
 
@@ -53,6 +62,15 @@ func (dst *Gcp) ConvertFrom(srcRaw conversion.Hub) error {
 	dst.ObjectMeta = src.ObjectMeta
 
 	// Spec
+	dst.Spec.DryRun = src.Spec.DryRun
+	dst.Spec.Periods = src.Spec.Periods
+	dst.Spec.ProjectId = src.Spec.ProjectId
+	dst.Spec.Region = src.Spec.Region
+	dst.Spec.AuthSecret = src.Spec.AuthSecret
+	dst.Spec.RestoreOnDelete = src.Spec.RestoreOnDelete
+	dst.Spec.WaitForOperation = src.Spec.WaitForOperation
+
+	// convert fields from v1alpha2 to v1alpha1
 	dst.Spec.Resources = src.Spec.Resources.Types
 	dst.Spec.LabelSelector = src.Spec.Resources.LabelSelector
 
