@@ -18,7 +18,8 @@ spec:
           namespace: '{{ .Release.Namespace }}'
           path: /convert
       conversionReviewVersions:
-      - v1
+      - v1alpha2
+      - v1alpha1
   group: kubecloudscaler.cloud
   names:
     kind: Gcp
