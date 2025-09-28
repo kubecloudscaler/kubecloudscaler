@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.2](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.3.1...v1.3.2) (2025-09-28)
+
+
+### Bug Fixes
+
+* conversionReviewVersions ([01ea726](https://github.com/kubecloudscaler/kubecloudscaler/commit/01ea72615ecf62a22b488e81905588725023fb09))
+
 ## [1.3.1](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.3.0...v1.3.1) (2025-09-28)
 
 
