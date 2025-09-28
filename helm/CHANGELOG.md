@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.0](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.2.2...v1.3.0) (2025-09-28)
+
+
+### Features
+
+* implement v1alpha2 ([#140](https://github.com/kubecloudscaler/kubecloudscaler/issues/140)) ([f85e361](https://github.com/kubecloudscaler/kubecloudscaler/commit/f85e3612b4cb0bf03101932eb9b81f11cb8a397d))
+
 ## [1.2.2](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.2.1...v1.2.2) (2025-09-25)
 
 
