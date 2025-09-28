@@ -3,18 +3,16 @@ title: API Reference
 ---
 
 **Packages**
+- [kubecloudscaler.cloud/common](#kubecloudscalercloudcommon)
 - [kubecloudscaler.cloud/v1alpha1](#kubecloudscalercloudv1alpha1)
+- [kubecloudscaler.cloud/v1alpha2](#kubecloudscalercloudv1alpha2)
 
 
-## kubecloudscaler.cloud/v1alpha1
-
+## kubecloudscaler.cloud/common
 
 Package v1alpha1 contains API Schema definitions for the k8s v1alpha1 API group
 
 
-### Resource Types
-- [Gcp](#gcp)
-- [K8s](#k8s)
 
 
 
@@ -37,97 +35,6 @@ _Appears in:_
 | `once` _boolean_ | Run once at StartTime |  |  |
 | `gracePeriod` _string_ | Grace period in seconds for deployments before scaling down |  | Pattern: `^\d*s$` <br /> |
 | `reverse` _boolean_ | Reverse the period |  |  |
-
-
-#### Gcp
-
-
-
-Gcp is the Schema for the scalers API
-
-
-
-
-
-| Field | Description | Default | Validation |
-| --- | --- | --- | --- |
-| `apiVersion` _string_ | `kubecloudscaler.cloud/v1alpha1` | | |
-| `kind` _string_ | `Gcp` | | |
-| `metadata` _[ObjectMeta](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#objectmeta-v1-meta)_ | Refer to Kubernetes API documentation for fields of `metadata`. |  |  |
-| `spec` _[GcpSpec](#gcpspec)_ |  |  |  |
-| `status` _[ScalerStatus](#scalerstatus)_ |  |  |  |
-
-
-#### GcpSpec
-
-
-
-GcpSpec defines the desired state of Scaler
-
-
-
-_Appears in:_
-- [Gcp](#gcp)
-
-| Field | Description | Default | Validation |
-| --- | --- | --- | --- |
-| `dryRun` _boolean_ | dry-run mode |  |  |
-| `periods` _[ScalerPeriod](#scalerperiod) array_ | Time period to scale |  |  |
-| `projectId` _string_ | Resources<br />ProjectId |  |  |
-| `region` _string_ | Region |  |  |
-| `resources` _string array_ | Resources |  |  |
-| `excludeResources` _string array_ | Exclude resources from downscaling |  |  |
-| `labelSelector` _[LabelSelector](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#labelselector-v1-meta)_ | Labels selectors |  |  |
-| `deploymentTimeAnnotation` _string_ | Deployment time annotation |  |  |
-| `authSecret` _string_ | AuthSecret name |  |  |
-| `restoreOnDelete` _boolean_ | Restore on delete |  |  |
-| `waitForOperation` _boolean_ | Wait for operation to complete |  |  |
-
-
-#### K8s
-
-
-
-Scaler is the Schema for the scalers API
-
-
-
-
-
-| Field | Description | Default | Validation |
-| --- | --- | --- | --- |
-| `apiVersion` _string_ | `kubecloudscaler.cloud/v1alpha1` | | |
-| `kind` _string_ | `K8s` | | |
-| `metadata` _[ObjectMeta](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#objectmeta-v1-meta)_ | Refer to Kubernetes API documentation for fields of `metadata`. |  |  |
-| `spec` _[K8sSpec](#k8sspec)_ |  |  |  |
-| `status` _[ScalerStatus](#scalerstatus)_ |  |  |  |
-
-
-#### K8sSpec
-
-
-
-ScalerSpec defines the desired state of Scaler
-
-
-
-_Appears in:_
-- [K8s](#k8s)
-
-| Field | Description | Default | Validation |
-| --- | --- | --- | --- |
-| `dryRun` _boolean_ | dry-run mode |  |  |
-| `periods` _[ScalerPeriod](#scalerperiod) array_ | Time period to scale |  |  |
-| `namespaces` _string array_ | Resources<br />Namespaces |  |  |
-| `excludeNamespaces` _string array_ | Exclude namespaces from downscaling |  |  |
-| `forceExcludeSystemNamespaces` _boolean_ | Force exclude system namespaces |  |  |
-| `resources` _string array_ | Resources |  |  |
-| `excludeResources` _string array_ | Exclude resources from downscaling |  |  |
-| `labelSelector` _[LabelSelector](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#labelselector-v1-meta)_ | Labels selectors |  |  |
-| `deploymentTimeAnnotation` _string_ | Deployment time annotation |  |  |
-| `disableEvents` _boolean_ | Disable events |  |  |
-| `authSecret` _string_ | AuthSecret name |  |  |
-| `restoreOnDelete` _boolean_ | Restore on delete |  |  |
 
 
 #### RecurringPeriod
@@ -153,6 +60,25 @@ _Appears in:_
 | `reverse` _boolean_ | Reverse the period |  |  |
 
 
+#### Resources
+
+
+
+
+
+
+
+_Appears in:_
+- [GcpSpec](#gcpspec)
+- [K8sSpec](#k8sspec)
+
+| Field | Description | Default | Validation |
+| --- | --- | --- | --- |
+| `types` _string array_ | Types of resources<br />K8s: deployments, statefulsets, ... (default: deployments)<br />GCP: compute-instances, ... (default: compute-instances) |  |  |
+| `names` _string array_ | Names of resources to manage |  |  |
+| `labelSelector` _[LabelSelector](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#labelselector-v1-meta)_ | Labels selectors |  |  |
+
+
 #### ScalerPeriod
 
 
@@ -163,6 +89,8 @@ _Appears in:_
 
 _Appears in:_
 - [GcpSpec](#gcpspec)
+- [GcpSpec](#gcpspec)
+- [K8sSpec](#k8sspec)
 - [K8sSpec](#k8sspec)
 
 | Field | Description | Default | Validation |
@@ -183,6 +111,8 @@ ScalerStatus defines the observed state of Scaler
 
 _Appears in:_
 - [Gcp](#gcp)
+- [Gcp](#gcp)
+- [K8s](#k8s)
 - [K8s](#k8s)
 
 | Field | Description | Default | Validation |
@@ -262,5 +192,207 @@ _Appears in:_
 | --- | --- | --- | --- |
 | `recurring` _[RecurringPeriod](#recurringperiod)_ |  |  |  |
 | `fixed` _[FixedPeriod](#fixedperiod)_ |  |  |  |
+
+
+
+## kubecloudscaler.cloud/v1alpha1
+
+Package v1alpha1 contains API Schema definitions for the k8s v1alpha1 API group
+
+
+### Resource Types
+- [Gcp](#gcp)
+- [K8s](#k8s)
+
+
+
+#### Gcp
+
+
+
+Gcp is the Schema for the scalers API
+
+
+
+
+
+| Field | Description | Default | Validation |
+| --- | --- | --- | --- |
+| `apiVersion` _string_ | `kubecloudscaler.cloud/v1alpha1` | | |
+| `kind` _string_ | `Gcp` | | |
+| `metadata` _[ObjectMeta](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#objectmeta-v1-meta)_ | Refer to Kubernetes API documentation for fields of `metadata`. |  |  |
+| `spec` _[GcpSpec](#gcpspec)_ |  |  |  |
+| `status` _[ScalerStatus](#scalerstatus)_ |  |  |  |
+
+
+#### GcpSpec
+
+
+
+GcpSpec defines the desired state of Scaler
+
+
+
+_Appears in:_
+- [Gcp](#gcp)
+
+| Field | Description | Default | Validation |
+| --- | --- | --- | --- |
+| `dryRun` _boolean_ | dry-run mode |  |  |
+| `periods` _ScalerPeriod array_ | Time period to scale |  |  |
+| `projectId` _string_ | Resources<br />ProjectId |  |  |
+| `region` _string_ | Region |  |  |
+| `resources` _string array_ | Resources |  |  |
+| `excludeResources` _string array_ | Exclude resources from downscaling |  |  |
+| `labelSelector` _[LabelSelector](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#labelselector-v1-meta)_ | Labels selectors |  |  |
+| `deploymentTimeAnnotation` _string_ | Deployment time annotation |  |  |
+| `authSecret` _string_ | AuthSecret name |  |  |
+| `restoreOnDelete` _boolean_ | Restore on delete |  |  |
+| `waitForOperation` _boolean_ | Wait for operation to complete |  |  |
+
+
+#### K8s
+
+
+
+Scaler is the Schema for the scalers API
+
+
+
+
+
+| Field | Description | Default | Validation |
+| --- | --- | --- | --- |
+| `apiVersion` _string_ | `kubecloudscaler.cloud/v1alpha1` | | |
+| `kind` _string_ | `K8s` | | |
+| `metadata` _[ObjectMeta](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#objectmeta-v1-meta)_ | Refer to Kubernetes API documentation for fields of `metadata`. |  |  |
+| `spec` _[K8sSpec](#k8sspec)_ |  |  |  |
+| `status` _[ScalerStatus](#scalerstatus)_ |  |  |  |
+
+
+#### K8sSpec
+
+
+
+ScalerSpec defines the desired state of Scaler
+
+
+
+_Appears in:_
+- [K8s](#k8s)
+
+| Field | Description | Default | Validation |
+| --- | --- | --- | --- |
+| `dryRun` _boolean_ | dry-run mode |  |  |
+| `periods` _ScalerPeriod array_ | Time period to scale |  |  |
+| `namespaces` _string array_ | Resources<br />Namespaces |  |  |
+| `excludeNamespaces` _string array_ | Exclude namespaces from downscaling |  |  |
+| `forceExcludeSystemNamespaces` _boolean_ | Force exclude system namespaces |  |  |
+| `resources` _string array_ | Resources |  |  |
+| `excludeResources` _string array_ | Exclude resources from downscaling |  |  |
+| `labelSelector` _[LabelSelector](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#labelselector-v1-meta)_ | Labels selectors |  |  |
+| `deploymentTimeAnnotation` _string_ | Deployment time annotation |  |  |
+| `disableEvents` _boolean_ | Disable events |  |  |
+| `authSecret` _string_ | AuthSecret name |  |  |
+| `restoreOnDelete` _boolean_ | Restore on delete |  |  |
+
+
+
+## kubecloudscaler.cloud/v1alpha2
+
+Package v1alpha2 contains API Schema definitions for the k8s v1alpha2 API group
+
+Package v1alpha2 contains API Schema definitions for the  v1alpha2 API group.
+
+### Resource Types
+- [Gcp](#gcp)
+- [K8s](#k8s)
+
+
+
+#### Gcp
+
+
+
+Gcp is the Schema for the scalers API
+
+
+
+
+
+| Field | Description | Default | Validation |
+| --- | --- | --- | --- |
+| `apiVersion` _string_ | `kubecloudscaler.cloud/v1alpha2` | | |
+| `kind` _string_ | `Gcp` | | |
+| `metadata` _[ObjectMeta](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#objectmeta-v1-meta)_ | Refer to Kubernetes API documentation for fields of `metadata`. |  |  |
+| `spec` _[GcpSpec](#gcpspec)_ |  |  |  |
+| `status` _[ScalerStatus](#scalerstatus)_ |  |  |  |
+
+
+#### GcpSpec
+
+
+
+GcpSpec defines the desired state of Scaler
+
+
+
+_Appears in:_
+- [Gcp](#gcp)
+
+| Field | Description | Default | Validation |
+| --- | --- | --- | --- |
+| `dryRun` _boolean_ | dry-run mode |  |  |
+| `periods` _ScalerPeriod array_ | Time period to scale |  |  |
+| `resources` _[Resources](#resources)_ | Resources |  |  |
+| `projectId` _string_ | ProjectId |  |  |
+| `region` _string_ | Region |  |  |
+| `authSecret` _string_ | AuthSecret name |  |  |
+| `restoreOnDelete` _boolean_ | Restore on delete |  |  |
+| `waitForOperation` _boolean_ | Wait for operation to complete |  |  |
+
+
+#### K8s
+
+
+
+Scaler is the Schema for the scalers API
+
+
+
+
+
+| Field | Description | Default | Validation |
+| --- | --- | --- | --- |
+| `apiVersion` _string_ | `kubecloudscaler.cloud/v1alpha2` | | |
+| `kind` _string_ | `K8s` | | |
+| `metadata` _[ObjectMeta](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#objectmeta-v1-meta)_ | Refer to Kubernetes API documentation for fields of `metadata`. |  |  |
+| `spec` _[K8sSpec](#k8sspec)_ |  |  |  |
+| `status` _[ScalerStatus](#scalerstatus)_ |  |  |  |
+
+
+#### K8sSpec
+
+
+
+ScalerSpec defines the desired state of Scaler
+
+
+
+_Appears in:_
+- [K8s](#k8s)
+
+| Field | Description | Default | Validation |
+| --- | --- | --- | --- |
+| `dryRun` _boolean_ | dry-run mode |  |  |
+| `periods` _ScalerPeriod array_ | Time period to scale |  |  |
+| `resources` _[Resources](#resources)_ | Resources |  |  |
+| `namespaces` _string array_ | Resources<br />Namespaces |  |  |
+| `excludeNamespaces` _string array_ | Exclude namespaces from downscaling |  |  |
+| `forceExcludeSystemNamespaces` _boolean_ | Force exclude system namespaces |  |  |
+| `deploymentTimeAnnotation` _string_ | Deployment time annotation |  |  |
+| `disableEvents` _boolean_ | Disable events |  |  |
+| `authSecret` _string_ | AuthSecret name |  |  |
+| `restoreOnDelete` _boolean_ | Restore on delete |  |  |
 
 

@@ -3,7 +3,7 @@ package period_test
 import (
 	"time"
 
-	kubecloudscalerv1alpha1 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha1"
+	"github.com/kubecloudscaler/kubecloudscaler/api/common"
 	"github.com/kubecloudscaler/kubecloudscaler/pkg/period"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -15,14 +15,14 @@ var _ = Describe("Period", func() {
 	Describe("New", func() {
 		Context("with valid recurring periods", func() {
 			var (
-				periodRecurring *kubecloudscalerv1alpha1.ScalerPeriod
+				periodRecurring *common.ScalerPeriod
 			)
 
 			BeforeEach(func() {
-				periodRecurring = &kubecloudscalerv1alpha1.ScalerPeriod{
+				periodRecurring = &common.ScalerPeriod{
 					Type: "down",
-					Time: kubecloudscalerv1alpha1.TimePeriod{
-						Recurring: &kubecloudscalerv1alpha1.RecurringPeriod{
+					Time: common.TimePeriod{
+						Recurring: &common.RecurringPeriod{
 							Days: []string{
 								"all",
 							},
@@ -98,14 +98,14 @@ var _ = Describe("Period", func() {
 
 		Context("with valid fixed periods", func() {
 			var (
-				periodFixed *kubecloudscalerv1alpha1.ScalerPeriod
+				periodFixed *common.ScalerPeriod
 			)
 
 			BeforeEach(func() {
-				periodFixed = &kubecloudscalerv1alpha1.ScalerPeriod{
+				periodFixed = &common.ScalerPeriod{
 					Type: "up",
-					Time: kubecloudscalerv1alpha1.TimePeriod{
-						Fixed: &kubecloudscalerv1alpha1.FixedPeriod{
+					Time: common.TimePeriod{
+						Fixed: &common.FixedPeriod{
 							StartTime:   "2024-10-10 08:00:00",
 							EndTime:     "2024-10-10 18:00:00",
 							Once:        ptr.To(true),
@@ -151,10 +151,10 @@ var _ = Describe("Period", func() {
 
 		Context("with invalid configurations", func() {
 			It("should error on minReplicas greater than maxReplicas", func() {
-				invalidPeriod := &kubecloudscalerv1alpha1.ScalerPeriod{
+				invalidPeriod := &common.ScalerPeriod{
 					Type: "down",
-					Time: kubecloudscalerv1alpha1.TimePeriod{
-						Recurring: &kubecloudscalerv1alpha1.RecurringPeriod{
+					Time: common.TimePeriod{
+						Recurring: &common.RecurringPeriod{
 							Days:      []string{"all"},
 							StartTime: "08:00",
 							EndTime:   "18:00",
@@ -171,10 +171,10 @@ var _ = Describe("Period", func() {
 			})
 
 			It("should error on invalid day notation", func() {
-				invalidPeriod := &kubecloudscalerv1alpha1.ScalerPeriod{
+				invalidPeriod := &common.ScalerPeriod{
 					Type: "down",
-					Time: kubecloudscalerv1alpha1.TimePeriod{
-						Recurring: &kubecloudscalerv1alpha1.RecurringPeriod{
+					Time: common.TimePeriod{
+						Recurring: &common.RecurringPeriod{
 							Days:      []string{"invalid"},
 							StartTime: "08:00",
 							EndTime:   "18:00",
@@ -192,10 +192,10 @@ var _ = Describe("Period", func() {
 			})
 
 			It("should error on invalid recurring time format", func() {
-				invalidPeriod := &kubecloudscalerv1alpha1.ScalerPeriod{
+				invalidPeriod := &common.ScalerPeriod{
 					Type: "down",
-					Time: kubecloudscalerv1alpha1.TimePeriod{
-						Recurring: &kubecloudscalerv1alpha1.RecurringPeriod{
+					Time: common.TimePeriod{
+						Recurring: &common.RecurringPeriod{
 							Days:      []string{"all"},
 							StartTime: "invalid-time",
 							EndTime:   "18:00",
@@ -212,10 +212,10 @@ var _ = Describe("Period", func() {
 			})
 
 			It("should error on invalid fixed time format", func() {
-				invalidPeriod := &kubecloudscalerv1alpha1.ScalerPeriod{
+				invalidPeriod := &common.ScalerPeriod{
 					Type: "down",
-					Time: kubecloudscalerv1alpha1.TimePeriod{
-						Fixed: &kubecloudscalerv1alpha1.FixedPeriod{
+					Time: common.TimePeriod{
+						Fixed: &common.FixedPeriod{
 							StartTime: "invalid-datetime",
 							EndTime:   "2024-10-10 18:00:00",
 						},
@@ -231,10 +231,10 @@ var _ = Describe("Period", func() {
 			})
 
 			It("should error on start time after end time", func() {
-				invalidPeriod := &kubecloudscalerv1alpha1.ScalerPeriod{
+				invalidPeriod := &common.ScalerPeriod{
 					Type: "down",
-					Time: kubecloudscalerv1alpha1.TimePeriod{
-						Recurring: &kubecloudscalerv1alpha1.RecurringPeriod{
+					Time: common.TimePeriod{
+						Recurring: &common.RecurringPeriod{
 							Days:      []string{"all"},
 							StartTime: "18:00",
 							EndTime:   "08:00",
@@ -251,10 +251,10 @@ var _ = Describe("Period", func() {
 			})
 
 			It("should error on invalid timezone", func() {
-				invalidPeriod := &kubecloudscalerv1alpha1.ScalerPeriod{
+				invalidPeriod := &common.ScalerPeriod{
 					Type: "down",
-					Time: kubecloudscalerv1alpha1.TimePeriod{
-						Recurring: &kubecloudscalerv1alpha1.RecurringPeriod{
+					Time: common.TimePeriod{
+						Recurring: &common.RecurringPeriod{
 							Days:      []string{"all"},
 							StartTime: "08:00",
 							EndTime:   "18:00",
@@ -273,10 +273,10 @@ var _ = Describe("Period", func() {
 			})
 
 			It("should error on invalid grace period", func() {
-				invalidPeriod := &kubecloudscalerv1alpha1.ScalerPeriod{
+				invalidPeriod := &common.ScalerPeriod{
 					Type: "down",
-					Time: kubecloudscalerv1alpha1.TimePeriod{
-						Recurring: &kubecloudscalerv1alpha1.RecurringPeriod{
+					Time: common.TimePeriod{
+						Recurring: &common.RecurringPeriod{
 							Days:        []string{"all"},
 							StartTime:   "08:00",
 							EndTime:     "18:00",
@@ -297,10 +297,10 @@ var _ = Describe("Period", func() {
 
 		Context("with edge cases", func() {
 			It("should handle nil minReplicas (defaults to 1)", func() {
-				periodWithNilMin := &kubecloudscalerv1alpha1.ScalerPeriod{
+				periodWithNilMin := &common.ScalerPeriod{
 					Type: "down",
-					Time: kubecloudscalerv1alpha1.TimePeriod{
-						Recurring: &kubecloudscalerv1alpha1.RecurringPeriod{
+					Time: common.TimePeriod{
+						Recurring: &common.RecurringPeriod{
 							Days:      []string{"all"},
 							StartTime: "08:00",
 							EndTime:   "18:00",
@@ -317,10 +317,10 @@ var _ = Describe("Period", func() {
 			})
 
 			It("should handle nil maxReplicas (defaults to minReplicas)", func() {
-				periodWithNilMax := &kubecloudscalerv1alpha1.ScalerPeriod{
+				periodWithNilMax := &common.ScalerPeriod{
 					Type: "down",
-					Time: kubecloudscalerv1alpha1.TimePeriod{
-						Recurring: &kubecloudscalerv1alpha1.RecurringPeriod{
+					Time: common.TimePeriod{
+						Recurring: &common.RecurringPeriod{
 							Days:      []string{"all"},
 							StartTime: "08:00",
 							EndTime:   "18:00",
@@ -337,10 +337,10 @@ var _ = Describe("Period", func() {
 			})
 
 			It("should handle nil grace period (defaults to 0s)", func() {
-				periodWithNilGrace := &kubecloudscalerv1alpha1.ScalerPeriod{
+				periodWithNilGrace := &common.ScalerPeriod{
 					Type: "down",
-					Time: kubecloudscalerv1alpha1.TimePeriod{
-						Recurring: &kubecloudscalerv1alpha1.RecurringPeriod{
+					Time: common.TimePeriod{
+						Recurring: &common.RecurringPeriod{
 							Days:        []string{"all"},
 							StartTime:   "08:00",
 							EndTime:     "18:00",
@@ -358,10 +358,10 @@ var _ = Describe("Period", func() {
 			})
 
 			It("should handle end time 00:00 (converts to 23:59)", func() {
-				periodWithZeroEnd := &kubecloudscalerv1alpha1.ScalerPeriod{
+				periodWithZeroEnd := &common.ScalerPeriod{
 					Type: "down",
-					Time: kubecloudscalerv1alpha1.TimePeriod{
-						Recurring: &kubecloudscalerv1alpha1.RecurringPeriod{
+					Time: common.TimePeriod{
+						Recurring: &common.RecurringPeriod{
 							Days:      []string{"all"},
 							StartTime: "08:00",
 							EndTime:   "00:00",
@@ -378,10 +378,10 @@ var _ = Describe("Period", func() {
 			})
 
 			It("should handle single day with short notation", func() {
-				periodWithShortDay := &kubecloudscalerv1alpha1.ScalerPeriod{
+				periodWithShortDay := &common.ScalerPeriod{
 					Type: "down",
-					Time: kubecloudscalerv1alpha1.TimePeriod{
-						Recurring: &kubecloudscalerv1alpha1.RecurringPeriod{
+					Time: common.TimePeriod{
+						Recurring: &common.RecurringPeriod{
 							Days:      []string{"mon"},
 							StartTime: "08:00",
 							EndTime:   "18:00",
@@ -398,10 +398,10 @@ var _ = Describe("Period", func() {
 			})
 
 			It("should handle day with 3 characters", func() {
-				periodWithThreeCharDay := &kubecloudscalerv1alpha1.ScalerPeriod{
+				periodWithThreeCharDay := &common.ScalerPeriod{
 					Type: "down",
-					Time: kubecloudscalerv1alpha1.TimePeriod{
-						Recurring: &kubecloudscalerv1alpha1.RecurringPeriod{
+					Time: common.TimePeriod{
+						Recurring: &common.RecurringPeriod{
 							Days:      []string{"tue"},
 							StartTime: "08:00",
 							EndTime:   "18:00",
@@ -420,10 +420,10 @@ var _ = Describe("Period", func() {
 
 		Context("with different period types", func() {
 			It("should handle restore type", func() {
-				restorePeriod := &kubecloudscalerv1alpha1.ScalerPeriod{
+				restorePeriod := &common.ScalerPeriod{
 					Type: "restore",
-					Time: kubecloudscalerv1alpha1.TimePeriod{
-						Recurring: &kubecloudscalerv1alpha1.RecurringPeriod{
+					Time: common.TimePeriod{
+						Recurring: &common.RecurringPeriod{
 							Days:      []string{"all"},
 							StartTime: "08:00",
 							EndTime:   "18:00",
@@ -440,10 +440,10 @@ var _ = Describe("Period", func() {
 			})
 
 			It("should handle up type", func() {
-				upPeriod := &kubecloudscalerv1alpha1.ScalerPeriod{
+				upPeriod := &common.ScalerPeriod{
 					Type: "up",
-					Time: kubecloudscalerv1alpha1.TimePeriod{
-						Recurring: &kubecloudscalerv1alpha1.RecurringPeriod{
+					Time: common.TimePeriod{
+						Recurring: &common.RecurringPeriod{
 							Days:      []string{"all"},
 							StartTime: "08:00",
 							EndTime:   "18:00",
@@ -460,10 +460,10 @@ var _ = Describe("Period", func() {
 			})
 
 			It("should handle down type", func() {
-				downPeriod := &kubecloudscalerv1alpha1.ScalerPeriod{
+				downPeriod := &common.ScalerPeriod{
 					Type: "down",
-					Time: kubecloudscalerv1alpha1.TimePeriod{
-						Recurring: &kubecloudscalerv1alpha1.RecurringPeriod{
+					Time: common.TimePeriod{
+						Recurring: &common.RecurringPeriod{
 							Days:      []string{"all"},
 							StartTime: "08:00",
 							EndTime:   "18:00",
@@ -482,10 +482,10 @@ var _ = Describe("Period", func() {
 
 		Context("with complex day configurations", func() {
 			It("should handle multiple days", func() {
-				multiDayPeriod := &kubecloudscalerv1alpha1.ScalerPeriod{
+				multiDayPeriod := &common.ScalerPeriod{
 					Type: "down",
-					Time: kubecloudscalerv1alpha1.TimePeriod{
-						Recurring: &kubecloudscalerv1alpha1.RecurringPeriod{
+					Time: common.TimePeriod{
+						Recurring: &common.RecurringPeriod{
 							Days:      []string{"mon", "wed", "fri", "sun"},
 							StartTime: "08:00",
 							EndTime:   "18:00",
@@ -503,10 +503,10 @@ var _ = Describe("Period", func() {
 			})
 
 			It("should handle all days", func() {
-				allDaysPeriod := &kubecloudscalerv1alpha1.ScalerPeriod{
+				allDaysPeriod := &common.ScalerPeriod{
 					Type: "down",
-					Time: kubecloudscalerv1alpha1.TimePeriod{
-						Recurring: &kubecloudscalerv1alpha1.RecurringPeriod{
+					Time: common.TimePeriod{
+						Recurring: &common.RecurringPeriod{
 							Days:      []string{"all"},
 							StartTime: "08:00",
 							EndTime:   "18:00",
@@ -525,10 +525,10 @@ var _ = Describe("Period", func() {
 
 		Context("with time parsing edge cases", func() {
 			It("should handle time with minutes", func() {
-				timeWithMinutes := &kubecloudscalerv1alpha1.ScalerPeriod{
+				timeWithMinutes := &common.ScalerPeriod{
 					Type: "down",
-					Time: kubecloudscalerv1alpha1.TimePeriod{
-						Recurring: &kubecloudscalerv1alpha1.RecurringPeriod{
+					Time: common.TimePeriod{
+						Recurring: &common.RecurringPeriod{
 							Days:      []string{"all"},
 							StartTime: "08:30",
 							EndTime:   "18:15",
@@ -546,10 +546,10 @@ var _ = Describe("Period", func() {
 			})
 
 			It("should handle midnight times", func() {
-				midnightPeriod := &kubecloudscalerv1alpha1.ScalerPeriod{
+				midnightPeriod := &common.ScalerPeriod{
 					Type: "down",
-					Time: kubecloudscalerv1alpha1.TimePeriod{
-						Recurring: &kubecloudscalerv1alpha1.RecurringPeriod{
+					Time: common.TimePeriod{
+						Recurring: &common.RecurringPeriod{
 							Days:      []string{"all"},
 							StartTime: "00:00",
 							EndTime:   "23:59",

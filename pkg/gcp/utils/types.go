@@ -17,8 +17,7 @@ type Config struct {
 	ProjectId        string                `json:"projectId,omitempty"`
 	Region           string                `json:"region,omitempty"`
 	Client           *compute.Service      `json:"client"`
-	Resources        []string              `json:"resources,omitempty"`
-	ExcludeResources []string              `json:"excludeResources,omitempty"`
+	Names            []string              `json:"names,omitempty"`
 	LabelSelector    *metaV1.LabelSelector `json:"labelSelector,omitempty"`
 	Period           *periodPkg.Period     `json:"period,omitempty"`
 	WaitForOperation bool                  `json:"waitForOperation,omitempty"`

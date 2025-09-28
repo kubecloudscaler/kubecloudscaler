@@ -2,4 +2,6 @@
 resources:
 - k8s_v1alpha1_scaler.yaml
 - gcp_v1alpha1_scaler.yaml
+- v1alpha2_k8s.yaml
+- v1alpha2_gcp.yaml
 # +kubebuilder:scaffold:manifestskustomizesamples

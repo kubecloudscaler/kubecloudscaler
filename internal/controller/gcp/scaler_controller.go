@@ -20,10 +20,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"slices"
 	"time"
 
-	kubecloudscalerv1alpha1 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha1"
+	"github.com/kubecloudscaler/kubecloudscaler/api/common"
+	kubecloudscalerv1alpha2 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha2"
 	"github.com/kubecloudscaler/kubecloudscaler/internal/utils"
 	gcpUtils "github.com/kubecloudscaler/kubecloudscaler/pkg/gcp/utils"
 	gcpClient "github.com/kubecloudscaler/kubecloudscaler/pkg/gcp/utils/client"
@@ -67,12 +67,14 @@ func (r *ScalerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	_ = log.FromContext(ctx)
 
 	// Fetch the Scaler object from the Kubernetes API
-	scaler := &kubecloudscalerv1alpha1.Gcp{}
+	scaler := &kubecloudscalerv1alpha2.Gcp{}
 	if err := r.Get(ctx, req.NamespacedName, scaler); err != nil {
 		log.Log.Error(err, "unable to fetch Scaler")
 
 		return ctrl.Result{RequeueAfter: 0 * time.Second}, client.IgnoreNotFound(err)
 	}
+
+	log.Log.Info("reconciling scaler", "name", scaler.Name, "kind", scaler.Kind, "apiVersion", scaler.APIVersion)
 
 	// Finalizer management for proper cleanup
 	scalerFinalizer := "kubecloudscaler.cloud/finalizer"
@@ -131,12 +133,11 @@ func (r *ScalerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	// Configure resource management settings
 	resourceConfig := resources.Config{
 		GCP: &gcpUtils.Config{
-			Client:           gcpClient,
-			ProjectId:        scaler.Spec.ProjectId,
-			Region:           scaler.Spec.Region,
-			Resources:        scaler.Spec.Resources,
-			ExcludeResources: scaler.Spec.ExcludeResources,
-			LabelSelector:    scaler.Spec.LabelSelector,
+			Client:        gcpClient,
+			ProjectId:     scaler.Spec.ProjectId,
+			Region:        scaler.Spec.Region,
+			Names:         scaler.Spec.Resources.Names,
+			LabelSelector: scaler.Spec.Resources.LabelSelector,
 		},
 	}
 
@@ -165,8 +166,8 @@ func (r *ScalerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 
 	// Track results of scaling operations
 	var (
-		recSuccess []kubecloudscalerv1alpha1.ScalerStatusSuccess // Successfully scaled resources
-		recFailed  []kubecloudscalerv1alpha1.ScalerStatusFailed  // Failed scaling operations
+		recSuccess []common.ScalerStatusSuccess // Successfully scaled resources
+		recFailed  []common.ScalerStatusFailed  // Failed scaling operations
 	)
 
 	// Validate and filter the list of resources to be scaled
@@ -228,6 +229,8 @@ func (r *ScalerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	// Persist status updates to the cluster
 	if err := r.Status().Update(ctx, scaler); err != nil {
 		log.Log.Error(err, "unable to update scaler status")
+	} else {
+		log.Log.Info("scaler status updated", "name", scaler.Name, "kind", scaler.Kind, "apiVersion", scaler.APIVersion)
 	}
 
 	// Requeue for the next reconciliation cycle
@@ -239,7 +242,7 @@ func (r *ScalerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 // and defines the reconciliation behavior.
 func (r *ScalerReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&kubecloudscalerv1alpha1.Gcp{}).              // Watch for GCP Scaler resources
+		For(&kubecloudscalerv1alpha2.Gcp{}).              // Watch for GCP Scaler resources
 		WithEventFilter(utils.IgnoreDeletionPredicate()). // Filter out deletion events
 		Named("gcpScaler").                               // Set controller name
 		Complete(r)                                       // Complete the controller setup
@@ -247,7 +250,7 @@ func (r *ScalerReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 // validResourceList validates and filters the list of resources to be scaled.
 // It ensures that only valid resource types are included for GCP resources.
-func (r *ScalerReconciler) validResourceList(ctx context.Context, scaler *kubecloudscalerv1alpha1.Gcp) ([]string, error) {
+func (r *ScalerReconciler) validResourceList(ctx context.Context, scaler *kubecloudscalerv1alpha2.Gcp) ([]string, error) {
 	_ = log.FromContext(ctx)
 
 	var (
@@ -255,17 +258,8 @@ func (r *ScalerReconciler) validResourceList(ctx context.Context, scaler *kubecl
 	)
 
 	// Default to compute instances if no resources are specified
-	if len(scaler.Spec.Resources) == 0 {
-		scaler.Spec.Resources = append(scaler.Spec.Resources, "compute-instances")
-	}
-
-	// Process each resource type and validate it
-	for _, resource := range scaler.Spec.Resources {
-		// Skip excluded resources
-		if !slices.Contains(scaler.Spec.ExcludeResources, resource) {
-			// Add valid resource to the output list
-			output = append(output, resource)
-		}
+	if len(scaler.Spec.Resources.Types) == 0 {
+		scaler.Spec.Resources.Types = []string{resources.DefaultGCPResourceType}
 	}
 
 	return output, nil

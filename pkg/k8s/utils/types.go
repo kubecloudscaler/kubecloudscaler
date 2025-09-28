@@ -19,4 +19,5 @@ type Config struct {
 	LabelSelector                *metaV1.LabelSelector `json:"labelSelector,omitempty"`
 	Period                       *periodPkg.Period     `json:"period,omitempty"`
 	ForceExcludeSystemNamespaces bool                  `json:"forceExcludeSystemNamespaces,omitempty"`
+	Names                        []string              `json:"names,omitempty"`
 }

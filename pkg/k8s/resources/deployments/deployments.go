@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	kubecloudscalerv1alpha1 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha1"
+	"github.com/kubecloudscaler/kubecloudscaler/api/common"
 	"github.com/kubecloudscaler/kubecloudscaler/pkg/k8s/utils"
 	appsV1 "k8s.io/api/apps/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -23,10 +23,10 @@ func (d *Deployments) init(client kubernetes.Interface) {
 	d.Client = client.AppsV1()
 }
 
-func (d *Deployments) SetState(ctx context.Context) ([]kubecloudscalerv1alpha1.ScalerStatusSuccess, []kubecloudscalerv1alpha1.ScalerStatusFailed, error) {
+func (d *Deployments) SetState(ctx context.Context) ([]common.ScalerStatusSuccess, []common.ScalerStatusFailed, error) {
 	_ = log.FromContext(ctx)
-	scalerStatusSuccess := []kubecloudscalerv1alpha1.ScalerStatusSuccess{}
-	scalerStatusFailed := []kubecloudscalerv1alpha1.ScalerStatusFailed{}
+	scalerStatusSuccess := []common.ScalerStatusSuccess{}
+	scalerStatusFailed := []common.ScalerStatusFailed{}
 	list := []appsV1.Deployment{}
 
 	for _, ns := range d.Resource.NsList {
@@ -52,7 +52,7 @@ func (d *Deployments) SetState(ctx context.Context) ([]kubecloudscalerv1alpha1.S
 		if err != nil {
 			scalerStatusFailed = append(
 				scalerStatusFailed,
-				kubecloudscalerv1alpha1.ScalerStatusFailed{
+				common.ScalerStatusFailed{
 					Kind:   "deployment",
 					Name:   dName.Name,
 					Reason: err.Error(),
@@ -84,7 +84,7 @@ func (d *Deployments) SetState(ctx context.Context) ([]kubecloudscalerv1alpha1.S
 			if err != nil {
 				scalerStatusFailed = append(
 					scalerStatusFailed,
-					kubecloudscalerv1alpha1.ScalerStatusFailed{
+					common.ScalerStatusFailed{
 						Kind:   "deployment",
 						Name:   dName.Name,
 						Reason: err.Error(),
@@ -108,7 +108,7 @@ func (d *Deployments) SetState(ctx context.Context) ([]kubecloudscalerv1alpha1.S
 		if err != nil {
 			scalerStatusFailed = append(
 				scalerStatusFailed,
-				kubecloudscalerv1alpha1.ScalerStatusFailed{
+				common.ScalerStatusFailed{
 					Kind:   "deployment",
 					Name:   dName.Name,
 					Reason: err.Error(),
@@ -120,7 +120,7 @@ func (d *Deployments) SetState(ctx context.Context) ([]kubecloudscalerv1alpha1.S
 
 		scalerStatusSuccess = append(
 			scalerStatusSuccess,
-			kubecloudscalerv1alpha1.ScalerStatusSuccess{
+			common.ScalerStatusSuccess{
 				Kind: "deployment",
 				Name: dName.Name,
 			},

@@ -1,0 +1,79 @@
+/*
+Copyright 2024.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+package v1alpha2
+
+import (
+	"github.com/kubecloudscaler/kubecloudscaler/api/common"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
+
+// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
+// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
+
+// GcpSpec defines the desired state of Scaler
+type GcpSpec struct {
+	// Secret containing k8s config to connect to distant cluster
+	// If not set, will use the incluster client
+	// AuthSecretName string `json:"authSecretName,omitempty"`
+
+	// dry-run mode
+	DryRun bool `json:"dryRun,omitempty"`
+
+	// Time period to scale
+	Periods []*common.ScalerPeriod `json:"periods"`
+	// Resources
+	Resources common.Resources `json:"resources"`
+
+	// ProjectId
+	ProjectId string `json:"projectId"`
+	// Region
+	Region string `json:"region,omitempty"`
+	// AuthSecret name
+	AuthSecret *string `json:"authSecret,omitempty"`
+	// Restore on delete
+	RestoreOnDelete bool `json:"restoreOnDelete,omitempty"`
+	// Wait for operation to complete
+	WaitForOperation bool `json:"waitForOperation,omitempty"`
+}
+
+// +kubebuilder:object:root=true
+// +kubebuilder:storageversion
+// +kubebuilder:subresource:status
+// +kubebuilder:resource:scope=Cluster
+// +genclient
+
+// Gcp is the Schema for the scalers API
+type Gcp struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+
+	Spec   GcpSpec             `json:"spec,omitempty"`
+	Status common.ScalerStatus `json:"status,omitempty"`
+}
+
+// +kubebuilder:object:root=true
+
+// GcpList contains a list of Scaler
+type GcpList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata,omitempty"`
+	Items           []Gcp `json:"items"`
+}
+
+func init() {
+	SchemeBuilder.Register(&Gcp{}, &GcpList{})
+}

@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	kubecloudscalerv1alpha1 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha1"
+	"github.com/kubecloudscaler/kubecloudscaler/api/common"
 	deploymentsPkg "github.com/kubecloudscaler/kubecloudscaler/pkg/k8s/resources/deployments"
 	"github.com/kubecloudscaler/kubecloudscaler/pkg/k8s/utils"
 	"github.com/kubecloudscaler/kubecloudscaler/pkg/period"
@@ -48,7 +48,7 @@ var _ = Describe("Deployments", func() {
 				IsActive:     true,
 				GetStartTime: time.Now(),
 				GetEndTime:   time.Now(),
-				Period: &kubecloudscalerv1alpha1.RecurringPeriod{
+				Period: &common.RecurringPeriod{
 					Days:      []string{"all"},
 					StartTime: "00:00",
 					EndTime:   "23:59",

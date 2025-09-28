@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	kubecloudscalerv1alpha1 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha1"
+	"github.com/kubecloudscaler/kubecloudscaler/api/common"
 	"github.com/kubecloudscaler/kubecloudscaler/pkg/k8s/utils"
 	batchV1 "k8s.io/api/batch/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -23,10 +23,10 @@ func (c *Cronjobs) init(client kubernetes.Interface) {
 	c.Client = client.BatchV1()
 }
 
-func (c *Cronjobs) SetState(ctx context.Context) ([]kubecloudscalerv1alpha1.ScalerStatusSuccess, []kubecloudscalerv1alpha1.ScalerStatusFailed, error) {
+func (c *Cronjobs) SetState(ctx context.Context) ([]common.ScalerStatusSuccess, []common.ScalerStatusFailed, error) {
 	_ = log.FromContext(ctx)
-	scalerStatusSuccess := []kubecloudscalerv1alpha1.ScalerStatusSuccess{}
-	scalerStatusFailed := []kubecloudscalerv1alpha1.ScalerStatusFailed{}
+	scalerStatusSuccess := []common.ScalerStatusSuccess{}
+	scalerStatusFailed := []common.ScalerStatusFailed{}
 	list := []batchV1.CronJob{}
 
 	// list all objects in all needed namespaces
@@ -52,7 +52,7 @@ func (c *Cronjobs) SetState(ctx context.Context) ([]kubecloudscalerv1alpha1.Scal
 		if err != nil {
 			scalerStatusFailed = append(
 				scalerStatusFailed,
-				kubecloudscalerv1alpha1.ScalerStatusFailed{
+				common.ScalerStatusFailed{
 					Kind:   "cronjob",
 					Name:   cName.Name,
 					Reason: err.Error(),
@@ -75,7 +75,7 @@ func (c *Cronjobs) SetState(ctx context.Context) ([]kubecloudscalerv1alpha1.Scal
 
 			scalerStatusFailed = append(
 				scalerStatusFailed,
-				kubecloudscalerv1alpha1.ScalerStatusFailed{
+				common.ScalerStatusFailed{
 					Kind:   "cronjob",
 					Name:   cName.Name,
 					Reason: "cronjob can only be scaled down",
@@ -93,7 +93,7 @@ func (c *Cronjobs) SetState(ctx context.Context) ([]kubecloudscalerv1alpha1.Scal
 			if err != nil {
 				scalerStatusFailed = append(
 					scalerStatusFailed,
-					kubecloudscalerv1alpha1.ScalerStatusFailed{
+					common.ScalerStatusFailed{
 						Kind:   "cronjob",
 						Name:   cName.Name,
 						Reason: err.Error(),
@@ -117,7 +117,7 @@ func (c *Cronjobs) SetState(ctx context.Context) ([]kubecloudscalerv1alpha1.Scal
 		if err != nil {
 			scalerStatusFailed = append(
 				scalerStatusFailed,
-				kubecloudscalerv1alpha1.ScalerStatusFailed{
+				common.ScalerStatusFailed{
 					Kind:   "cronjob",
 					Name:   cName.Name,
 					Reason: err.Error(),
@@ -129,7 +129,7 @@ func (c *Cronjobs) SetState(ctx context.Context) ([]kubecloudscalerv1alpha1.Scal
 
 		scalerStatusSuccess = append(
 			scalerStatusSuccess,
-			kubecloudscalerv1alpha1.ScalerStatusSuccess{
+			common.ScalerStatusSuccess{
 				Kind: "cronjob",
 				Name: cName.Name,
 			},

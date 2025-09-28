@@ -2,7 +2,7 @@
 # This file is used to track the info used to scaffold your project
 # and allow the plugins properly work.
 # More info: https://book.kubebuilder.io/reference/project-config.html
-cliVersion: 4.7.1
+cliVersion: 4.9.0
 domain: kubecloudscaler.cloud
 layout:
 - go.kubebuilder.io/v4
@@ -26,4 +26,27 @@ resources:
   kind: Gcp
   path: github.com/kubecloudscaler/kubecloudscaler/api/v1alpha1
   version: v1alpha1
+- api:
+    crdVersion: v1
+  domain: kubecloudscaler.cloud
+  kind: K8s
+  path: github.com/kubecloudscaler/kubecloudscaler/api/v1alpha2
+  version: v1alpha2
+  webhooks:
+    conversion: true
+    spoke:
+    - v1alpha1
+    webhookVersion: v1
+- api:
+    crdVersion: v1
+  domain: kubecloudscaler.cloud
+  kind: Gcp
+  path: github.com/kubecloudscaler/kubecloudscaler/api/v1alpha2
+  version: v1alpha2
+  webhooks:
+    conversion: true
+    spoke:
+    - v1alpha1
+    validation: true
+    webhookVersion: v1
 version: "3"

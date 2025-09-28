@@ -38,8 +38,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	kubecloudscalerv1alpha1 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha1"
+	kubecloudscalerv1alpha2 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha2"
 	gcpcontroller "github.com/kubecloudscaler/kubecloudscaler/internal/controller/gcp"
 	k8scontroller "github.com/kubecloudscaler/kubecloudscaler/internal/controller/k8s"
+	webhookv1alpha2 "github.com/kubecloudscaler/kubecloudscaler/internal/webhook/v1alpha2"
 	// +kubebuilder:scaffold:imports
 )
 
@@ -51,6 +53,7 @@ var (
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
+	utilruntime.Must(kubecloudscalerv1alpha2.AddToScheme(scheme))
 	utilruntime.Must(kubecloudscalerv1alpha1.AddToScheme(scheme))
 	// +kubebuilder:scaffold:scheme
 }
@@ -216,6 +219,21 @@ func main() {
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "GcpScaler")
 		os.Exit(1)
+	}
+
+	// nolint:goconst
+	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
+		if err := webhookv1alpha2.SetupK8sWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "v1alpha2", "kind", "K8s")
+			os.Exit(1)
+		}
+	}
+	// nolint:goconst
+	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
+		if err := webhookv1alpha2.SetupGcpWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "v1alpha2", "kind", "Gcp")
+			os.Exit(1)
+		}
 	}
 	// +kubebuilder:scaffold:builder
 

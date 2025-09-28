@@ -1,5 +1,5 @@
 // +kubebuilder:object:generate=true
-package v1alpha1
+package common
 
 type ScalerPeriod struct {
 	// +kubebuilder:validation:Enum=down;up

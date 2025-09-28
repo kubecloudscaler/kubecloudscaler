@@ -8,11 +8,11 @@ import (
 	"strings"
 	"time"
 
-	kubecloudscalerv1alpha1 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha1"
+	"github.com/kubecloudscaler/kubecloudscaler/api/common"
 	"k8s.io/utils/ptr"
 )
 
-func New(period *kubecloudscalerv1alpha1.ScalerPeriod) (*Period, error) {
+func New(period *common.ScalerPeriod) (*Period, error) {
 	var err error
 
 	curPeriod := &Period{
@@ -127,7 +127,7 @@ func getTime(period, periodType string, timeLocation *time.Location) (time.Time,
 
 func isPeriodActive(
 	periodType string,
-	period *kubecloudscalerv1alpha1.RecurringPeriod,
+	period *common.RecurringPeriod,
 ) (bool, time.Time, time.Time, *bool, error) {
 	var (
 		err error
@@ -191,12 +191,12 @@ func isPeriodActive(
 	return isActive, startTime, endTime, period.Once, nil
 }
 
-func convertFixedToRecurring(fixed *kubecloudscalerv1alpha1.FixedPeriod) *kubecloudscalerv1alpha1.RecurringPeriod {
+func convertFixedToRecurring(fixed *common.FixedPeriod) *common.RecurringPeriod {
 	if fixed == nil {
 		return nil
 	}
 
-	return &kubecloudscalerv1alpha1.RecurringPeriod{
+	return &common.RecurringPeriod{
 		Days: []string{
 			"all",
 		},
