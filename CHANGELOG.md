@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.1](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.3.0...v1.3.1) (2025-09-28)
+
+
+### Bug Fixes
+
+* webhook tls ([154fbe1](https://github.com/kubecloudscaler/kubecloudscaler/commit/154fbe1e0d6f65a446f80294c8a4cc76aca26ce5))
+
 ## [1.3.0](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.2.2...v1.3.0) (2025-09-28)
 
 
