@@ -5,47 +5,48 @@
 cliVersion: 4.9.0
 domain: kubecloudscaler.cloud
 layout:
-  - go.kubebuilder.io/v4
-  - grafana.kubebuilder.io/v1-alpha
+- go.kubebuilder.io/v4
+- grafana.kubebuilder.io/v1-alpha
 plugins:
   grafana.kubebuilder.io/v1-alpha: {}
 projectName: kubecloudscaler
 repo: github.com/kubecloudscaler/kubecloudscaler
 resources:
-  - api:
-      crdVersion: v1
-    controller: true
-    domain: kubecloudscaler.cloud
-    kind: K8s
-    path: github.com/kubecloudscaler/kubecloudscaler/api/v1alpha1
-    version: v1alpha1
-  - api:
-      crdVersion: v1
-    controller: true
-    domain: kubecloudscaler.cloud
-    kind: Gcp
-    path: github.com/kubecloudscaler/kubecloudscaler/api/v1alpha1
-    version: v1alpha1
-  - api:
-      crdVersion: v1
-    domain: kubecloudscaler.cloud
-    kind: K8s
-    path: github.com/kubecloudscaler/kubecloudscaler/api/v1alpha2
-    version: v1alpha2
-    webhooks:
-      conversion: true
-      spoke:
-        - v1alpha1
-      webhookVersion: v1
-  - api:
-      crdVersion: v1
-    domain: kubecloudscaler.cloud
-    kind: Gcp
-    path: github.com/kubecloudscaler/kubecloudscaler/api/v1alpha2
-    version: v1alpha2
-    webhooks:
-      conversion: true
-      spoke:
-        - v1alpha1
-      webhookVersion: v1
+- api:
+    crdVersion: v1
+  controller: true
+  domain: kubecloudscaler.cloud
+  kind: K8s
+  path: github.com/kubecloudscaler/kubecloudscaler/api/v1alpha1
+  version: v1alpha1
+- api:
+    crdVersion: v1
+  controller: true
+  domain: kubecloudscaler.cloud
+  kind: Gcp
+  path: github.com/kubecloudscaler/kubecloudscaler/api/v1alpha1
+  version: v1alpha1
+- api:
+    crdVersion: v1
+  domain: kubecloudscaler.cloud
+  kind: K8s
+  path: github.com/kubecloudscaler/kubecloudscaler/api/v1alpha2
+  version: v1alpha2
+  webhooks:
+    conversion: true
+    spoke:
+    - v1alpha1
+    webhookVersion: v1
+- api:
+    crdVersion: v1
+  domain: kubecloudscaler.cloud
+  kind: Gcp
+  path: github.com/kubecloudscaler/kubecloudscaler/api/v1alpha2
+  version: v1alpha2
+  webhooks:
+    conversion: true
+    spoke:
+    - v1alpha1
+    validation: true
+    webhookVersion: v1
 version: "3"

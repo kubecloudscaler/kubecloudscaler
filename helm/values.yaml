@@ -4,11 +4,15 @@ controllerManager:
     - --metrics-bind-address=:8443
     - --leader-elect
     - --health-probe-bind-address=:8081
+    - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
     containerSecurityContext:
       allowPrivilegeEscalation: false
       capabilities:
         drop:
         - ALL
+      readOnlyRootFilesystem: true
+    env:
+      enableWebhooks: "true"
     image:
       repository: ghcr.io/kubecloudscaler/kubecloudscaler
       tag: latest
@@ -23,6 +27,8 @@ controllerManager:
   nodeSelector: {}
   podSecurityContext:
     runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
   replicas: 1
   tolerations: []
   topologySpreadConstraints: []

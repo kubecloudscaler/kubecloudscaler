@@ -3,7 +3,6 @@ kind: Namespace
 metadata:
   labels:
     control-plane: controller-manager
-    app.kubernetes.io/name: cloudscaler
     app.kubernetes.io/managed-by: kustomize
   name: system
 ---
@@ -14,7 +13,6 @@ metadata:
   namespace: system
   labels:
     control-plane: controller-manager
-    app.kubernetes.io/name: cloudscaler
     app.kubernetes.io/managed-by: kustomize
 spec:
   selector:
@@ -55,8 +53,8 @@ spec:
         # More info: https://kubernetes.io/docs/concepts/security/pod-security-standards/#restricted
         # Please uncomment the following code if your project does NOT have to work on old Kubernetes
         # versions < 1.19 or on vendors versions which do NOT support this field by default (i.e. Openshift < 4.11 ).
-        # seccompProfile:
-        #   type: RuntimeDefault
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - command:
             - /kubecloudscaler
@@ -66,7 +64,9 @@ spec:
           image: ghcr.io/kubecloudscaler/kubecloudscaler:latest
           imagePullPolicy: IfNotPresent
           name: manager
+          ports: []
           securityContext:
+            readOnlyRootFilesystem: true
             allowPrivilegeEscalation: false
             capabilities:
               drop:
@@ -92,6 +92,8 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
+            - name: ENABLE_WEBHOOKS
+              value: "true"
           # TODO(user): Configure the resources accordingly based on the project requirements.
           # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
           resources:
@@ -101,6 +103,8 @@ spec:
             requests:
               cpu: 10m
               memory: 64Mi
+          volumeMounts: []
+      volumes: []
       serviceAccountName: controller-manager
       terminationGracePeriodSeconds: 10
       # tolerations:
