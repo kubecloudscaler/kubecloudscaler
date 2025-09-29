@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.5](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.3.4...v1.3.5) (2025-09-29)
+
+
+### Bug Fixes
+
+* cert-manager objects ([5863607](https://github.com/kubecloudscaler/kubecloudscaler/commit/5863607ab462275ca632e940dd2c3ca33f4c772b))
+
 ## [1.3.4](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.3.3...v1.3.4) (2025-09-28)
 
 
