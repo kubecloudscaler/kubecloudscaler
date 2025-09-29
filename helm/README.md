@@ -1,6 +1,6 @@
 # Kubecloudscaler
 
-**Cloudscaler** is a Kubernetes operator that scales cloud resources up or down using custom CRDs. It supports Kubernetes resources like [deployments](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/) and [cron jobs](https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/) and aims to extend support to cloud resources like [Compute Engine](https://cloud.google.com/compute/docs/instances) and [Cloud SQL](https://cloud.google.com/sql/docs) on GCP.
+**Kubecloudscaler** is a Kubernetes operator that scales cloud resources up or down using custom CRDs. It supports Kubernetes resources like [deployments](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/) and [cron jobs](https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/) and aims to extend support to cloud resources like [Compute Engine](https://cloud.google.com/compute/docs/instances) and [Cloud SQL](https://cloud.google.com/sql/docs) on GCP.
 
 This project is inspired by [kube-downscaler](https://codeberg.org/hjacobs/kube-downscaler).
 
@@ -11,7 +11,7 @@ This project is inspired by [kube-downscaler](https://codeberg.org/hjacobs/kube-
 1. **Install the Chart**
 
     ```bash
-    helm install cloudscaler oci://ghcr.io/kubecloudscaler/kubecloudscaler/kubecloudscaler --namespace cloudscaler-system
+    helm upgrade --install kubecloudscaler oci://ghcr.io/kubecloudscaler/charts/kubecloudscaler --namespace kubecloudscaler-system --create-namespace
     ```
 
 2. **Create a Scaler Custom Resource (CR)**
