@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.6](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.3.5...v1.3.6) (2025-09-29)
+
+
+### Bug Fixes
+
+* gcp resource list ([ec51f90](https://github.com/kubecloudscaler/kubecloudscaler/commit/ec51f902bdf7883ffe7812911174ca5dbedfb49c))
+
 ## [1.3.5](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.3.4...v1.3.5) (2025-09-29)
 
 

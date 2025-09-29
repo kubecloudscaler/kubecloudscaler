@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.6](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.3.5...v1.3.6) (2025-09-29)
+
+
+### Bug Fixes
+
+* update helm ([49d8fc4](https://github.com/kubecloudscaler/kubecloudscaler/commit/49d8fc450cd699958127105bc799ce6aad18c5ea))
+
 ## [1.3.5](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.3.4...v1.3.5) (2025-09-29)
 
 
