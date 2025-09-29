@@ -1,0 +1,9 @@
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: {{ include "helm.fullname" . }}-selfsigned-ca-issuer
+  labels:
+  {{- include "helm.labels" . | nindent 4 }}
+spec:
+  ca:
+    secretName: root-secret

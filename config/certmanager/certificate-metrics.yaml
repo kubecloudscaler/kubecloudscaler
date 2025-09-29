@@ -16,5 +16,5 @@ spec:
     - SERVICE_NAME.SERVICE_NAMESPACE.svc.cluster.local
   issuerRef:
     kind: Issuer
-    name: selfsigned-issuer
+    name: selfsigned-ca-issuer
   secretName: metrics-server-cert

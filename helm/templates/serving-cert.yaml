@@ -11,5 +11,5 @@ spec:
     .Values.kubernetesClusterDomain }}'
   issuerRef:
     kind: Issuer
-    name: '{{ include "helm.fullname" . }}-selfsigned-issuer'
+    name: '{{ include "helm.fullname" . }}-selfsigned-ca-issuer'
   secretName: webhook-server-cert
