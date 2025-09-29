@@ -253,14 +253,10 @@ func (r *ScalerReconciler) SetupWithManager(mgr ctrl.Manager) error {
 func (r *ScalerReconciler) validResourceList(ctx context.Context, scaler *kubecloudscalerv1alpha2.Gcp) ([]string, error) {
 	_ = log.FromContext(ctx)
 
-	var (
-		output []string // Validated list of resources to scale
-	)
-
 	// Default to compute instances if no resources are specified
 	if len(scaler.Spec.Resources.Types) == 0 {
 		scaler.Spec.Resources.Types = []string{resources.DefaultGCPResourceType}
 	}
 
-	return output, nil
+	return scaler.Spec.Resources.Types, nil
 }
