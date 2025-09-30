@@ -6,10 +6,10 @@ import (
 	"strings"
 	"time"
 
+	computepb "cloud.google.com/go/compute/apiv1/computepb"
 	"github.com/kubecloudscaler/kubecloudscaler/api/common"
 	gcpUtils "github.com/kubecloudscaler/kubecloudscaler/pkg/gcp/utils"
 	"github.com/kubecloudscaler/kubecloudscaler/pkg/period"
-	compute "google.golang.org/api/compute/v1"
 )
 
 // ComputeInstances handles scaling of GCP Compute Engine instances
@@ -73,7 +73,7 @@ func (c *ComputeInstances) SetState(ctx context.Context) ([]common.ScalerStatusS
 	for _, instance := range filteredInstances {
 		status := common.ScalerStatusSuccess{
 			Kind: "ComputeInstance",
-			Name: instance.Name,
+			Name: instance.GetName(),
 		}
 
 		// Skip instances that are in transitional states
@@ -102,7 +102,7 @@ func (c *ComputeInstances) SetState(ctx context.Context) ([]common.ScalerStatusS
 		if err := c.applyInstanceState(ctx, instance, desiredState); err != nil {
 			failed = append(failed, common.ScalerStatusFailed{
 				Kind:   "ComputeInstance",
-				Name:   instance.Name,
+				Name:   instance.GetName(),
 				Reason: err.Error(),
 			})
 			continue
@@ -131,16 +131,16 @@ func (c *ComputeInstances) getDesiredState() string {
 }
 
 // isInstanceInDesiredState checks if the instance is already in the desired state
-func (c *ComputeInstances) isInstanceInDesiredState(instance *compute.Instance, desiredState string) bool {
+func (c *ComputeInstances) isInstanceInDesiredState(instance *computepb.Instance, desiredState string) bool {
 	currentState := gcpUtils.GetInstanceStatus(instance)
 	return currentState == desiredState
 }
 
 // applyInstanceState applies the desired state to the instance
-func (c *ComputeInstances) applyInstanceState(ctx context.Context, instance *compute.Instance, desiredState string) error {
+func (c *ComputeInstances) applyInstanceState(ctx context.Context, instance *computepb.Instance, desiredState string) error {
 	zone := c.extractZoneFromInstance(instance)
 	if zone == "" {
-		return fmt.Errorf("cannot extract zone from instance %s", instance.Name)
+		return fmt.Errorf("cannot extract zone from instance %s", instance.GetName())
 	}
 
 	switch desiredState {
@@ -154,54 +154,66 @@ func (c *ComputeInstances) applyInstanceState(ctx context.Context, instance *com
 }
 
 // startInstance starts a stopped instance
-func (c *ComputeInstances) startInstance(ctx context.Context, instance *compute.Instance, zone string) error {
+func (c *ComputeInstances) startInstance(ctx context.Context, instance *computepb.Instance, zone string) error {
 	// Check if instance is already running
 	if gcpUtils.IsInstanceRunning(instance) {
 		return nil
 	}
 
 	// Start the instance
-	operation, err := c.Config.Client.Instances.Start(c.Config.ProjectId, zone, instance.Name).Do()
+	req := &computepb.StartInstanceRequest{
+		Project:  c.Config.ProjectId,
+		Zone:     zone,
+		Instance: instance.GetName(),
+	}
+	op, err := c.Config.Client.Instances.Start(ctx, req)
 	if err != nil {
-		return fmt.Errorf("failed to start instance %s: %w", instance.Name, err)
+		return fmt.Errorf("failed to start instance %s: %w", instance.GetName(), err)
 	}
 
 	// Wait for the operation to complete
 	if c.Config.WaitForOperation {
-		return c.waitForOperation(ctx, operation, zone)
+		return c.waitForOperation(ctx, op.Proto(), zone)
 	}
 	return nil
 }
 
 // stopInstance stops a running instance
-func (c *ComputeInstances) stopInstance(ctx context.Context, instance *compute.Instance, zone string) error {
+func (c *ComputeInstances) stopInstance(ctx context.Context, instance *computepb.Instance, zone string) error {
 	// Check if instance is already stopped
 	if gcpUtils.IsInstanceStopped(instance) {
 		return nil
 	}
 
 	// Stop the instance
-	operation, err := c.Config.Client.Instances.Stop(c.Config.ProjectId, zone, instance.Name).Do()
+	req := &computepb.StopInstanceRequest{
+		Project:  c.Config.ProjectId,
+		Zone:     zone,
+		Instance: instance.GetName(),
+	}
+	op, err := c.Config.Client.Instances.Stop(ctx, req)
 	if err != nil {
-		return fmt.Errorf("failed to stop instance %s: %w", instance.Name, err)
+		return fmt.Errorf("failed to stop instance %s: %w", instance.GetName(), err)
 	}
 
 	// Wait for the operation to complete
 	if c.Config.WaitForOperation {
-		return c.waitForOperation(ctx, operation, zone)
+		return c.waitForOperation(ctx, op.Proto(), zone)
 	}
 	return nil
 }
 
 // extractZoneFromInstance extracts the zone from the instance's self link
-func (c *ComputeInstances) extractZoneFromInstance(instance *compute.Instance) string {
-	if instance.Zone == "" {
+func (c *ComputeInstances) extractZoneFromInstance(instance *computepb.Instance) string {
+	if instance.GetZone() == "" {
 		return ""
 	}
 
 	// Extract zone from the zone URL
 	// Format: https://www.googleapis.com/compute/v1/projects/PROJECT_ID/zones/ZONE_NAME
-	parts := strings.Split(instance.Zone, "/")
+	zoneURL := strings.TrimSuffix(instance.GetZone(), "/")
+
+	parts := strings.Split(zoneURL, "/")
 	if len(parts) > 0 {
 		return parts[len(parts)-1]
 	}
@@ -210,7 +222,7 @@ func (c *ComputeInstances) extractZoneFromInstance(instance *compute.Instance) s
 }
 
 // waitForOperation waits for a GCP operation to complete
-func (c *ComputeInstances) waitForOperation(ctx context.Context, operation *compute.Operation, zone string) error {
+func (c *ComputeInstances) waitForOperation(ctx context.Context, operation *computepb.Operation, zone string) error {
 	// Set a timeout for the operation
 	timeout := time.After(5 * time.Minute)
 	ticker := time.NewTicker(10 * time.Second)
@@ -222,14 +234,19 @@ func (c *ComputeInstances) waitForOperation(ctx context.Context, operation *comp
 			return fmt.Errorf("operation timed out")
 		case <-ticker.C:
 			// Check operation status
-			op, err := c.Config.Client.ZoneOperations.Get(c.Config.ProjectId, zone, operation.Name).Do()
+			getReq := &computepb.GetZoneOperationRequest{
+				Operation: operation.GetName(),
+				Project:   c.Config.ProjectId,
+				Zone:      zone,
+			}
+			op, err := c.Config.Client.ZoneOperations.Get(ctx, getReq)
 			if err != nil {
 				return fmt.Errorf("failed to get operation status: %w", err)
 			}
 
-			if op.Status == "DONE" {
-				if op.Error != nil {
-					return fmt.Errorf("operation failed: %v", op.Error)
+			if op.GetStatus() == computepb.Operation_DONE {
+				if op.Error != nil && op.Error.Errors != nil && len(op.Error.Errors) > 0 {
+					return fmt.Errorf("operation failed: %v", op.Error.Errors)
 				}
 				return nil
 			}
