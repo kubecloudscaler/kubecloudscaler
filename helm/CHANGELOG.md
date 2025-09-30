@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.7](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.3.6...v1.3.7) (2025-09-30)
+
+
+### Bug Fixes
+
+* refactor gcp to use official lib ([#142](https://github.com/kubecloudscaler/kubecloudscaler/issues/142)) ([6de955f](https://github.com/kubecloudscaler/kubecloudscaler/commit/6de955f6624965c5c3a809cacb157e3fafd0b44c))
+
 ## [1.3.6](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.3.5...v1.3.6) (2025-09-29)
 
 
