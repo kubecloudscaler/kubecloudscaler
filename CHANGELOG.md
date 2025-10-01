@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.2](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.4.1...v1.4.2) (2025-10-01)
+
+
+### Bug Fixes
+
+* sts logger ([72a5d59](https://github.com/kubecloudscaler/kubecloudscaler/commit/72a5d591f0237a089e7e0da7ffd13ff4561b9f13))
+
 ## [1.4.1](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.4.0...v1.4.1) (2025-10-01)
 
 
