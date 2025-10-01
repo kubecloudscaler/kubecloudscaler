@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.1](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.4.0...v1.4.1) (2025-10-01)
+
+
+### Bug Fixes
+
+* CI ([14e0723](https://github.com/kubecloudscaler/kubecloudscaler/commit/14e07235289955a9828c4f5828eaca218a8ab449))
+
 ## [1.4.0](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.3.7...v1.4.0) (2025-10-01)
 
 
