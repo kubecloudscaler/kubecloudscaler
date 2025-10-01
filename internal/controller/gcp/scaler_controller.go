@@ -19,7 +19,6 @@ package gcp
 import (
 	"context"
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/rs/zerolog"
@@ -173,7 +172,7 @@ func (r *ScalerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 
 	// Validate and filter the list of resources to be scaled
 	// This ensures only valid resource types are processed
-	resourceList, err := r.validResourceList(ctx, scaler)
+	resourceList, err := r.validResourceList(scaler)
 	if err != nil {
 		r.Logger.Error().Err(err).Msg("unable to get valid resources")
 		scaler.Status.Comments = ptr.To(err.Error())
@@ -185,7 +184,7 @@ func (r *ScalerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{}, nil
 	}
 
-	fmt.Printf("resourceList: %v\n", resourceList)
+	r.Logger.Debug().Msgf("resourceList: %v", resourceList)
 
 	// Process each resource type and perform scaling operations
 	for _, resource := range resourceList {
@@ -251,7 +250,7 @@ func (r *ScalerReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 // validResourceList validates and filters the list of resources to be scaled.
 // It ensures that only valid resource types are included for GCP resources.
-func (r *ScalerReconciler) validResourceList(ctx context.Context, scaler *kubecloudscalerv1alpha2.Gcp) ([]string, error) {
+func (r *ScalerReconciler) validResourceList(scaler *kubecloudscalerv1alpha2.Gcp) ([]string, error) {
 	// Default to compute instances if no resources are specified
 	if len(scaler.Spec.Resources.Types) == 0 {
 		scaler.Spec.Resources.Types = []string{resources.DefaultGCPResourceType}

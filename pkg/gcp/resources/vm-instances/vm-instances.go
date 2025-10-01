@@ -1,4 +1,4 @@
-package computeinstances
+package vminstances
 
 import (
 	"context"
@@ -13,7 +13,7 @@ import (
 )
 
 // SetState scales instances based on the current period
-func (c *ComputeInstances) SetState(ctx context.Context) ([]common.ScalerStatusSuccess, []common.ScalerStatusFailed, error) {
+func (c *VMnstances) SetState(ctx context.Context) ([]common.ScalerStatusSuccess, []common.ScalerStatusFailed, error) {
 	var (
 		success []common.ScalerStatusSuccess
 		failed  []common.ScalerStatusFailed
@@ -25,14 +25,11 @@ func (c *ComputeInstances) SetState(ctx context.Context) ([]common.ScalerStatusS
 		return success, failed, fmt.Errorf("failed to get zones: %w", err)
 	}
 
-	// Get all instances in the zones
-	instances, err := gcpUtils.GetInstancesInZones(ctx, c.Config.Client, c.Config.ProjectId, zones)
+	// Get instances in the zones filtered by label selector (filter applied at GCP API level)
+	filteredInstances, err := gcpUtils.GetInstancesInZones(ctx, c.Config.Client, c.Config.ProjectId, zones, c.Config.LabelSelector)
 	if err != nil {
 		return success, failed, fmt.Errorf("failed to get instances: %w", err)
 	}
-
-	// Filter instances by label selector
-	filteredInstances := gcpUtils.FilterInstancesByLabels(instances, c.Config.LabelSelector)
 
 	if len(filteredInstances) == 0 {
 		success = append(success, common.ScalerStatusSuccess{
@@ -89,7 +86,7 @@ func (c *ComputeInstances) SetState(ctx context.Context) ([]common.ScalerStatusS
 }
 
 // getDesiredState determines the desired state based on the current period
-func (c *ComputeInstances) getDesiredState() string {
+func (c *VMnstances) getDesiredState() string {
 	defaultPeriodType := gcpUtils.InstanceStopped
 	if c.Config.DefaultPeriodType == "up" {
 		defaultPeriodType = gcpUtils.InstanceRunning
@@ -110,13 +107,13 @@ func (c *ComputeInstances) getDesiredState() string {
 }
 
 // isInstanceInDesiredState checks if the instance is already in the desired state
-func (c *ComputeInstances) isInstanceInDesiredState(instance *computepb.Instance, desiredState string) bool {
+func (c *VMnstances) isInstanceInDesiredState(instance *computepb.Instance, desiredState string) bool {
 	currentState := gcpUtils.GetInstanceStatus(instance)
 	return currentState == desiredState
 }
 
 // applyInstanceState applies the desired state to the instance
-func (c *ComputeInstances) applyInstanceState(ctx context.Context, instance *computepb.Instance, desiredState string) error {
+func (c *VMnstances) applyInstanceState(ctx context.Context, instance *computepb.Instance, desiredState string) error {
 	zone := c.extractZoneFromInstance(instance)
 	if zone == "" {
 		return fmt.Errorf("cannot extract zone from instance %s", instance.GetName())
@@ -133,7 +130,7 @@ func (c *ComputeInstances) applyInstanceState(ctx context.Context, instance *com
 }
 
 // startInstance starts a stopped instance
-func (c *ComputeInstances) startInstance(ctx context.Context, instance *computepb.Instance, zone string) error {
+func (c *VMnstances) startInstance(ctx context.Context, instance *computepb.Instance, zone string) error {
 	// Check if instance is already running
 	if gcpUtils.IsInstanceRunning(instance) {
 		return nil
@@ -158,7 +155,7 @@ func (c *ComputeInstances) startInstance(ctx context.Context, instance *computep
 }
 
 // stopInstance stops a running instance
-func (c *ComputeInstances) stopInstance(ctx context.Context, instance *computepb.Instance, zone string) error {
+func (c *VMnstances) stopInstance(ctx context.Context, instance *computepb.Instance, zone string) error {
 	// Check if instance is already stopped
 	if gcpUtils.IsInstanceStopped(instance) {
 		return nil
@@ -183,7 +180,7 @@ func (c *ComputeInstances) stopInstance(ctx context.Context, instance *computepb
 }
 
 // extractZoneFromInstance extracts the zone from the instance's self link
-func (c *ComputeInstances) extractZoneFromInstance(instance *computepb.Instance) string {
+func (c *VMnstances) extractZoneFromInstance(instance *computepb.Instance) string {
 	if instance.GetZone() == "" {
 		return ""
 	}
@@ -201,7 +198,7 @@ func (c *ComputeInstances) extractZoneFromInstance(instance *computepb.Instance)
 }
 
 // waitForOperation waits for a GCP operation to complete
-func (c *ComputeInstances) waitForOperation(ctx context.Context, operation *computepb.Operation, zone string) error {
+func (c *VMnstances) waitForOperation(ctx context.Context, operation *computepb.Operation, zone string) error {
 	// Set a timeout for the operation
 	timeout := time.After(5 * time.Minute)
 	ticker := time.NewTicker(10 * time.Second)

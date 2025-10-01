@@ -1,8 +1,6 @@
----
-title: API Reference
----
+# API Reference
 
-**Packages**
+## Packages
 - [kubecloudscaler.cloud/common](#kubecloudscalercloudcommon)
 - [kubecloudscaler.cloud/v1alpha1](#kubecloudscalercloudv1alpha1)
 - [kubecloudscaler.cloud/v1alpha2](#kubecloudscalercloudv1alpha2)
@@ -74,9 +72,9 @@ _Appears in:_
 
 | Field | Description | Default | Validation |
 | --- | --- | --- | --- |
-| `types` _string array_ | Types of resources<br />K8s: deployments, statefulsets, ... (default: deployments)<br />GCP: compute-instances, ... (default: compute-instances) |  |  |
+| `types` _string array_ | Types of resources<br />K8s: deployments, statefulsets, ... (default: deployments)<br />GCP: VM-instances, ... (default: vm-instances) |  |  |
 | `names` _string array_ | Names of resources to manage |  |  |
-| `labelSelector` _[LabelSelector](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#labelselector-v1-meta)_ | Labels selectors |  |  |
+| `labelSelector` _[LabelSelector](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.33/#labelselector-v1-meta)_ | Labels selectors |  |  |
 
 
 #### ScalerPeriod
@@ -220,7 +218,7 @@ Gcp is the Schema for the scalers API
 | --- | --- | --- | --- |
 | `apiVersion` _string_ | `kubecloudscaler.cloud/v1alpha1` | | |
 | `kind` _string_ | `Gcp` | | |
-| `metadata` _[ObjectMeta](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#objectmeta-v1-meta)_ | Refer to Kubernetes API documentation for fields of `metadata`. |  |  |
+| `metadata` _[ObjectMeta](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.33/#objectmeta-v1-meta)_ | Refer to Kubernetes API documentation for fields of `metadata`. |  |  |
 | `spec` _[GcpSpec](#gcpspec)_ |  |  |  |
 | `status` _[ScalerStatus](#scalerstatus)_ |  |  |  |
 
@@ -244,7 +242,7 @@ _Appears in:_
 | `region` _string_ | Region |  |  |
 | `resources` _string array_ | Resources |  |  |
 | `excludeResources` _string array_ | Exclude resources from downscaling |  |  |
-| `labelSelector` _[LabelSelector](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#labelselector-v1-meta)_ | Labels selectors |  |  |
+| `labelSelector` _[LabelSelector](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.33/#labelselector-v1-meta)_ | Labels selectors |  |  |
 | `deploymentTimeAnnotation` _string_ | Deployment time annotation |  |  |
 | `authSecret` _string_ | AuthSecret name |  |  |
 | `restoreOnDelete` _boolean_ | Restore on delete |  |  |
@@ -265,7 +263,7 @@ Scaler is the Schema for the scalers API
 | --- | --- | --- | --- |
 | `apiVersion` _string_ | `kubecloudscaler.cloud/v1alpha1` | | |
 | `kind` _string_ | `K8s` | | |
-| `metadata` _[ObjectMeta](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#objectmeta-v1-meta)_ | Refer to Kubernetes API documentation for fields of `metadata`. |  |  |
+| `metadata` _[ObjectMeta](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.33/#objectmeta-v1-meta)_ | Refer to Kubernetes API documentation for fields of `metadata`. |  |  |
 | `spec` _[K8sSpec](#k8sspec)_ |  |  |  |
 | `status` _[ScalerStatus](#scalerstatus)_ |  |  |  |
 
@@ -290,7 +288,7 @@ _Appears in:_
 | `forceExcludeSystemNamespaces` _boolean_ | Force exclude system namespaces |  |  |
 | `resources` _string array_ | Resources |  |  |
 | `excludeResources` _string array_ | Exclude resources from downscaling |  |  |
-| `labelSelector` _[LabelSelector](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#labelselector-v1-meta)_ | Labels selectors |  |  |
+| `labelSelector` _[LabelSelector](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.33/#labelselector-v1-meta)_ | Labels selectors |  |  |
 | `deploymentTimeAnnotation` _string_ | Deployment time annotation |  |  |
 | `disableEvents` _boolean_ | Disable events |  |  |
 | `authSecret` _string_ | AuthSecret name |  |  |
@@ -324,7 +322,7 @@ Gcp is the Schema for the scalers API
 | --- | --- | --- | --- |
 | `apiVersion` _string_ | `kubecloudscaler.cloud/v1alpha2` | | |
 | `kind` _string_ | `Gcp` | | |
-| `metadata` _[ObjectMeta](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#objectmeta-v1-meta)_ | Refer to Kubernetes API documentation for fields of `metadata`. |  |  |
+| `metadata` _[ObjectMeta](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.33/#objectmeta-v1-meta)_ | Refer to Kubernetes API documentation for fields of `metadata`. |  |  |
 | `spec` _[GcpSpec](#gcpspec)_ |  |  |  |
 | `status` _[ScalerStatus](#scalerstatus)_ |  |  |  |
 
@@ -348,8 +346,9 @@ _Appears in:_
 | `projectId` _string_ | ProjectId |  |  |
 | `region` _string_ | Region |  |  |
 | `authSecret` _string_ | AuthSecret name |  |  |
-| `restoreOnDelete` _boolean_ | Restore on delete |  |  |
+| `restoreOnDelete` _boolean_ | Restore resource state on CR deletion (default: true) | true |  |
 | `waitForOperation` _boolean_ | Wait for operation to complete |  |  |
+| `defaultPeriodType` _string_ | Default status for resources | down | Enum: [down up] <br /> |
 
 
 #### K8s
@@ -366,7 +365,7 @@ Scaler is the Schema for the scalers API
 | --- | --- | --- | --- |
 | `apiVersion` _string_ | `kubecloudscaler.cloud/v1alpha2` | | |
 | `kind` _string_ | `K8s` | | |
-| `metadata` _[ObjectMeta](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#objectmeta-v1-meta)_ | Refer to Kubernetes API documentation for fields of `metadata`. |  |  |
+| `metadata` _[ObjectMeta](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.33/#objectmeta-v1-meta)_ | Refer to Kubernetes API documentation for fields of `metadata`. |  |  |
 | `spec` _[K8sSpec](#k8sspec)_ |  |  |  |
 | `status` _[ScalerStatus](#scalerstatus)_ |  |  |  |
 
@@ -393,6 +392,6 @@ _Appears in:_
 | `deploymentTimeAnnotation` _string_ | Deployment time annotation |  |  |
 | `disableEvents` _boolean_ | Disable events |  |  |
 | `authSecret` _string_ | AuthSecret name |  |  |
-| `restoreOnDelete` _boolean_ | Restore on delete |  |  |
+| `restoreOnDelete` _boolean_ | Restore resource state on CR deletion (default: true) | true |  |
 
 

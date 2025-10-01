@@ -1,4 +1,4 @@
-package computeinstances
+package vminstances
 
 import (
 	"testing"
@@ -7,7 +7,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func TestComputeInstances(t *testing.T) {
+func TestVMnstances(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "ComputeInstances Suite")
+	RunSpecs(t, "VMnstances Suite")
 }

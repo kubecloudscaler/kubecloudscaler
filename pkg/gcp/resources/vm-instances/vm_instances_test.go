@@ -1,4 +1,4 @@
-package computeinstances
+package vminstances
 
 import (
 	"context"
@@ -16,7 +16,7 @@ var _ = Describe("ComputeInstances", func() {
 	var (
 		ctx    context.Context
 		config *utils.Config
-		ci     *ComputeInstances
+		ci     *VMnstances
 	)
 
 	BeforeEach(func() {
@@ -36,7 +36,7 @@ var _ = Describe("ComputeInstances", func() {
 				config.Period = &period.Period{Type: "up"}
 			})
 
-			It("should create a new ComputeInstances instance", func() {
+			It("should create a new VMnstances instance", func() {
 				var err error
 				ci, err = New(ctx, config)
 				Expect(err).NotTo(HaveOccurred())
@@ -87,7 +87,7 @@ var _ = Describe("ComputeInstances", func() {
 
 	Describe("getDesiredState", func() {
 		BeforeEach(func() {
-			ci = &ComputeInstances{Config: config}
+			ci = &VMnstances{Config: config}
 		})
 
 		Context("when period is nil", func() {
@@ -137,7 +137,7 @@ var _ = Describe("ComputeInstances", func() {
 
 	Describe("isInstanceInDesiredState", func() {
 		BeforeEach(func() {
-			ci = &ComputeInstances{Config: config}
+			ci = &VMnstances{Config: config}
 		})
 
 		Context("when instance is in desired state", func() {
@@ -159,7 +159,7 @@ var _ = Describe("ComputeInstances", func() {
 
 	Describe("extractZoneFromInstance", func() {
 		BeforeEach(func() {
-			ci = &ComputeInstances{Config: config}
+			ci = &VMnstances{Config: config}
 		})
 
 		Context("when zone URL is valid", func() {
@@ -201,7 +201,7 @@ var _ = Describe("ComputeInstances", func() {
 
 	Describe("SetState", func() {
 		BeforeEach(func() {
-			ci = &ComputeInstances{
+			ci = &VMnstances{
 				Config: config,
 				Period: &period.Period{Type: "up"},
 			}
@@ -221,7 +221,7 @@ var _ = Describe("ComputeInstances", func() {
 
 	Describe("applyInstanceState", func() {
 		BeforeEach(func() {
-			ci = &ComputeInstances{Config: config}
+			ci = &VMnstances{Config: config}
 		})
 
 		Context("when desired state is unknown", func() {

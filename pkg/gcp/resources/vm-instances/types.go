@@ -1,4 +1,4 @@
-package computeinstances
+package vminstances
 
 import (
 	"github.com/rs/zerolog"
@@ -7,8 +7,8 @@ import (
 	"github.com/kubecloudscaler/kubecloudscaler/pkg/period"
 )
 
-// ComputeInstances handles scaling of GCP Compute Engine instances
-type ComputeInstances struct {
+// VMnstances handles scaling of GCP Compute Engine instances
+type VMnstances struct {
 	Config *gcpUtils.Config
 	Period *period.Period
 	Logger *zerolog.Logger

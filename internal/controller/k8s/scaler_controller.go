@@ -30,7 +30,6 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/kubecloudscaler/kubecloudscaler/api/common"
 	kubecloudscalerv1alpha2 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha2"
@@ -177,7 +176,7 @@ func (r *ScalerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 
 	// Validate and filter the list of resources to be scaled
 	// This ensures only valid resource types are processed
-	resourceList, err := r.validResourceList(ctx, scaler)
+	resourceList, err := r.validResourceList(scaler)
 	if err != nil {
 		r.Logger.Error().Err(err).Msg("unable to get valid resources")
 		scaler.Status.Comments = ptr.To(err.Error())
@@ -254,9 +253,7 @@ func (r *ScalerReconciler) SetupWithManager(mgr ctrl.Manager) error {
 // validResourceList validates and filters the list of resources to be scaled.
 // It ensures that only valid resource types are included and prevents mixing
 // of application resources (deployments, statefulsets) with HPA resources.
-func (r *ScalerReconciler) validResourceList(ctx context.Context, scaler *kubecloudscalerv1alpha2.K8s) ([]string, error) {
-	_ = log.FromContext(ctx)
-
+func (r *ScalerReconciler) validResourceList(scaler *kubecloudscalerv1alpha2.K8s) ([]string, error) {
 	var (
 		output []string // Validated list of resources to scale
 		isApp  bool     // Flag indicating if app resources are present

@@ -1,4 +1,4 @@
-package computeinstances
+package vminstances
 
 import (
 	"context"
@@ -9,8 +9,8 @@ import (
 	gcpUtils "github.com/kubecloudscaler/kubecloudscaler/pkg/gcp/utils"
 )
 
-// New creates a new ComputeInstances resource handler
-func New(ctx context.Context, config *gcpUtils.Config) (*ComputeInstances, error) {
+// New creates a new VMnstances resource handler
+func New(ctx context.Context, config *gcpUtils.Config) (*VMnstances, error) {
 	if config == nil {
 		return nil, fmt.Errorf("config cannot be nil")
 	}
@@ -23,7 +23,7 @@ func New(ctx context.Context, config *gcpUtils.Config) (*ComputeInstances, error
 		return nil, fmt.Errorf("project ID cannot be empty")
 	}
 
-	return &ComputeInstances{
+	return &VMnstances{
 		Config: config,
 		Period: config.Period,
 		Logger: zerolog.Ctx(ctx),

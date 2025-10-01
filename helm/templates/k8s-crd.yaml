@@ -496,7 +496,8 @@ spec:
                     type: array
                 type: object
               restoreOnDelete:
-                description: Restore on delete
+                default: true
+                description: 'Restore resource state on CR deletion (default: true)'
                 type: boolean
             required:
             - periods

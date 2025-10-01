@@ -39,16 +39,25 @@ func GetZonesFromRegion(ctx context.Context, clients *ClientSet, projectId, regi
 }
 
 // GetInstancesInZones returns all instances in the specified zones using apiv1
-func GetInstancesInZones(ctx context.Context, clients *ClientSet, projectId string, zones []string) ([]*computepb.Instance, error) {
+// If labelSelector is provided, it will be converted to a GCP filter and applied at the API level
+func GetInstancesInZones(ctx context.Context, clients *ClientSet, projectId string, zones []string, labelSelector *metaV1.LabelSelector) ([]*computepb.Instance, error) {
 	if clients == nil || clients.Instances == nil {
 		return nil, fmt.Errorf("instances client is nil")
 	}
+
+	// Build filter from label selector
+	filter := buildGCPFilterFromLabelSelector(labelSelector)
 
 	var allInstances []*computepb.Instance
 	for _, zone := range zones {
 		req := &computepb.ListInstancesRequest{
 			Project: projectId,
 			Zone:    zone,
+		}
+
+		// Add filter if we have one
+		if filter != "" {
+			req.Filter = &filter
 		}
 
 		it := clients.Instances.List(ctx, req)
@@ -67,7 +76,25 @@ func GetInstancesInZones(ctx context.Context, clients *ClientSet, projectId stri
 	return allInstances, nil
 }
 
+// buildGCPFilterFromLabelSelector converts a Kubernetes label selector to a GCP filter string
+// GCP filter format: labels.key=value AND labels.key2=value2
+func buildGCPFilterFromLabelSelector(labelSelector *metaV1.LabelSelector) string {
+	if labelSelector == nil || len(labelSelector.MatchLabels) == 0 {
+		return ""
+	}
+
+	var filters []string
+	for key, value := range labelSelector.MatchLabels {
+		// GCP filter format for labels: labels.key=value
+		filters = append(filters, fmt.Sprintf("labels.%s=%s", key, value))
+	}
+
+	// Join multiple filters with AND
+	return strings.Join(filters, " AND ")
+}
+
 // FilterInstancesByLabels filters instances based on label selector
+// This is now primarily used for additional filtering or when a filter wasn't applied at the API level
 func FilterInstancesByLabels(instances []*computepb.Instance, labelSelector *metaV1.LabelSelector) []*computepb.Instance {
 	if labelSelector == nil {
 		return instances

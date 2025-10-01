@@ -44,7 +44,8 @@ type GcpSpec struct {
 	Region string `json:"region,omitempty"`
 	// AuthSecret name
 	AuthSecret *string `json:"authSecret,omitempty"`
-	// Restore on delete
+	// Restore resource state on CR deletion (default: true)
+	// +kubebuilder:default:=true
 	RestoreOnDelete bool `json:"restoreOnDelete,omitempty"`
 	// Wait for operation to complete
 	WaitForOperation bool `json:"waitForOperation,omitempty"`

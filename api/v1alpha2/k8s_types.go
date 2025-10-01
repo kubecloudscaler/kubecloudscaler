@@ -51,7 +51,8 @@ type K8sSpec struct {
 	DisableEvents bool `json:"disableEvents,omitempty"`
 	// AuthSecret name
 	AuthSecret *string `json:"authSecret,omitempty"`
-	// Restore on delete
+	// Restore resource state on CR deletion (default: true)
+	// +kubebuilder:default:=true
 	RestoreOnDelete bool `json:"restoreOnDelete,omitempty"`
 }
 

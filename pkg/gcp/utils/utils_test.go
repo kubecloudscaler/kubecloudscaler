@@ -41,7 +41,7 @@ var _ = Describe("GCP Utils", func() {
 	Describe("GetInstancesInZones", func() {
 		Context("when clients is nil", func() {
 			It("should return an error", func() {
-				instances, err := GetInstancesInZones(ctx, nil, "test-project", []string{"us-central1-a"})
+				instances, err := GetInstancesInZones(ctx, nil, "test-project", []string{"us-central1-a"}, nil)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("instances client is nil"))
 				Expect(instances).To(BeNil())
@@ -50,10 +50,53 @@ var _ = Describe("GCP Utils", func() {
 
 		Context("when instances client is nil", func() {
 			It("should return an error", func() {
-				instances, err := GetInstancesInZones(ctx, &ClientSet{}, "test-project", []string{"us-central1-a"})
+				instances, err := GetInstancesInZones(ctx, &ClientSet{}, "test-project", []string{"us-central1-a"}, nil)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("instances client is nil"))
 				Expect(instances).To(BeNil())
+			})
+		})
+	})
+
+	Describe("buildGCPFilterFromLabelSelector", func() {
+		Context("when label selector is nil", func() {
+			It("should return empty string", func() {
+				filter := buildGCPFilterFromLabelSelector(nil)
+				Expect(filter).To(Equal(""))
+			})
+		})
+
+		Context("when label selector has no match labels", func() {
+			It("should return empty string", func() {
+				selector := &metaV1.LabelSelector{
+					MatchLabels: map[string]string{},
+				}
+				filter := buildGCPFilterFromLabelSelector(selector)
+				Expect(filter).To(Equal(""))
+			})
+		})
+
+		Context("when label selector has one label", func() {
+			It("should return GCP filter format", func() {
+				selector := &metaV1.LabelSelector{
+					MatchLabels: map[string]string{"env": "prod"},
+				}
+				filter := buildGCPFilterFromLabelSelector(selector)
+				Expect(filter).To(Equal("labels.env=prod"))
+			})
+		})
+
+		Context("when label selector has multiple labels", func() {
+			It("should return GCP filter format with AND", func() {
+				selector := &metaV1.LabelSelector{
+					MatchLabels: map[string]string{"env": "prod", "app": "web"},
+				}
+				filter := buildGCPFilterFromLabelSelector(selector)
+				// Note: map iteration order is not guaranteed, so we need to check both possible orders
+				Expect(filter).To(Or(
+					Equal("labels.env=prod AND labels.app=web"),
+					Equal("labels.app=web AND labels.env=prod"),
+				))
 			})
 		})
 	})
