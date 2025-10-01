@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.4.3](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.4.2...v1.4.3) (2025-10-01)
+
+
+### Bug Fixes
+
+* conversion logs as debug ([67154db](https://github.com/kubecloudscaler/kubecloudscaler/commit/67154db16d5b4b4c2996d54dc4720066cfc13bd0))
+* set restoreOnDelete as true by default ([c3bcf8f](https://github.com/kubecloudscaler/kubecloudscaler/commit/c3bcf8f4dac684ca6824f7f6181814bf1a66e98e))
+
 ## [1.4.2](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.4.1...v1.4.2) (2025-10-01)
 
 
