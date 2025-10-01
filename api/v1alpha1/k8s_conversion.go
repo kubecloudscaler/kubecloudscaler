@@ -17,8 +17,7 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"log"
-
+	"github.com/rs/zerolog/log"
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
 
 	kubecloudscalercloudv1alpha2 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha2"
@@ -27,7 +26,7 @@ import (
 // ConvertTo converts this K8s (v1alpha1) to the Hub version (v1alpha2).
 func (src *K8s) ConvertTo(dstRaw conversion.Hub) error {
 	dst := dstRaw.(*kubecloudscalercloudv1alpha2.K8s)
-	log.Printf("ConvertTo: Converting K8s from Spoke version v1alpha1 to Hub version v1alpha2;"+
+	log.Debug().Msgf("ConvertTo: Converting K8s from Spoke version v1alpha1 to Hub version v1alpha2;"+
 		"source: %s/%s, target: %s/%s", src.Namespace, src.Name, dst.Namespace, dst.Name)
 
 	// ObjectMeta
@@ -57,7 +56,7 @@ func (src *K8s) ConvertTo(dstRaw conversion.Hub) error {
 // ConvertFrom converts the Hub version (v1alpha2) to this K8s (v1alpha1).
 func (dst *K8s) ConvertFrom(srcRaw conversion.Hub) error {
 	src := srcRaw.(*kubecloudscalercloudv1alpha2.K8s)
-	log.Printf("ConvertFrom: Converting K8s from Hub version v1alpha2 to Spoke version v1alpha1;"+
+	log.Debug().Msgf("ConvertFrom: Converting K8s from Hub version v1alpha2 to Spoke version v1alpha1;"+
 		"source: %s/%s, target: %s/%s", src.Namespace, src.Name, dst.Namespace, dst.Name)
 
 	// ObjectMeta
