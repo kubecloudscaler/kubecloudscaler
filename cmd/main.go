@@ -21,6 +21,7 @@ import (
 	"flag"
 	"os"
 	"path/filepath"
+	"time"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -42,12 +43,16 @@ import (
 	gcpcontroller "github.com/kubecloudscaler/kubecloudscaler/internal/controller/gcp"
 	k8scontroller "github.com/kubecloudscaler/kubecloudscaler/internal/controller/k8s"
 	webhookv1alpha2 "github.com/kubecloudscaler/kubecloudscaler/internal/webhook/v1alpha2"
+	"github.com/rs/zerolog"
 	// +kubebuilder:scaffold:imports
 )
 
 var (
-	scheme   = runtime.NewScheme()
-	setupLog = ctrl.Log.WithName("setup")
+	scheme    = runtime.NewScheme()
+	setupLog  = ctrl.Log.WithName("setup")
+	logFormat string
+	logLevel  string
+	logger    zerolog.Logger
 )
 
 func init() {
@@ -85,6 +90,8 @@ func main() {
 	flag.StringVar(&metricsCertKey, "metrics-cert-key", "tls.key", "The name of the metrics server key file.")
 	flag.BoolVar(&enableHTTP2, "enable-http2", false,
 		"If set, HTTP/2 will be enabled for the metrics and webhook servers")
+	flag.StringVar(&logFormat, "log-format", "json", "Set log format \"raw\" or \"json\"")
+	flag.StringVar(&logLevel, "log-level", "info", "Set log level \"debug\", \"info\", \"warn\", \"error\", \"fatal\"")
 	opts := zap.Options{
 		Development: false,
 	}
@@ -92,6 +99,30 @@ func main() {
 	flag.Parse()
 
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
+
+	zerolog.SetGlobalLevel(zerolog.InfoLevel)
+	switch logLevel {
+	case "debug":
+		zerolog.SetGlobalLevel(zerolog.DebugLevel)
+	case "warn":
+		zerolog.SetGlobalLevel(zerolog.WarnLevel)
+	case "error":
+		zerolog.SetGlobalLevel(zerolog.ErrorLevel)
+	case "fatal":
+		zerolog.SetGlobalLevel(zerolog.FatalLevel)
+	}
+
+	if logFormat == "raw" {
+		logger = zerolog.New(zerolog.ConsoleWriter{Out: os.Stdout, TimeFormat: time.RFC3339Nano})
+	} else {
+		logger = zerolog.New(os.Stdout)
+	}
+
+	logger = logger.
+		With().
+		Str("app", "kubecloudscaler").
+		Timestamp().
+		Logger()
 
 	// if the enable-http2 flag is false (the default), http/2 should be disabled
 	// due to its vulnerabilities. More specifically, disabling http/2 will
@@ -209,6 +240,7 @@ func main() {
 	if err = (&k8scontroller.ScalerReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
+		Logger: &logger,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "K8sScaler")
 		os.Exit(1)
@@ -216,6 +248,7 @@ func main() {
 	if err = (&gcpcontroller.ScalerReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
+		Logger: &logger,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "GcpScaler")
 		os.Exit(1)

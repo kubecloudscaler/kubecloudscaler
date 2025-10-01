@@ -7,36 +7,10 @@ import (
 	"time"
 
 	computepb "cloud.google.com/go/compute/apiv1/computepb"
+
 	"github.com/kubecloudscaler/kubecloudscaler/api/common"
 	gcpUtils "github.com/kubecloudscaler/kubecloudscaler/pkg/gcp/utils"
-	"github.com/kubecloudscaler/kubecloudscaler/pkg/period"
 )
-
-// ComputeInstances handles scaling of GCP Compute Engine instances
-type ComputeInstances struct {
-	Config *gcpUtils.Config
-	Period *period.Period
-}
-
-// New creates a new ComputeInstances resource handler
-func New(ctx context.Context, config *gcpUtils.Config) (*ComputeInstances, error) {
-	if config == nil {
-		return nil, fmt.Errorf("config cannot be nil")
-	}
-
-	if config.Client == nil {
-		return nil, fmt.Errorf("GCP client cannot be nil")
-	}
-
-	if config.ProjectId == "" {
-		return nil, fmt.Errorf("project ID cannot be empty")
-	}
-
-	return &ComputeInstances{
-		Config: config,
-		Period: config.Period,
-	}, nil
-}
 
 // SetState scales instances based on the current period
 func (c *ComputeInstances) SetState(ctx context.Context) ([]common.ScalerStatusSuccess, []common.ScalerStatusFailed, error) {
@@ -116,17 +90,16 @@ func (c *ComputeInstances) SetState(ctx context.Context) ([]common.ScalerStatusS
 
 // getDesiredState determines the desired state based on the current period
 func (c *ComputeInstances) getDesiredState() string {
-	if c.Period == nil {
-		return gcpUtils.InstanceStopped // Default to stopped if no period
-	}
-
 	switch c.Period.Type {
 	case "up":
 		return gcpUtils.InstanceRunning
 	case "down":
 		return gcpUtils.InstanceStopped
 	default:
-		return gcpUtils.InstanceStopped
+		if c.Config.DefaultPeriodType == "down" {
+			return gcpUtils.InstanceStopped
+		}
+		return gcpUtils.InstanceRunning
 	}
 }
 

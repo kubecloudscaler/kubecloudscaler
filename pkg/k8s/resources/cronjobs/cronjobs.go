@@ -4,38 +4,31 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/kubecloudscaler/kubecloudscaler/api/common"
-	"github.com/kubecloudscaler/kubecloudscaler/pkg/k8s/utils"
 	batchV1 "k8s.io/api/batch/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-	v1 "k8s.io/client-go/kubernetes/typed/batch/v1"
 	"k8s.io/utils/ptr"
-	"sigs.k8s.io/controller-runtime/pkg/log"
-)
 
-type Cronjobs struct {
-	Resource *utils.K8sResource
-	Client   v1.BatchV1Interface
-}
+	"github.com/kubecloudscaler/kubecloudscaler/api/common"
+	"github.com/kubecloudscaler/kubecloudscaler/pkg/k8s/utils"
+)
 
 func (c *Cronjobs) init(client kubernetes.Interface) {
 	c.Client = client.BatchV1()
 }
 
 func (c *Cronjobs) SetState(ctx context.Context) ([]common.ScalerStatusSuccess, []common.ScalerStatusFailed, error) {
-	_ = log.FromContext(ctx)
 	scalerStatusSuccess := []common.ScalerStatusSuccess{}
 	scalerStatusFailed := []common.ScalerStatusFailed{}
 	list := []batchV1.CronJob{}
 
 	// list all objects in all needed namespaces
 	for _, ns := range c.Resource.NsList {
-		log.Log.V(1).Info("found namespace", "ns", ns)
+		c.Logger.Debug().Msgf("found namespace: %s", ns)
 
 		cronList, err := c.Client.CronJobs(ns).List(ctx, c.Resource.ListOptions)
 		if err != nil {
-			log.Log.V(1).Error(err, "error listing cronjobs")
+			c.Logger.Debug().Err(err).Msg("error listing cronjobs")
 
 			return scalerStatusSuccess, scalerStatusFailed, fmt.Errorf("error listing cronjobs: %w", err)
 		}
@@ -43,10 +36,10 @@ func (c *Cronjobs) SetState(ctx context.Context) ([]common.ScalerStatusSuccess, 
 		list = append(list, cronList.Items...)
 	}
 
-	log.Log.V(1).Info("cronjobs", "number", len(list))
+	c.Logger.Debug().Msgf("number of cronjobs: %d", len(list))
 
 	for _, cName := range list {
-		log.Log.V(1).Info("cronjobs", "name", cName.Name)
+		c.Logger.Debug().Msgf("resource-name: %s", cName.Name)
 
 		cronjob, err := c.Client.CronJobs(cName.Namespace).Get(ctx, cName.Name, metaV1.GetOptions{})
 		if err != nil {
@@ -64,14 +57,14 @@ func (c *Cronjobs) SetState(ctx context.Context) ([]common.ScalerStatusSuccess, 
 
 		switch c.Resource.Period.Type {
 		case "down":
-			log.Log.V(1).Info("scaling down", "name", cName.Name)
+			c.Logger.Debug().Msgf("scaling down: %s", cName.Name)
 
 			cronjob.Annotations = utils.AddBoolAnnotations(cronjob.Annotations, c.Resource.Period, suspended)
 
 			cronjob.Spec.Suspend = ptr.To(suspended)
 
 		case "up":
-			log.Log.V(1).Info("scaling up", "name", cName.Name)
+			c.Logger.Debug().Msgf("scaling up: %s", cName.Name)
 
 			scalerStatusFailed = append(
 				scalerStatusFailed,
@@ -85,7 +78,7 @@ func (c *Cronjobs) SetState(ctx context.Context) ([]common.ScalerStatusSuccess, 
 			continue
 
 		default:
-			log.Log.V(1).Info("restoring", "name", cName.Name)
+			c.Logger.Debug().Msgf("restoring: %s", cName.Name)
 
 			var isAlreadyRestored bool
 
@@ -104,12 +97,12 @@ func (c *Cronjobs) SetState(ctx context.Context) ([]common.ScalerStatusSuccess, 
 			}
 
 			if isAlreadyRestored {
-				log.Log.V(1).Info("nothing to do", "name", cName.Name)
+				c.Logger.Debug().Msgf("nothing to do: %s", cName.Name)
 				continue
 			}
 		}
 
-		log.Log.V(1).Info("update cronjob", "name", cName.Name)
+		c.Logger.Debug().Msgf("update cronjob: %s", cName.Name)
 
 		_, err = c.Client.CronJobs(cName.Namespace).Update(ctx, cronjob, metaV1.UpdateOptions{
 			FieldManager: utils.FieldManager,

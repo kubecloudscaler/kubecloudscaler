@@ -48,6 +48,10 @@ type GcpSpec struct {
 	RestoreOnDelete bool `json:"restoreOnDelete,omitempty"`
 	// Wait for operation to complete
 	WaitForOperation bool `json:"waitForOperation,omitempty"`
+	// Default status for resources
+	// +kubebuilder:validation:Enum=down;up
+	// +kubebuilder:default:=down
+	DefaultPeriodType string `json:"defaultPeriodType,omitempty"`
 }
 
 // +kubebuilder:object:root=true

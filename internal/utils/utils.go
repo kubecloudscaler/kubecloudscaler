@@ -1,14 +1,13 @@
 package utils
 
 import (
-	"fmt"
+	"github.com/rs/zerolog/log"
+	"k8s.io/utils/ptr"
+	"sigs.k8s.io/controller-runtime/pkg/event"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	"github.com/kubecloudscaler/kubecloudscaler/api/common"
 	periodPkg "github.com/kubecloudscaler/kubecloudscaler/pkg/period"
-	"k8s.io/utils/ptr"
-	"sigs.k8s.io/controller-runtime/pkg/event"
-	"sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
 func IgnoreDeletionPredicate() predicate.Predicate {
@@ -40,25 +39,25 @@ func ValidatePeriod(periods []*common.ScalerPeriod, status *common.ScalerStatus,
 
 	onPeriod, err := periodPkg.New(restorePeriod)
 	if err != nil {
-		log.Log.Error(err, "unable to load restore period")
+		log.Error().Err(err).Msg("unable to load restore period")
 
 		return nil, ErrLoadRestorePeriod
 	}
 
 	if !forceRestore {
 		for _, period := range periods {
-			log.Log.V(1).Info(fmt.Sprintf("checking period:\n  type => %s\n  def => %+v\n", period.Type, period.Time))
+			log.Debug().Msgf("checking period:\n  type => %s\n  def => %+v\n", period.Type, period.Time)
 			curPeriod, err := periodPkg.New(period)
 			if err != nil {
-				log.Log.Error(err, "unable to load period")
+				log.Error().Err(err).Msg("unable to load period")
 
 				return nil, ErrLoadPeriod
 			}
 
-			log.Log.V(1).Info(fmt.Sprintf("is period:\n  type => %s\n  def => %v\n  isActive => %t", curPeriod.Type, curPeriod.Period, curPeriod.IsActive))
+			log.Debug().Msgf("is period:\n  type => %s\n  def => %v\n  isActive => %t", curPeriod.Type, curPeriod.Period, curPeriod.IsActive)
 
-			log.Log.V(1).Info(fmt.Sprintf("starttime: %v\n", curPeriod.GetStartTime.String()))
-			log.Log.V(1).Info(fmt.Sprintf("endtime: %v\n", curPeriod.GetEndTime.String()))
+			log.Debug().Msgf("starttime: %v\n", curPeriod.GetStartTime.String())
+			log.Debug().Msgf("endtime: %v\n", curPeriod.GetEndTime.String())
 
 			if curPeriod.IsActive {
 				onPeriod = curPeriod
@@ -70,13 +69,13 @@ func ValidatePeriod(periods []*common.ScalerPeriod, status *common.ScalerStatus,
 
 	// if we are in a once period, we do nothing if the period has already been processed
 	if ptr.Deref(onPeriod.Once, false) && status.CurrentPeriod.SpecSHA == onPeriod.Hash {
-		log.Log.V(1).Info("period already running")
+		log.Debug().Msg("period already running")
 
 		return onPeriod, ErrRunOncePeriod
 	}
 
 	// we always parse resources to scale or restore values
-	log.Log.V(1).Info(fmt.Sprintf("is period:\n  type => %s\n  def => %v\n", onPeriod.Type, onPeriod.Period))
+	log.Debug().Msgf("is period:\n  type => %s\n  def => %v\n", onPeriod.Type, onPeriod.Period)
 
 	// prepare status
 	status.CurrentPeriod = &common.ScalerStatusPeriod{}

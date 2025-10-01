@@ -110,7 +110,7 @@ build: manifests generate fmt vet ## Build manager binary.
 
 .PHONY: run
 run: manifests generate fmt vet generate-certs ## Run a controller from your host.
-	go run ./cmd/main.go -zap-devel -zap-stacktrace-level=panic --webhook-cert-path=$(CERTSDIR)
+	go run ./cmd/main.go -zap-devel -zap-stacktrace-level=panic --webhook-cert-path=$(CERTSDIR) --log-format=raw --log-level=debug
 
 CERTSDIR=./tmp/k8s-webhook-server/serving-certs
 .PHONY: generate-certs

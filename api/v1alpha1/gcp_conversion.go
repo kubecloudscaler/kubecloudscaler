@@ -41,6 +41,7 @@ func (src *Gcp) ConvertTo(dstRaw conversion.Hub) error {
 	dst.Spec.AuthSecret = src.Spec.AuthSecret
 	dst.Spec.RestoreOnDelete = src.Spec.RestoreOnDelete
 	dst.Spec.WaitForOperation = src.Spec.WaitForOperation
+	dst.Spec.DefaultPeriodType = "down"
 
 	// convert fields from v1alpha1 to v1alpha2
 	dst.Spec.Resources.Types = src.Spec.Resources

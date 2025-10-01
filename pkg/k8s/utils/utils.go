@@ -7,15 +7,16 @@ import (
 	"strconv"
 	"strings"
 
-	periodPkg "github.com/kubecloudscaler/kubecloudscaler/pkg/period"
+	"github.com/rs/zerolog"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
-	"sigs.k8s.io/controller-runtime/pkg/log"
+
+	periodPkg "github.com/kubecloudscaler/kubecloudscaler/pkg/period"
 )
 
 // We set namespaces into resources to be able to use k8s client
 func SetNamespaceList(ctx context.Context, config *Config) ([]string, error) {
-	_ = log.FromContext(ctx)
+	logger := zerolog.Ctx(ctx)
 	nsList := []string{}
 
 	// get the list of namespaces
@@ -25,7 +26,7 @@ func SetNamespaceList(ctx context.Context, config *Config) ([]string, error) {
 		// get all namespaces from the cluster
 		nsListItems, err := config.Client.CoreV1().Namespaces().List(context.Background(), metaV1.ListOptions{})
 		if err != nil {
-			log.Log.V(1).Info("error listing namespaces")
+			logger.Debug().Msg("error listing namespaces")
 
 			return []string{}, fmt.Errorf("error listing namespaces: %w", err)
 		}
@@ -89,12 +90,12 @@ func RemoveAnnotations(annotations map[string]string) map[string]string {
 }
 
 func PrepareSearch(ctx context.Context, config *Config) ([]string, metaV1.ListOptions, error) {
-	_ = log.FromContext(ctx)
+	logger := zerolog.Ctx(ctx)
 	var err error
 
 	nsList, err := SetNamespaceList(ctx, config)
 	if err != nil {
-		log.Log.Error(err, "unable to set namespace list")
+		logger.Error().Err(err).Msg("unable to set namespace list")
 
 		return []string{}, metaV1.ListOptions{}, err
 	}
@@ -111,7 +112,7 @@ func PrepareSearch(ctx context.Context, config *Config) ([]string, metaV1.ListOp
 	}
 
 	if config.LabelSelector != nil {
-		log.Log.V(1).Info("labelSelector", "selectors", config.LabelSelector)
+		logger.Debug().Msgf("labelSelector: %+v", config.LabelSelector)
 
 		if config.LabelSelector.MatchLabels != nil {
 			for k, v := range config.LabelSelector.MatchLabels {
@@ -138,7 +139,6 @@ func PrepareSearch(ctx context.Context, config *Config) ([]string, metaV1.ListOp
 }
 
 func InitConfig(ctx context.Context, config *Config) (*K8sResource, error) {
-	_ = log.FromContext(ctx)
 	resource := &K8sResource{
 		Period: config.Period,
 	}

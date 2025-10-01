@@ -308,6 +308,13 @@ spec:
               authSecret:
                 description: AuthSecret name
                 type: string
+              defaultPeriodType:
+                default: down
+                description: Default status for resources
+                enum:
+                - down
+                - up
+                type: string
               dryRun:
                 description: dry-run mode
                 type: boolean

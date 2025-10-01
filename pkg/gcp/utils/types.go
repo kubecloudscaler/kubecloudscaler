@@ -21,12 +21,13 @@ type ClientSet struct {
 }
 
 type Config struct {
-	ProjectId        string                `json:"projectId,omitempty"`
-	Region           string                `json:"region,omitempty"`
-	Client           *ClientSet            `json:"client"`
-	Names            []string              `json:"names,omitempty"`
-	LabelSelector    *metaV1.LabelSelector `json:"labelSelector,omitempty"`
-	Period           *periodPkg.Period     `json:"period,omitempty"`
-	WaitForOperation bool                  `json:"waitForOperation,omitempty"`
-	DryRun           bool                  `json:"dryRun,omitempty"`
+	ProjectId         string                `json:"projectId,omitempty"`
+	Region            string                `json:"region,omitempty"`
+	Client            *ClientSet            `json:"client"`
+	Names             []string              `json:"names,omitempty"`
+	LabelSelector     *metaV1.LabelSelector `json:"labelSelector,omitempty"`
+	Period            *periodPkg.Period     `json:"period,omitempty"`
+	WaitForOperation  bool                  `json:"waitForOperation,omitempty"`
+	DryRun            bool                  `json:"dryRun,omitempty"`
+	DefaultPeriodType string                `json:"defaultPeriodType,omitempty"`
 }

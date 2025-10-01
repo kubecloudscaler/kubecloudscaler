@@ -22,12 +22,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/kubecloudscaler/kubecloudscaler/api/common"
-	kubecloudscalerv1alpha2 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha2"
-	"github.com/kubecloudscaler/kubecloudscaler/internal/utils"
-	gcpUtils "github.com/kubecloudscaler/kubecloudscaler/pkg/gcp/utils"
-	gcpClient "github.com/kubecloudscaler/kubecloudscaler/pkg/gcp/utils/client"
-	"github.com/kubecloudscaler/kubecloudscaler/pkg/resources"
+	"github.com/rs/zerolog"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -35,7 +30,13 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-	"sigs.k8s.io/controller-runtime/pkg/log"
+
+	"github.com/kubecloudscaler/kubecloudscaler/api/common"
+	kubecloudscalerv1alpha2 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha2"
+	"github.com/kubecloudscaler/kubecloudscaler/internal/utils"
+	gcpUtils "github.com/kubecloudscaler/kubecloudscaler/pkg/gcp/utils"
+	gcpClient "github.com/kubecloudscaler/kubecloudscaler/pkg/gcp/utils/client"
+	"github.com/kubecloudscaler/kubecloudscaler/pkg/resources"
 )
 
 // ScalerReconciler reconciles a Scaler object
@@ -43,6 +44,7 @@ import (
 type ScalerReconciler struct {
 	client.Client                 // Kubernetes client for API operations
 	Scheme        *runtime.Scheme // Scheme for type conversion and serialization
+	Logger        *zerolog.Logger
 }
 
 // +kubebuilder:rbac:groups=kubecloudscaler.cloud,resources=gcps,verbs=get;list;watch;create;update;patch;delete
@@ -64,17 +66,15 @@ type ScalerReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.18.4/pkg/reconcile
 func (r *ScalerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	_ = log.FromContext(ctx)
-
 	// Fetch the Scaler object from the Kubernetes API
 	scaler := &kubecloudscalerv1alpha2.Gcp{}
 	if err := r.Get(ctx, req.NamespacedName, scaler); err != nil {
-		log.Log.Error(err, "unable to fetch Scaler")
+		r.Logger.Error().Err(err).Msg("unable to fetch Scaler")
 
 		return ctrl.Result{RequeueAfter: 0 * time.Second}, client.IgnoreNotFound(err)
 	}
 
-	log.Log.Info("reconciling scaler", "name", scaler.Name, "kind", scaler.Kind, "apiVersion", scaler.APIVersion)
+	r.Logger.Info().Str("name", scaler.Name).Str("kind", scaler.Kind).Str("apiVersion", scaler.APIVersion).Msg("reconciling scaler")
 
 	// Finalizer management for proper cleanup
 	scalerFinalizer := "kubecloudscaler.cloud/finalizer"
@@ -85,7 +85,7 @@ func (r *ScalerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		// Object is not being deleted - ensure finalizer is present
 		// The finalizer ensures we can perform cleanup operations before deletion
 		if !controllerutil.ContainsFinalizer(scaler, scalerFinalizer) {
-			log.Log.Info("adding finalizer")
+			r.Logger.Info().Msg("adding finalizer")
 			controllerutil.AddFinalizer(scaler, scalerFinalizer)
 			if err := r.Update(ctx, scaler); err != nil {
 				return ctrl.Result{RequeueAfter: 0 * time.Second}, client.IgnoreNotFound(err)
@@ -94,7 +94,7 @@ func (r *ScalerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	} else {
 		// Object is being deleted - handle finalizer cleanup
 		if controllerutil.ContainsFinalizer(scaler, scalerFinalizer) {
-			log.Log.Info("deleting scaler with finalizer")
+			r.Logger.Info().Msg("deleting scaler with finalizer")
 			scalerFinalize = true
 		} else {
 			// Finalizer already removed, stop reconciliation
@@ -105,7 +105,7 @@ func (r *ScalerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	// Handle authentication secret for GCP access
 	secret := &corev1.Secret{}
 	if scaler.Spec.AuthSecret != nil {
-		log.Log.Info("auth secret found for GCP authentication")
+		r.Logger.Info().Msg("auth secret found for GCP authentication")
 		// Construct the namespaced name for the secret
 		namespacedSecret := types.NamespacedName{
 			Namespace: req.Namespace,
@@ -114,7 +114,7 @@ func (r *ScalerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 
 		// Fetch the secret from the cluster
 		if err := r.Get(ctx, namespacedSecret, secret); err != nil {
-			log.Log.Error(err, "unable to fetch secret")
+			r.Logger.Error().Err(err).Msg("unable to fetch secret")
 		}
 	} else {
 		// No authentication secret specified, use default GCP access
@@ -125,7 +125,7 @@ func (r *ScalerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	// This client is used to interact with the GCP Compute Engine API
 	gcpClient, err := gcpClient.GetClient(secret, scaler.Spec.ProjectId)
 	if err != nil {
-		log.Log.Error(err, "unable to get GCP client")
+		r.Logger.Error().Err(err).Msg("unable to get GCP client")
 
 		return ctrl.Result{RequeueAfter: utils.ReconcileErrorDuration}, nil
 	}
@@ -133,11 +133,12 @@ func (r *ScalerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	// Configure resource management settings
 	resourceConfig := resources.Config{
 		GCP: &gcpUtils.Config{
-			Client:        gcpClient,
-			ProjectId:     scaler.Spec.ProjectId,
-			Region:        scaler.Spec.Region,
-			Names:         scaler.Spec.Resources.Names,
-			LabelSelector: scaler.Spec.Resources.LabelSelector,
+			Client:            gcpClient,
+			ProjectId:         scaler.Spec.ProjectId,
+			Region:            scaler.Spec.Region,
+			Names:             scaler.Spec.Resources.Names,
+			LabelSelector:     scaler.Spec.Resources.LabelSelector,
+			DefaultPeriodType: scaler.Spec.DefaultPeriodType,
 		},
 	}
 
@@ -158,7 +159,7 @@ func (r *ScalerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		scaler.Status.Comments = ptr.To(err.Error())
 
 		if err := r.Status().Update(ctx, scaler); err != nil {
-			log.Log.Error(err, "unable to update scaler status")
+			r.Logger.Error().Err(err).Msg("unable to update scaler status")
 		}
 
 		return ctrl.Result{Requeue: false}, nil
@@ -174,11 +175,11 @@ func (r *ScalerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	// This ensures only valid resource types are processed
 	resourceList, err := r.validResourceList(ctx, scaler)
 	if err != nil {
-		log.Log.Error(err, "unable to get valid resources")
+		r.Logger.Error().Err(err).Msg("unable to get valid resources")
 		scaler.Status.Comments = ptr.To(err.Error())
 
 		if err := r.Status().Update(ctx, scaler); err != nil {
-			log.Log.Error(err, "unable to update scaler status")
+			r.Logger.Error().Err(err).Msg("unable to update scaler status")
 		}
 
 		return ctrl.Result{}, nil
@@ -189,9 +190,9 @@ func (r *ScalerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	// Process each resource type and perform scaling operations
 	for _, resource := range resourceList {
 		// Create a resource handler for the specific resource type
-		curResource, err := resources.NewResource(ctx, resource, resourceConfig)
+		curResource, err := resources.NewResource(resource, resourceConfig, r.Logger)
 		if err != nil {
-			log.Log.Error(err, "unable to get resource")
+			r.Logger.Error().Err(err).Msg("unable to get resource")
 
 			continue
 		}
@@ -200,7 +201,7 @@ func (r *ScalerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		// This will scale all matching resources up or down based on the current period
 		success, failed, err := curResource.SetState(ctx)
 		if err != nil {
-			log.Log.Error(err, "unable to set resource state")
+			r.Logger.Error().Err(err).Msg("unable to set resource state")
 
 			continue
 		}
@@ -212,7 +213,7 @@ func (r *ScalerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 
 	// Handle finalizer cleanup if the object is being deleted
 	if scalerFinalize {
-		log.Log.Info("removing finalizer")
+		r.Logger.Info().Msg("removing finalizer")
 		controllerutil.RemoveFinalizer(scaler, scalerFinalizer)
 		if err := r.Update(ctx, scaler); err != nil {
 			return ctrl.Result{RequeueAfter: 0 * time.Second}, client.IgnoreNotFound(err)
@@ -228,9 +229,9 @@ func (r *ScalerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 
 	// Persist status updates to the cluster
 	if err := r.Status().Update(ctx, scaler); err != nil {
-		log.Log.Error(err, "unable to update scaler status")
+		r.Logger.Error().Err(err).Msg("unable to update scaler status")
 	} else {
-		log.Log.Info("scaler status updated", "name", scaler.Name, "kind", scaler.Kind, "apiVersion", scaler.APIVersion)
+		r.Logger.Info().Str("name", scaler.Name).Str("kind", scaler.Kind).Str("apiVersion", scaler.APIVersion).Msg("scaler status updated")
 	}
 
 	// Requeue for the next reconciliation cycle
@@ -251,8 +252,6 @@ func (r *ScalerReconciler) SetupWithManager(mgr ctrl.Manager) error {
 // validResourceList validates and filters the list of resources to be scaled.
 // It ensures that only valid resource types are included for GCP resources.
 func (r *ScalerReconciler) validResourceList(ctx context.Context, scaler *kubecloudscalerv1alpha2.Gcp) ([]string, error) {
-	_ = log.FromContext(ctx)
-
 	// Default to compute instances if no resources are specified
 	if len(scaler.Spec.Resources.Types) == 0 {
 		scaler.Spec.Resources.Types = []string{resources.DefaultGCPResourceType}

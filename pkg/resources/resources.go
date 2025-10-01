@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/rs/zerolog"
+
 	computeinstances "github.com/kubecloudscaler/kubecloudscaler/pkg/gcp/resources/compute-instances"
 	"github.com/kubecloudscaler/kubecloudscaler/pkg/k8s/resources/cronjobs"
 	"github.com/kubecloudscaler/kubecloudscaler/pkg/k8s/resources/deployments"
@@ -11,7 +13,9 @@ import (
 	// "github.com/kubecloudscaler/kubecloudscaler/pkg/k8s/resources/horizontalpodautoscalers"
 )
 
-func NewResource(ctx context.Context, resourceName string, config Config) (IResource, error) {
+func NewResource(resourceName string, config Config, logger *zerolog.Logger) (IResource, error) {
+	ctx := context.Background()
+	ctx = logger.With().Str("resource-type", resourceName).Logger().WithContext(ctx)
 	var (
 		resource IResource
 		err      error

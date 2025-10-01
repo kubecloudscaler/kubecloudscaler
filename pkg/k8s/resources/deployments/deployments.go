@@ -4,37 +4,30 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/kubecloudscaler/kubecloudscaler/api/common"
-	"github.com/kubecloudscaler/kubecloudscaler/pkg/k8s/utils"
 	appsV1 "k8s.io/api/apps/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-	v1 "k8s.io/client-go/kubernetes/typed/apps/v1"
 	"k8s.io/utils/ptr"
-	"sigs.k8s.io/controller-runtime/pkg/log"
-)
 
-type Deployments struct {
-	Resource *utils.K8sResource
-	Client   v1.AppsV1Interface
-}
+	"github.com/kubecloudscaler/kubecloudscaler/api/common"
+	"github.com/kubecloudscaler/kubecloudscaler/pkg/k8s/utils"
+)
 
 func (d *Deployments) init(client kubernetes.Interface) {
 	d.Client = client.AppsV1()
 }
 
 func (d *Deployments) SetState(ctx context.Context) ([]common.ScalerStatusSuccess, []common.ScalerStatusFailed, error) {
-	_ = log.FromContext(ctx)
 	scalerStatusSuccess := []common.ScalerStatusSuccess{}
 	scalerStatusFailed := []common.ScalerStatusFailed{}
 	list := []appsV1.Deployment{}
 
 	for _, ns := range d.Resource.NsList {
-		log.Log.V(1).Info("found namespace", "ns", ns)
+		d.Logger.Debug().Msgf("found namespace: %s", ns)
 
 		deployList, err := d.Client.Deployments(ns).List(ctx, d.Resource.ListOptions)
 		if err != nil {
-			log.Log.V(1).Error(err, "error listing deployments")
+			d.Logger.Debug().Err(err).Msg("error listing deployments")
 
 			return scalerStatusSuccess, scalerStatusFailed, fmt.Errorf("error listing deployments: %w", err)
 		}
@@ -42,10 +35,10 @@ func (d *Deployments) SetState(ctx context.Context) ([]common.ScalerStatusSucces
 		list = append(list, deployList.Items...)
 	}
 
-	log.Log.V(1).Info("deployments", "number", len(list))
+	d.Logger.Debug().Msgf("number of deployments: %d", len(list))
 
 	for _, dName := range list {
-		log.Log.V(1).Info("deployment", "name", dName.Name)
+		d.Logger.Debug().Msgf("resource-name: %s", dName.Name)
 		var deploy *appsV1.Deployment
 
 		deploy, err := d.Client.Deployments(dName.Namespace).Get(ctx, dName.Name, metaV1.GetOptions{})
@@ -64,19 +57,19 @@ func (d *Deployments) SetState(ctx context.Context) ([]common.ScalerStatusSucces
 
 		switch d.Resource.Period.Type {
 		case "down":
-			log.Log.V(1).Info("scaling down", "name", dName.Name)
+			d.Logger.Debug().Msgf("scaling down: %s", dName.Name)
 
 			deploy.Annotations = utils.AddIntAnnotations(deploy.Annotations, d.Resource.Period, deploy.Spec.Replicas)
 			deploy.Spec.Replicas = ptr.To(d.Resource.Period.MinReplicas)
 
 		case "up":
-			log.Log.V(1).Info("scaling up", "name", dName.Name)
+			d.Logger.Debug().Msgf("scaling up: %s", dName.Name)
 
 			deploy.Annotations = utils.AddIntAnnotations(deploy.Annotations, d.Resource.Period, deploy.Spec.Replicas)
 			deploy.Spec.Replicas = ptr.To(d.Resource.Period.MaxReplicas)
 
 		default:
-			log.Log.V(1).Info("restoring", "name", dName.Name)
+			d.Logger.Debug().Msgf("restoring: %s", dName.Name)
 
 			var isAlreadyRestored bool
 
@@ -95,12 +88,12 @@ func (d *Deployments) SetState(ctx context.Context) ([]common.ScalerStatusSucces
 			}
 
 			if isAlreadyRestored {
-				log.Log.V(1).Info("nothing to do", "name", dName.Name)
+				d.Logger.Debug().Msgf("nothing to do: %s", dName.Name)
 				continue
 			}
 		}
 
-		log.Log.V(1).Info("update deployment", "name", dName.Name)
+		d.Logger.Debug().Msgf("update deployment: %s", dName.Name)
 
 		_, err = d.Client.Deployments(dName.Namespace).Update(ctx, deploy, metaV1.UpdateOptions{
 			FieldManager: utils.FieldManager,
