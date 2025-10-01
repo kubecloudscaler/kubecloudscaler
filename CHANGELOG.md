@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.4.0](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.3.7...v1.4.0) (2025-10-01)
+
+
+### Features
+
+* add default period type to gcp crd ([75199f8](https://github.com/kubecloudscaler/kubecloudscaler/commit/75199f8eec0dd468589f2b6149e80aa702dd5a37))
+
+
+### Bug Fixes
+
+* rename gcp compute-instance in vm-instances ([882f5d4](https://github.com/kubecloudscaler/kubecloudscaler/commit/882f5d4ddfa3ee52aa924cc2547c9385f99a4cfe))
+
 ## [1.3.7](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.3.6...v1.3.7) (2025-09-30)
 
 
