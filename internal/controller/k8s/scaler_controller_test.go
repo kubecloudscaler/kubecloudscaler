@@ -21,6 +21,7 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"github.com/rs/zerolog/log"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -124,6 +125,7 @@ var _ = Describe("Scaler Controller", func() {
 			controllerReconciler := &ScalerReconciler{
 				Client: k8sClientTest,
 				Scheme: k8sClientTest.Scheme(),
+				Logger: &log.Logger,
 			}
 
 			_, err := controllerReconciler.Reconcile(ctx, reconcile.Request{

@@ -475,7 +475,7 @@ spec:
                     description: |-
                       Types of resources
                       K8s: deployments, statefulsets, ... (default: deployments)
-                      GCP: compute-instances, ... (default: compute-instances)
+                      GCP: VM-instances, ... (default: vm-instances)
                     items:
                       type: string
                     type: array

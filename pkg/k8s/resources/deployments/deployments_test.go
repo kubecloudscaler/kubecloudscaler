@@ -6,18 +6,20 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/kubecloudscaler/kubecloudscaler/api/common"
-	deploymentsPkg "github.com/kubecloudscaler/kubecloudscaler/pkg/k8s/resources/deployments"
-	"github.com/kubecloudscaler/kubecloudscaler/pkg/k8s/utils"
-	"github.com/kubecloudscaler/kubecloudscaler/pkg/period"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"github.com/rs/zerolog/log"
 	appsV1 "k8s.io/api/apps/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/testing"
 	"k8s.io/utils/ptr"
+
+	"github.com/kubecloudscaler/kubecloudscaler/api/common"
+	deploymentsPkg "github.com/kubecloudscaler/kubecloudscaler/pkg/k8s/resources/deployments"
+	"github.com/kubecloudscaler/kubecloudscaler/pkg/k8s/utils"
+	"github.com/kubecloudscaler/kubecloudscaler/pkg/period"
 )
 
 var _ = Describe("Deployments", func() {
@@ -63,6 +65,7 @@ var _ = Describe("Deployments", func() {
 
 			deployments = &deploymentsPkg.Deployments{
 				Resource: resource,
+				Logger:   &log.Logger,
 			}
 			deployments.Client = fakeClient.AppsV1()
 		})

@@ -6,18 +6,20 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/kubecloudscaler/kubecloudscaler/api/common"
-	cronjobsPkg "github.com/kubecloudscaler/kubecloudscaler/pkg/k8s/resources/cronjobs"
-	"github.com/kubecloudscaler/kubecloudscaler/pkg/k8s/utils"
-	"github.com/kubecloudscaler/kubecloudscaler/pkg/period"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"github.com/rs/zerolog/log"
 	batchV1 "k8s.io/api/batch/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/testing"
 	"k8s.io/utils/ptr"
+
+	"github.com/kubecloudscaler/kubecloudscaler/api/common"
+	cronjobsPkg "github.com/kubecloudscaler/kubecloudscaler/pkg/k8s/resources/cronjobs"
+	"github.com/kubecloudscaler/kubecloudscaler/pkg/k8s/utils"
+	"github.com/kubecloudscaler/kubecloudscaler/pkg/period"
 )
 
 var _ = Describe("Cronjobs", func() {
@@ -63,6 +65,7 @@ var _ = Describe("Cronjobs", func() {
 
 			cronjobs = &cronjobsPkg.Cronjobs{
 				Resource: resource,
+				Logger:   &log.Logger,
 			}
 			cronjobs.Client = fakeClient.BatchV1()
 		})

@@ -3,11 +3,13 @@ package computeinstances
 import (
 	"context"
 
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+	"github.com/rs/zerolog/log"
+
 	computepb "cloud.google.com/go/compute/apiv1/computepb"
 	"github.com/kubecloudscaler/kubecloudscaler/pkg/gcp/utils"
 	"github.com/kubecloudscaler/kubecloudscaler/pkg/period"
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("ComputeInstances", func() {
@@ -19,10 +21,12 @@ var _ = Describe("ComputeInstances", func() {
 
 	BeforeEach(func() {
 		ctx = context.Background()
+		ctx = log.Logger.WithContext(ctx)
 		config = &utils.Config{
-			Client:    &utils.ClientSet{},
-			ProjectId: "test-project",
-			Region:    "us-central1",
+			Client:            &utils.ClientSet{},
+			ProjectId:         "test-project",
+			Region:            "us-central1",
+			DefaultPeriodType: "down",
 		}
 	})
 

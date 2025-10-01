@@ -6,18 +6,20 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/kubecloudscaler/kubecloudscaler/api/common"
-	"github.com/kubecloudscaler/kubecloudscaler/pkg/k8s/resources/hpa"
-	"github.com/kubecloudscaler/kubecloudscaler/pkg/k8s/utils"
-	"github.com/kubecloudscaler/kubecloudscaler/pkg/period"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"github.com/rs/zerolog/log"
 	autoscaleV2 "k8s.io/api/autoscaling/v2"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/testing"
 	"k8s.io/utils/ptr"
+
+	"github.com/kubecloudscaler/kubecloudscaler/api/common"
+	"github.com/kubecloudscaler/kubecloudscaler/pkg/k8s/resources/hpa"
+	"github.com/kubecloudscaler/kubecloudscaler/pkg/k8s/utils"
+	"github.com/kubecloudscaler/kubecloudscaler/pkg/period"
 )
 
 var _ = Describe("HPA", func() {
@@ -63,6 +65,7 @@ var _ = Describe("HPA", func() {
 
 			hpaResource = &hpa.HorizontalPodAutoscalers{
 				Resource: resource,
+				Logger:   &log.Logger,
 			}
 			hpaResource.Client = fakeClient.AutoscalingV2()
 		})

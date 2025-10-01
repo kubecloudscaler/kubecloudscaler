@@ -8,7 +8,7 @@ import (
 type Resources struct {
 	// Types of resources
 	// K8s: deployments, statefulsets, ... (default: deployments)
-	// GCP: compute-instances, ... (default: compute-instances)
+	// GCP: VM-instances, ... (default: vm-instances)
 	Types []string `json:"types,omitempty"`
 	// Names of resources to manage
 	Names []string `json:"names,omitempty"`

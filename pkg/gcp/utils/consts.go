@@ -12,7 +12,7 @@ const (
 	FieldManager            = "kubecloudscaler"
 
 	// GCP specific constants
-	DefaultResource  = "compute-instances"
+	DefaultResource  = "vm-instances"
 	InstanceRunning  = "RUNNING"
 	InstanceStopped  = "TERMINATED"
 	InstanceStopping = "STOPPING"

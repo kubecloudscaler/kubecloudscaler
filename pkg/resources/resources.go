@@ -6,7 +6,7 @@ import (
 
 	"github.com/rs/zerolog"
 
-	computeinstances "github.com/kubecloudscaler/kubecloudscaler/pkg/gcp/resources/compute-instances"
+	vminstances "github.com/kubecloudscaler/kubecloudscaler/pkg/gcp/resources/vm-instances"
 	"github.com/kubecloudscaler/kubecloudscaler/pkg/k8s/resources/cronjobs"
 	"github.com/kubecloudscaler/kubecloudscaler/pkg/k8s/resources/deployments"
 	"github.com/kubecloudscaler/kubecloudscaler/pkg/k8s/resources/statefulsets"
@@ -49,13 +49,13 @@ func NewResource(resourceName string, config Config, logger *zerolog.Logger) (IR
 			return nil, fmt.Errorf("error creating cronjobs resource: %w", err)
 		}
 
-	case "compute-instances":
+	case "vm-instances":
 		if config.GCP == nil {
-			return nil, fmt.Errorf("GCP config is required for compute-instances resource")
+			return nil, fmt.Errorf("GCP config is required for vm-instances resource")
 		}
-		resource, err = computeinstances.New(ctx, config.GCP)
+		resource, err = vminstances.New(ctx, config.GCP)
 		if err != nil {
-			return nil, fmt.Errorf("error creating compute-instances resource: %w", err)
+			return nil, fmt.Errorf("error creating vm-instances resource: %w", err)
 		}
 
 	default:

@@ -90,16 +90,22 @@ func (c *ComputeInstances) SetState(ctx context.Context) ([]common.ScalerStatusS
 
 // getDesiredState determines the desired state based on the current period
 func (c *ComputeInstances) getDesiredState() string {
+	defaultPeriodType := gcpUtils.InstanceStopped
+	if c.Config.DefaultPeriodType == "up" {
+		defaultPeriodType = gcpUtils.InstanceRunning
+	}
+
+	if c.Period == nil {
+		return defaultPeriodType
+	}
+
 	switch c.Period.Type {
 	case "up":
 		return gcpUtils.InstanceRunning
 	case "down":
 		return gcpUtils.InstanceStopped
 	default:
-		if c.Config.DefaultPeriodType == "down" {
-			return gcpUtils.InstanceStopped
-		}
-		return gcpUtils.InstanceRunning
+		return defaultPeriodType
 	}
 }
 

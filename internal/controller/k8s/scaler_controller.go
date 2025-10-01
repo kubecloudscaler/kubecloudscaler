@@ -67,8 +67,6 @@ type ScalerReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.18.4/pkg/reconcile
 func (r *ScalerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	ctx = r.Logger.WithContext(ctx)
-
 	// Fetch the Scaler object from the Kubernetes API
 	scaler := &kubecloudscalerv1alpha2.K8s{}
 	if err := r.Get(ctx, req.NamespacedName, scaler); err != nil {
