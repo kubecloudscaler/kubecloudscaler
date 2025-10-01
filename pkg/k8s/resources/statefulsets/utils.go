@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/rs/zerolog"
+
 	"github.com/kubecloudscaler/kubecloudscaler/pkg/k8s/utils"
 )
 
@@ -15,6 +17,7 @@ func New(ctx context.Context, config *utils.Config) (*Statefulsets, error) {
 
 	resource := &Statefulsets{
 		Resource: k8sResource,
+		Logger:   zerolog.Ctx(ctx),
 	}
 
 	resource.init(config.Client)
