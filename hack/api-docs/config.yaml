@@ -1,6 +1,6 @@
 processor:
-  # ignoreGroupVersions:
-  #   - "GVK"
+  ignoreGroupVersions:
+    - "kubecloudscaler.cloud/v1alpha1"
   ignoreTypes:
     - "(K8s|Gcp)List$"
   ignoreFields:
