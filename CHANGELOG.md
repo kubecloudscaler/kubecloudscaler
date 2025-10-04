@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.4](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.4.3...v1.4.4) (2025-10-04)
+
+
+### Bug Fixes
+
+* **deps:** update module github.com/onsi/ginkgo/v2 to v2.26.0 ([#139](https://github.com/kubecloudscaler/kubecloudscaler/issues/139)) ([32c5d9c](https://github.com/kubecloudscaler/kubecloudscaler/commit/32c5d9c9d460f1c3a9d78fe619f30171b9c58b91))
+
 ## [1.4.3](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.4.2...v1.4.3) (2025-10-01)
 
 
