@@ -4,6 +4,7 @@
 resources:
   - bases/kubecloudscaler.cloud_gcps.yaml
   - bases/kubecloudscaler.cloud_k8s.yaml
+  - bases/kubecloudscaler.cloud_flows.yaml
 # +kubebuilder:scaffold:crdkustomizeresource
 
 patches:

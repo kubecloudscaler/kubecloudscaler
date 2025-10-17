@@ -191,6 +191,24 @@ replacements:
   #         delimiter: '/'
   #         index: 0
   #         create: true
+#     - select:
+#         kind: CustomResourceDefinition
+#         name: gcps.kubecloudscaler.cloud
+#       fieldPaths:
+#         - .metadata.annotations.[cert-manager.io/inject-ca-from]
+#       options:
+#         delimiter: '/'
+#         index: 0
+#         create: true
+#     - select:
+#         kind: CustomResourceDefinition
+#         name: k8s.kubecloudscaler.cloud
+#       fieldPaths:
+#         - .metadata.annotations.[cert-manager.io/inject-ca-from]
+#       options:
+#         delimiter: '/'
+#         index: 0
+#         create: true
   # +kubebuilder:scaffold:crdkustomizecainjectionns
   - source:
       kind: Certificate
@@ -227,6 +245,24 @@ replacements:
 #     - select:
 #         kind: CustomResourceDefinition
 #         name: k8sclusters.cloudscaler.io
+#       fieldPaths:
+#         - .metadata.annotations.[cert-manager.io/inject-ca-from]
+#       options:
+#         delimiter: '/'
+#         index: 1
+#         create: true
+#     - select:
+#         kind: CustomResourceDefinition
+#         name: gcps.kubecloudscaler.cloud
+#       fieldPaths:
+#         - .metadata.annotations.[cert-manager.io/inject-ca-from]
+#       options:
+#         delimiter: '/'
+#         index: 1
+#         create: true
+#     - select:
+#         kind: CustomResourceDefinition
+#         name: k8s.kubecloudscaler.cloud
 #       fieldPaths:
 #         - .metadata.annotations.[cert-manager.io/inject-ca-from]
 #       options:

@@ -26,3 +26,16 @@ resources:
 # - gcp_scaler_viewer_role.yaml
 # - scaler_editor_role.yaml
 # - scaler_viewer_role.yaml
+# For each CRD, "Admin", "Editor" and "Viewer" roles are scaffolded by
+# default, aiding admins in cluster management. Those roles are
+# not used by the kubecloudscaler itself. You can comment the following lines
+# if you do not want those helpers be installed with your Project.
+# - gcp_admin_role.yaml
+# - gcp_editor_role.yaml
+# - gcp_viewer_role.yaml
+# - k8s_admin_role.yaml
+# - k8s_editor_role.yaml
+# - k8s_viewer_role.yaml
+# - flow_admin_role.yaml
+# - flow_editor_role.yaml
+# - flow_viewer_role.yaml

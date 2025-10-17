@@ -14,23 +14,21 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1alpha2
+package v1alpha3
 
 import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
-	kubecloudscalercloudv1alpha2 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha2"
+	kubecloudscalerv1alpha3 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha3"
 )
 
 // nolint:unused
 // log is for logging in this package.
-var gcplog = logf.Log.WithName("gcp-resource")
+var k8slog = logf.Log.WithName("k8s-resource")
 
-// SetupGcpWebhookWithManager registers the webhook for Gcp in the manager.
-func SetupGcpWebhookWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewWebhookManagedBy(mgr).For(&kubecloudscalercloudv1alpha2.Gcp{}).
+// SetupK8sWebhookWithManager registers the webhook for K8s in the manager.
+func SetupK8sWebhookWithManager(mgr ctrl.Manager) error {
+	return ctrl.NewWebhookManagedBy(mgr).For(&kubecloudscalerv1alpha3.K8s{}).
 		Complete()
 }
-
-// TODO(user): EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!

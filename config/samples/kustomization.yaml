@@ -4,4 +4,7 @@ resources:
 - gcp_v1alpha1_scaler.yaml
 - v1alpha2_k8s.yaml
 - v1alpha2_gcp.yaml
+- v1alpha3_flow.yaml
+- v1alpha3_k8s.yaml
+- v1alpha3_gcp.yaml
 # +kubebuilder:scaffold:manifestskustomizesamples

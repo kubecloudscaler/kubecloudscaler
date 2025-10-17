@@ -1,0 +1,27 @@
+# This rule is not used by the project kubecloudscaler itself.
+# It is provided to allow the cluster admin to help manage permissions for users.
+#
+# Grants full permissions ('*') over kubecloudscaler.cloud.
+# This role is intended for users authorized to modify roles and bindings within the cluster,
+# enabling them to delegate specific permissions to other users or groups as needed.
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: kubecloudscaler
+    app.kubernetes.io/managed-by: kustomize
+  name: k8s-admin-role
+rules:
+- apiGroups:
+  - kubecloudscaler.cloud
+  resources:
+  - k8s
+  verbs:
+  - '*'
+- apiGroups:
+  - kubecloudscaler.cloud
+  resources:
+  - k8s/status
+  verbs:
+  - get

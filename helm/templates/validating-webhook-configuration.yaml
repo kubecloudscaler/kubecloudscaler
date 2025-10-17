@@ -1,0 +1,29 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  name: {{ include "helm.fullname" . }}-validating-webhook-configuration
+  annotations:
+    cert-manager.io/inject-ca-from: {{ .Release.Namespace }}/{{ include "helm.fullname" . }}-
+  labels:
+  {{- include "helm.labels" . | nindent 4 }}
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: '{{ include "helm.fullname" . }}-webhook-service'
+      namespace: '{{ .Release.Namespace }}'
+      path: /validate-kubecloudscaler-cloud-v1alpha3-flow
+  failurePolicy: Fail
+  name: vflow-v1alpha3.kb.io
+  rules:
+  - apiGroups:
+    - kubecloudscaler.cloud
+    apiVersions:
+    - v1alpha3
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - flows
+  sideEffects: None

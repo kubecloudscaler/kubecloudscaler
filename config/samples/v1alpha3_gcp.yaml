@@ -1,0 +1,9 @@
+apiVersion: kubecloudscaler.cloud/v1alpha3
+kind: Gcp
+metadata:
+  labels:
+    app.kubernetes.io/name: kubecloudscaler
+    app.kubernetes.io/managed-by: kustomize
+  name: gcp-sample
+spec:
+  # TODO(user): Add fields here

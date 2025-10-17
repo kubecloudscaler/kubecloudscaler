@@ -48,6 +48,7 @@ rules:
 - apiGroups:
   - kubecloudscaler.cloud
   resources:
+  - flows
   - gcps
   - k8s
   verbs:
@@ -61,6 +62,7 @@ rules:
 - apiGroups:
   - kubecloudscaler.cloud
   resources:
+  - flows/finalizers
   - gcps/finalizers
   - k8s/finalizers
   verbs:
@@ -68,6 +70,7 @@ rules:
 - apiGroups:
   - kubecloudscaler.cloud
   resources:
+  - flows/status
   - gcps/status
   - k8s/status
   verbs:
