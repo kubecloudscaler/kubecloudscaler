@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.5.0](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.4.4...v1.5.0) (2025-10-17)
+
+
+### Features
+
+* add flows ([#160](https://github.com/kubecloudscaler/kubecloudscaler/issues/160)) ([0ecaa8d](https://github.com/kubecloudscaler/kubecloudscaler/commit/0ecaa8d94ebe81ddb097263f613f1a6626288388))
+
+
+### Bug Fixes
+
+* **deps:** update all non-major dependencies ([#158](https://github.com/kubecloudscaler/kubecloudscaler/issues/158)) ([6f54576](https://github.com/kubecloudscaler/kubecloudscaler/commit/6f545768d5d86a65fcd6209d8697915465b65450))
+
 ## [1.4.4](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.4.3...v1.4.4) (2025-10-04)
 
 
