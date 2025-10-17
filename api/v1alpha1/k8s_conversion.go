@@ -20,13 +20,13 @@ import (
 	"github.com/rs/zerolog/log"
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
 
-	kubecloudscalercloudv1alpha2 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha2"
+	kubecloudscalercloudv1alpha3 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha3"
 )
 
 // ConvertTo converts this K8s (v1alpha1) to the Hub version (v1alpha2).
 func (src *K8s) ConvertTo(dstRaw conversion.Hub) error {
-	dst := dstRaw.(*kubecloudscalercloudv1alpha2.K8s)
-	log.Debug().Msgf("ConvertTo: Converting K8s from Spoke version v1alpha1 to Hub version v1alpha2;"+
+	dst := dstRaw.(*kubecloudscalercloudv1alpha3.K8s)
+	log.Debug().Msgf("ConvertTo: Converting K8s from Spoke version v1alpha1 to Hub version v1alpha3;"+
 		"source: %s/%s, target: %s/%s", src.Namespace, src.Name, dst.Namespace, dst.Name)
 
 	// ObjectMeta
@@ -35,15 +35,15 @@ func (src *K8s) ConvertTo(dstRaw conversion.Hub) error {
 	// Spec
 	dst.Spec.DryRun = src.Spec.DryRun
 	dst.Spec.Periods = src.Spec.Periods
-	dst.Spec.Namespaces = src.Spec.Namespaces
-	dst.Spec.ExcludeNamespaces = src.Spec.ExcludeNamespaces
-	dst.Spec.ForceExcludeSystemNamespaces = src.Spec.ForceExcludeSystemNamespaces
-	dst.Spec.DeploymentTimeAnnotation = src.Spec.DeploymentTimeAnnotation
-	dst.Spec.DisableEvents = src.Spec.DisableEvents
-	dst.Spec.AuthSecret = src.Spec.AuthSecret
-	dst.Spec.RestoreOnDelete = src.Spec.RestoreOnDelete
+	dst.Spec.Config.Namespaces = src.Spec.Namespaces
+	dst.Spec.Config.ExcludeNamespaces = src.Spec.ExcludeNamespaces
+	dst.Spec.Config.ForceExcludeSystemNamespaces = src.Spec.ForceExcludeSystemNamespaces
+	dst.Spec.Config.DeploymentTimeAnnotation = src.Spec.DeploymentTimeAnnotation
+	dst.Spec.Config.DisableEvents = src.Spec.DisableEvents
+	dst.Spec.Config.AuthSecret = src.Spec.AuthSecret
+	dst.Spec.Config.RestoreOnDelete = src.Spec.RestoreOnDelete
 
-	// convert fields from v1alpha1 to v1alpha2
+	// convert fields from v1alpha1 to v1alpha3
 	dst.Spec.Resources.Types = src.Spec.Resources
 	dst.Spec.Resources.LabelSelector = src.Spec.LabelSelector
 
@@ -55,8 +55,8 @@ func (src *K8s) ConvertTo(dstRaw conversion.Hub) error {
 
 // ConvertFrom converts the Hub version (v1alpha2) to this K8s (v1alpha1).
 func (dst *K8s) ConvertFrom(srcRaw conversion.Hub) error {
-	src := srcRaw.(*kubecloudscalercloudv1alpha2.K8s)
-	log.Debug().Msgf("ConvertFrom: Converting K8s from Hub version v1alpha2 to Spoke version v1alpha1;"+
+	src := srcRaw.(*kubecloudscalercloudv1alpha3.K8s)
+	log.Debug().Msgf("ConvertFrom: Converting K8s from Hub version v1alpha3 to Spoke version v1alpha1;"+
 		"source: %s/%s, target: %s/%s", src.Namespace, src.Name, dst.Namespace, dst.Name)
 
 	// ObjectMeta
@@ -65,15 +65,15 @@ func (dst *K8s) ConvertFrom(srcRaw conversion.Hub) error {
 	// Spec
 	dst.Spec.DryRun = src.Spec.DryRun
 	dst.Spec.Periods = src.Spec.Periods
-	dst.Spec.Namespaces = src.Spec.Namespaces
-	dst.Spec.ExcludeNamespaces = src.Spec.ExcludeNamespaces
-	dst.Spec.ForceExcludeSystemNamespaces = src.Spec.ForceExcludeSystemNamespaces
-	dst.Spec.DeploymentTimeAnnotation = src.Spec.DeploymentTimeAnnotation
-	dst.Spec.DisableEvents = src.Spec.DisableEvents
-	dst.Spec.AuthSecret = src.Spec.AuthSecret
-	dst.Spec.RestoreOnDelete = src.Spec.RestoreOnDelete
+	dst.Spec.Namespaces = src.Spec.Config.Namespaces
+	dst.Spec.ExcludeNamespaces = src.Spec.Config.ExcludeNamespaces
+	dst.Spec.ForceExcludeSystemNamespaces = src.Spec.Config.ForceExcludeSystemNamespaces
+	dst.Spec.DeploymentTimeAnnotation = src.Spec.Config.DeploymentTimeAnnotation
+	dst.Spec.DisableEvents = src.Spec.Config.DisableEvents
+	dst.Spec.AuthSecret = src.Spec.Config.AuthSecret
+	dst.Spec.RestoreOnDelete = src.Spec.Config.RestoreOnDelete
 
-	// convert fields from v1alpha2 to v1alpha1
+	// convert fields from v1alpha3 to v1alpha1
 	dst.Spec.Resources = src.Spec.Resources.Types
 	dst.Spec.LabelSelector = src.Spec.Resources.LabelSelector
 

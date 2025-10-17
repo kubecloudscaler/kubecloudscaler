@@ -29,7 +29,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	"github.com/kubecloudscaler/kubecloudscaler/api/common"
-	kubecloudscalerv1alpha2 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha2"
+	kubecloudscalerv1alpha3 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha3"
 )
 
 var _ = Describe("Scaler Controller", func() {
@@ -42,8 +42,8 @@ var _ = Describe("Scaler Controller", func() {
 			Name:      resourceName,
 			Namespace: "default", // TODO(user):Modify as needed
 		}
-		scaler := &kubecloudscalerv1alpha2.Gcp{
-			Spec: kubecloudscalerv1alpha2.GcpSpec{
+		scaler := &kubecloudscalerv1alpha3.Gcp{
+			Spec: kubecloudscalerv1alpha3.GcpSpec{
 				Periods: []*common.ScalerPeriod{
 					{
 						Type: "down",
@@ -66,12 +66,12 @@ var _ = Describe("Scaler Controller", func() {
 			By("creating the custom resource for the Kind Scaler")
 			err := k8sClient.Get(ctx, typeNamespacedName, scaler)
 			if err != nil && errors.IsNotFound(err) {
-				resource := &kubecloudscalerv1alpha2.Gcp{
+				resource := &kubecloudscalerv1alpha3.Gcp{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      resourceName,
 						Namespace: "default",
 					},
-					Spec: kubecloudscalerv1alpha2.GcpSpec{
+					Spec: kubecloudscalerv1alpha3.GcpSpec{
 						Periods: []*common.ScalerPeriod{
 							{
 								Type: "down",
@@ -95,8 +95,8 @@ var _ = Describe("Scaler Controller", func() {
 
 		AfterEach(func() {
 			// TODO(user): Cleanup logic after each test, like removing the resource instance.
-			resource := &kubecloudscalerv1alpha2.Gcp{
-				Spec: kubecloudscalerv1alpha2.GcpSpec{
+			resource := &kubecloudscalerv1alpha3.Gcp{
+				Spec: kubecloudscalerv1alpha3.GcpSpec{
 					Periods: []*common.ScalerPeriod{
 						{
 							Type: "down",

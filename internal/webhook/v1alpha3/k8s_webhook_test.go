@@ -14,25 +14,25 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1alpha2
+package v1alpha3
 
 import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	kubecloudscalercloudv1alpha2 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha2"
+	kubecloudscalerv1alpha3 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha3"
 	// TODO (user): Add any additional imports if needed
 )
 
 var _ = Describe("K8s Webhook", func() {
 	var (
-		obj    *kubecloudscalercloudv1alpha2.K8s
-		oldObj *kubecloudscalercloudv1alpha2.K8s
+		obj    *kubecloudscalerv1alpha3.K8s
+		oldObj *kubecloudscalerv1alpha3.K8s
 	)
 
 	BeforeEach(func() {
-		obj = &kubecloudscalercloudv1alpha2.K8s{}
-		oldObj = &kubecloudscalercloudv1alpha2.K8s{}
+		obj = &kubecloudscalerv1alpha3.K8s{}
+		oldObj = &kubecloudscalerv1alpha3.K8s{}
 		Expect(oldObj).NotTo(BeNil(), "Expected oldObj to be initialized")
 		Expect(obj).NotTo(BeNil(), "Expected obj to be initialized")
 		// TODO (user): Add any setup logic common to all tests
@@ -42,11 +42,34 @@ var _ = Describe("K8s Webhook", func() {
 		// TODO (user): Add any teardown logic common to all tests
 	})
 
+	Context("When creating or updating K8s under Validating Webhook", func() {
+		// TODO (user): Add logic for validating webhooks
+		// Example:
+		// It("Should deny creation if a required field is missing", func() {
+		//     By("simulating an invalid creation scenario")
+		//     obj.SomeRequiredField = ""
+		//     Expect(validator.ValidateCreate(ctx, obj)).Error().To(HaveOccurred())
+		// })
+		//
+		// It("Should admit creation if all required fields are present", func() {
+		//     By("simulating an invalid creation scenario")
+		//     obj.SomeRequiredField = "valid_value"
+		//     Expect(validator.ValidateCreate(ctx, obj)).To(BeNil())
+		// })
+		//
+		// It("Should validate updates correctly", func() {
+		//     By("simulating a valid update scenario")
+		//     oldObj.SomeRequiredField = "updated_value"
+		//     obj.SomeRequiredField = "updated_value"
+		//     Expect(validator.ValidateUpdate(ctx, oldObj, obj)).To(BeNil())
+		// })
+	})
+
 	Context("When creating K8s under Conversion Webhook", func() {
 		// TODO (user): Add logic to convert the object to the desired version and verify the conversion
 		// Example:
 		// It("Should convert the object correctly", func() {
-		//     convertedObj := &kubecloudscalercloudv1alpha2.K8s{}
+		//     convertedObj := &kubecloudscalerv1alpha3.K8s{}
 		//     Expect(obj.ConvertTo(convertedObj)).To(Succeed())
 		//     Expect(convertedObj).ToNot(BeNil())
 		// })

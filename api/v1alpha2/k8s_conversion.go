@@ -16,7 +16,42 @@ limitations under the License.
 
 package v1alpha2
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
+import (
+	"log"
 
-// Hub marks this type as a conversion hub.
-func (*K8s) Hub() {}
+	"sigs.k8s.io/controller-runtime/pkg/conversion"
+
+	kubecloudscalercloudv1alpha3 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha3"
+)
+
+// ConvertTo converts this K8s (v1alpha2) to the Hub version (v1alpha3).
+func (src *K8s) ConvertTo(dstRaw conversion.Hub) error {
+	dst := dstRaw.(*kubecloudscalercloudv1alpha3.K8s)
+	log.Printf("ConvertTo: Converting K8s from Spoke version v1alpha2 to Hub version v1alpha3;"+
+		"source: %s/%s, target: %s/%s", src.Namespace, src.Name, dst.Namespace, dst.Name)
+
+	// TODO(user): Implement conversion logic from v1alpha2 to v1alpha3
+	// Example: Copying Spec fields
+	// dst.Spec.Size = src.Spec.Replicas
+
+	// Copy ObjectMeta to preserve name, namespace, labels, etc.
+	dst.ObjectMeta = src.ObjectMeta
+
+	return nil
+}
+
+// ConvertFrom converts the Hub version (v1alpha3) to this K8s (v1alpha2).
+func (dst *K8s) ConvertFrom(srcRaw conversion.Hub) error {
+	src := srcRaw.(*kubecloudscalercloudv1alpha3.K8s)
+	log.Printf("ConvertFrom: Converting K8s from Hub version v1alpha3 to Spoke version v1alpha2;"+
+		"source: %s/%s, target: %s/%s", src.Namespace, src.Name, dst.Namespace, dst.Name)
+
+	// TODO(user): Implement conversion logic from v1alpha3 to v1alpha2
+	// Example: Copying Spec fields
+	// dst.Spec.Replicas = src.Spec.Size
+
+	// Copy ObjectMeta to preserve name, namespace, labels, etc.
+	dst.ObjectMeta = src.ObjectMeta
+
+	return nil
+}

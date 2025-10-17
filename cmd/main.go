@@ -27,6 +27,7 @@ import (
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
+	"github.com/rs/zerolog"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -40,10 +41,11 @@ import (
 
 	kubecloudscalerv1alpha1 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha1"
 	kubecloudscalerv1alpha2 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha2"
-	gcpcontroller "github.com/kubecloudscaler/kubecloudscaler/internal/controller/gcp"
-	k8scontroller "github.com/kubecloudscaler/kubecloudscaler/internal/controller/k8s"
-	webhookv1alpha2 "github.com/kubecloudscaler/kubecloudscaler/internal/webhook/v1alpha2"
-	"github.com/rs/zerolog"
+	kubecloudscalerv1alpha3 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha3"
+	flowController "github.com/kubecloudscaler/kubecloudscaler/internal/controller/flow"
+	gcpController "github.com/kubecloudscaler/kubecloudscaler/internal/controller/gcp"
+	k8sController "github.com/kubecloudscaler/kubecloudscaler/internal/controller/k8s"
+	webhookv1alpha3 "github.com/kubecloudscaler/kubecloudscaler/internal/webhook/v1alpha3"
 	// +kubebuilder:scaffold:imports
 )
 
@@ -60,6 +62,7 @@ func init() {
 
 	utilruntime.Must(kubecloudscalerv1alpha2.AddToScheme(scheme))
 	utilruntime.Must(kubecloudscalerv1alpha1.AddToScheme(scheme))
+	utilruntime.Must(kubecloudscalerv1alpha3.AddToScheme(scheme))
 	// +kubebuilder:scaffold:scheme
 }
 
@@ -237,7 +240,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (&k8scontroller.ScalerReconciler{
+	if err = (&k8sController.ScalerReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 		Logger: &logger,
@@ -245,7 +248,7 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "K8sScaler")
 		os.Exit(1)
 	}
-	if err = (&gcpcontroller.ScalerReconciler{
+	if err = (&gcpController.ScalerReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 		Logger: &logger,
@@ -254,17 +257,33 @@ func main() {
 		os.Exit(1)
 	}
 
+	if err := (&flowController.FlowReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+		Logger: &logger,
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Flow")
+		os.Exit(1)
+	}
+
 	// nolint:goconst
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
-		if err := webhookv1alpha2.SetupK8sWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "unable to create webhook", "webhook", "v1alpha2", "kind", "K8s")
+		if err := webhookv1alpha3.SetupGcpWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "Gcp")
 			os.Exit(1)
 		}
 	}
 	// nolint:goconst
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
-		if err := webhookv1alpha2.SetupGcpWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "unable to create webhook", "webhook", "v1alpha2", "kind", "Gcp")
+		if err := webhookv1alpha3.SetupK8sWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "K8s")
+			os.Exit(1)
+		}
+	}
+	// nolint:goconst
+	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
+		if err := webhookv1alpha3.SetupFlowWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "Flow")
 			os.Exit(1)
 		}
 	}

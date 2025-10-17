@@ -32,7 +32,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	"github.com/kubecloudscaler/kubecloudscaler/api/common"
-	kubecloudscalerv1alpha2 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha2"
+	kubecloudscalerv1alpha3 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha3"
 	"github.com/kubecloudscaler/kubecloudscaler/internal/utils"
 	k8sUtils "github.com/kubecloudscaler/kubecloudscaler/pkg/k8s/utils"
 	k8sClient "github.com/kubecloudscaler/kubecloudscaler/pkg/k8s/utils/client"
@@ -67,7 +67,7 @@ type ScalerReconciler struct {
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.18.4/pkg/reconcile
 func (r *ScalerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	// Fetch the Scaler object from the Kubernetes API
-	scaler := &kubecloudscalerv1alpha2.K8s{}
+	scaler := &kubecloudscalerv1alpha3.K8s{}
 	if err := r.Get(ctx, req.NamespacedName, scaler); err != nil {
 		r.Logger.Error().Err(err).Msg("unable to fetch Scaler")
 
@@ -104,12 +104,12 @@ func (r *ScalerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 
 	// Handle authentication secret for remote cluster access
 	secret := &corev1.Secret{}
-	if scaler.Spec.AuthSecret != nil {
+	if scaler.Spec.Config.AuthSecret != nil {
 		r.Logger.Info().Msg("auth secret found, currently not able to handle it")
 		// Construct the namespaced name for the secret
 		namespacedSecret := types.NamespacedName{
 			Namespace: req.Namespace,
-			Name:      *scaler.Spec.AuthSecret,
+			Name:      *scaler.Spec.Config.AuthSecret,
 		}
 
 		// Fetch the secret from the cluster
@@ -137,11 +137,11 @@ func (r *ScalerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	resourceConfig := resources.Config{
 		K8s: &k8sUtils.Config{
 			Client:                       kubeClient,
-			Names:                        scaler.Spec.Resources.Names,              // Target resources for scaling
-			Namespaces:                   scaler.Spec.Namespaces,                   // Target namespaces for scaling
-			ExcludeNamespaces:            scaler.Spec.ExcludeNamespaces,            // Namespaces to exclude from scaling
-			LabelSelector:                scaler.Spec.Resources.LabelSelector,      // Label selector for resource filtering
-			ForceExcludeSystemNamespaces: scaler.Spec.ForceExcludeSystemNamespaces, // Always exclude system namespaces
+			Names:                        scaler.Spec.Resources.Names,                     // Target resources for scaling
+			Namespaces:                   scaler.Spec.Config.Namespaces,                   // Target namespaces for scaling
+			ExcludeNamespaces:            scaler.Spec.Config.ExcludeNamespaces,            // Namespaces to exclude from scaling
+			LabelSelector:                scaler.Spec.Resources.LabelSelector,             // Label selector for resource filtering
+			ForceExcludeSystemNamespaces: scaler.Spec.Config.ForceExcludeSystemNamespaces, // Always exclude system namespaces
 		},
 	}
 
@@ -150,7 +150,7 @@ func (r *ScalerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	resourceConfig.K8s.Period, err = utils.ValidatePeriod(
 		scaler.Spec.Periods, // Configured time periods
 		&scaler.Status,      // Current status for tracking
-		scaler.Spec.RestoreOnDelete && scalerFinalize, // Restore original state on deletion
+		scaler.Spec.Config.RestoreOnDelete && scalerFinalize, // Restore original state on deletion
 	)
 	if err != nil {
 		// Handle run-once period - requeue until the period ends
@@ -244,7 +244,7 @@ func (r *ScalerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 // and defines the reconciliation behavior.
 func (r *ScalerReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&kubecloudscalerv1alpha2.K8s{}).              // Watch for K8s Scaler resources
+		For(&kubecloudscalerv1alpha3.K8s{}).              // Watch for K8s Scaler resources
 		WithEventFilter(utils.IgnoreDeletionPredicate()). // Filter out deletion events
 		Named("k8sScaler").                               // Set controller name
 		Complete(r)                                       // Complete the controller setup
@@ -253,7 +253,7 @@ func (r *ScalerReconciler) SetupWithManager(mgr ctrl.Manager) error {
 // validResourceList validates and filters the list of resources to be scaled.
 // It ensures that only valid resource types are included and prevents mixing
 // of application resources (deployments, statefulsets) with HPA resources.
-func (r *ScalerReconciler) validResourceList(scaler *kubecloudscalerv1alpha2.K8s) ([]string, error) {
+func (r *ScalerReconciler) validResourceList(scaler *kubecloudscalerv1alpha3.K8s) ([]string, error) {
 	var (
 		output []string // Validated list of resources to scale
 		isApp  bool     // Flag indicating if app resources are present

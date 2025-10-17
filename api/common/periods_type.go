@@ -9,6 +9,10 @@ type ScalerPeriod struct {
 	MinReplicas *int32 `json:"minReplicas,omitempty"`
 	// Maximum replicas
 	MaxReplicas *int32 `json:"maxReplicas,omitempty"`
+
+	// Name of the period
+	// +kubebuilder:validation:Pattern=`^(|[a-zA-Z0-9][a-zA-Z0-9_-]*)$`
+	Name *string `json:"name,omitempty"`
 }
 
 type TimePeriod struct {
