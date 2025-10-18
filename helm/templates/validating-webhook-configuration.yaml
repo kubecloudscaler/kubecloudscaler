@@ -3,7 +3,7 @@ kind: ValidatingWebhookConfiguration
 metadata:
   name: {{ include "helm.fullname" . }}-validating-webhook-configuration
   annotations:
-    cert-manager.io/inject-ca-from: {{ .Release.Namespace }}/{{ include "helm.fullname" . }}-
+    cert-manager.io/inject-ca-from: {{ .Release.Namespace }}/{{ include "helm.fullname" . }}-serving-cert
   labels:
   {{- include "helm.labels" . | nindent 4 }}
 webhooks:
