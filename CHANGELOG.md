@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.5.1](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.5.0...v1.5.1) (2025-10-18)
+
+
+### Bug Fixes
+
+* alpha2 conversion ([a882e10](https://github.com/kubecloudscaler/kubecloudscaler/commit/a882e10987b1c2ec09cfa1e2e2fd031139bdb997))
+* ca injection in validation webhook ([104a325](https://github.com/kubecloudscaler/kubecloudscaler/commit/104a325c7428849de9403441447b8c6ae6dfa96c))
+* **deps:** update k8s.io/utils digest to bc988d5 ([#156](https://github.com/kubecloudscaler/kubecloudscaler/issues/156)) ([87b5f9b](https://github.com/kubecloudscaler/kubecloudscaler/commit/87b5f9b7954f8480a832ff3f83497c76792a1c1e))
+
 ## [1.5.0](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.4.4...v1.5.0) (2025-10-17)
 
 
