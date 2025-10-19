@@ -145,11 +145,17 @@ func (r *ScalerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		},
 	}
 
+	// Convert []common.ScalerPeriod to []*common.ScalerPeriod for utils.ValidatePeriod
+	periods := make([]*common.ScalerPeriod, len(scaler.Spec.Periods))
+	for i := range scaler.Spec.Periods {
+		periods[i] = &scaler.Spec.Periods[i]
+	}
+
 	// Validate and determine the current time period for scaling operations
 	// This determines whether resources should be scaled up or down based on the current time
 	resourceConfig.K8s.Period, err = utils.ValidatePeriod(
-		scaler.Spec.Periods, // Configured time periods
-		&scaler.Status,      // Current status for tracking
+		periods,        // Configured time periods
+		&scaler.Status, // Current status for tracking
 		scaler.Spec.Config.RestoreOnDelete && scalerFinalize, // Restore original state on deletion
 	)
 	if err != nil {

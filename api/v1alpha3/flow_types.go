@@ -28,7 +28,7 @@ import (
 // FlowSpec defines the desired state of Flow
 type FlowSpec struct {
 	// Time period to scale
-	Periods []*common.ScalerPeriod `json:"periods"`
+	Periods []common.ScalerPeriod `json:"periods"`
 	// Resources
 	Resources Resources `json:"resources"`
 	Flows     []Flows   `json:"flows,omitempty"`
@@ -58,7 +58,11 @@ type Flows struct {
 
 type FlowResource struct {
 	Name string `json:"name"`
-	// +kubebuilder:validation:Pattern=`^\d*s$`
+
+	// Delay is the duration to delay the start of the period
+	// It is a duration in minutes
+	// It is optional and if not provided, the period will start at the start time of the period
+	// +kubebuilder:validation:Pattern=`^\d*m$`
 	Delay *string `json:"delay,omitempty"`
 }
 

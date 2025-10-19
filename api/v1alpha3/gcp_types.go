@@ -35,7 +35,7 @@ type GcpSpec struct {
 	DryRun bool `json:"dryRun,omitempty"`
 
 	// Time period to scale
-	Periods []*common.ScalerPeriod `json:"periods"`
+	Periods []common.ScalerPeriod `json:"periods"`
 	// Resources
 	Resources common.Resources `json:"resources"`
 

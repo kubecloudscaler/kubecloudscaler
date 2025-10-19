@@ -48,7 +48,11 @@ spec:
                       items:
                         properties:
                           delay:
-                            pattern: ^\d*s$
+                            description: |-
+                              Delay is the duration to delay the start of the period
+                              It is a duration in minutes
+                              It is optional and if not provided, the period will start at the start time of the period
+                            pattern: ^\d*m$
                             type: string
                           name:
                             type: string

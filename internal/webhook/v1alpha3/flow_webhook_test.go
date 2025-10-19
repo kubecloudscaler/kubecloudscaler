@@ -42,7 +42,7 @@ var _ = Describe("Flow Webhook Validation", func() {
 		It("should accept valid flow", func() {
 			flow := &kubecloudscalerv1alpha3.Flow{
 				Spec: kubecloudscalerv1alpha3.FlowSpec{
-					Periods: []*common.ScalerPeriod{
+					Periods: []common.ScalerPeriod{
 						{
 							Type: "up",
 							Name: ptr.To("test-period"),
@@ -87,7 +87,7 @@ var _ = Describe("Flow Webhook Validation", func() {
 		It("should reject flow with duplicate period names", func() {
 			flow := &kubecloudscalerv1alpha3.Flow{
 				Spec: kubecloudscalerv1alpha3.FlowSpec{
-					Periods: []*common.ScalerPeriod{
+					Periods: []common.ScalerPeriod{
 						{
 							Type: "up",
 							Name: ptr.To("duplicate-name"),
@@ -123,7 +123,7 @@ var _ = Describe("Flow Webhook Validation", func() {
 		It("should reject flow with missing period names", func() {
 			flow := &kubecloudscalerv1alpha3.Flow{
 				Spec: kubecloudscalerv1alpha3.FlowSpec{
-					Periods: []*common.ScalerPeriod{
+					Periods: []common.ScalerPeriod{
 						{
 							Type: "up",
 							// Name is nil
@@ -148,7 +148,7 @@ var _ = Describe("Flow Webhook Validation", func() {
 		It("should reject flow with duplicate K8s resource names", func() {
 			flow := &kubecloudscalerv1alpha3.Flow{
 				Spec: kubecloudscalerv1alpha3.FlowSpec{
-					Periods: []*common.ScalerPeriod{
+					Periods: []common.ScalerPeriod{
 						{
 							Type: "up",
 							Name: ptr.To("test-period"),
@@ -189,7 +189,7 @@ var _ = Describe("Flow Webhook Validation", func() {
 		It("should reject flow with cross-type resource name conflicts", func() {
 			flow := &kubecloudscalerv1alpha3.Flow{
 				Spec: kubecloudscalerv1alpha3.FlowSpec{
-					Periods: []*common.ScalerPeriod{
+					Periods: []common.ScalerPeriod{
 						{
 							Type: "up",
 							Name: ptr.To("test-period"),
@@ -232,7 +232,7 @@ var _ = Describe("Flow Webhook Validation", func() {
 		It("should reject flow with timing constraints violation", func() {
 			flow := &kubecloudscalerv1alpha3.Flow{
 				Spec: kubecloudscalerv1alpha3.FlowSpec{
-					Periods: []*common.ScalerPeriod{
+					Periods: []common.ScalerPeriod{
 						{
 							Type: "up",
 							Name: ptr.To("short-period"),
@@ -278,7 +278,7 @@ var _ = Describe("Flow Webhook Validation", func() {
 		It("should reject flow with invalid delay format", func() {
 			flow := &kubecloudscalerv1alpha3.Flow{
 				Spec: kubecloudscalerv1alpha3.FlowSpec{
-					Periods: []*common.ScalerPeriod{
+					Periods: []common.ScalerPeriod{
 						{
 							Type: "up",
 							Name: ptr.To("test-period"),
@@ -326,7 +326,7 @@ var _ = Describe("Flow Webhook Validation", func() {
 		It("should accept valid flow update", func() {
 			oldFlow := &kubecloudscalerv1alpha3.Flow{
 				Spec: kubecloudscalerv1alpha3.FlowSpec{
-					Periods: []*common.ScalerPeriod{
+					Periods: []common.ScalerPeriod{
 						{
 							Type: "up",
 							Name: ptr.To("test-period"),
@@ -344,7 +344,7 @@ var _ = Describe("Flow Webhook Validation", func() {
 
 			newFlow := &kubecloudscalerv1alpha3.Flow{
 				Spec: kubecloudscalerv1alpha3.FlowSpec{
-					Periods: []*common.ScalerPeriod{
+					Periods: []common.ScalerPeriod{
 						{
 							Type: "up",
 							Name: ptr.To("test-period"),
@@ -368,7 +368,7 @@ var _ = Describe("Flow Webhook Validation", func() {
 		It("should reject invalid flow update", func() {
 			oldFlow := &kubecloudscalerv1alpha3.Flow{
 				Spec: kubecloudscalerv1alpha3.FlowSpec{
-					Periods: []*common.ScalerPeriod{
+					Periods: []common.ScalerPeriod{
 						{
 							Type: "up",
 							Name: ptr.To("test-period"),
@@ -386,7 +386,7 @@ var _ = Describe("Flow Webhook Validation", func() {
 
 			newFlow := &kubecloudscalerv1alpha3.Flow{
 				Spec: kubecloudscalerv1alpha3.FlowSpec{
-					Periods: []*common.ScalerPeriod{
+					Periods: []common.ScalerPeriod{
 						{
 							Type: "up",
 							Name: ptr.To("duplicate-name"),
@@ -424,7 +424,7 @@ var _ = Describe("Flow Webhook Validation", func() {
 		It("should always allow deletion", func() {
 			flow := &kubecloudscalerv1alpha3.Flow{
 				Spec: kubecloudscalerv1alpha3.FlowSpec{
-					Periods: []*common.ScalerPeriod{
+					Periods: []common.ScalerPeriod{
 						{
 							Type: "up",
 							Name: ptr.To("test-period"),

@@ -65,7 +65,7 @@ var _ = Describe("Flow Controller", func() {
 					Namespace: "default",
 				},
 				Spec: kubecloudscalerv1alpha3.FlowSpec{
-					Periods: []*common.ScalerPeriod{
+					Periods: []common.ScalerPeriod{
 						{
 							Type: "up",
 							Name: ptr.To("bigup"),
@@ -98,7 +98,7 @@ var _ = Describe("Flow Controller", func() {
 							Resources: []kubecloudscalerv1alpha3.FlowResource{
 								{
 									Name:  "test-k8s-resource",
-									Delay: ptr.To("600s"),
+									Delay: ptr.To("10m"),
 								},
 							},
 						},
@@ -131,6 +131,15 @@ var _ = Describe("Flow Controller", func() {
 			Expect(updatedFlow.Status.Conditions).To(HaveLen(1))
 			Expect(updatedFlow.Status.Conditions[0].Type).To(Equal("Processed"))
 			Expect(updatedFlow.Status.Conditions[0].Status).To(Equal(metav1.ConditionTrue))
+
+			By("Verifying K8s resource was created with correct periods")
+			k8sResource := &kubecloudscalerv1alpha3.K8s{}
+			Expect(k8sClient.Get(ctx, types.NamespacedName{
+				Name:      "flow-test-flow-test-k8s-resource",
+				Namespace: "default",
+			}, k8sResource)).To(Succeed())
+			Expect(k8sResource.Spec.Periods).To(HaveLen(1))
+			Expect(ptr.Deref(k8sResource.Spec.Periods[0].Name, "")).To(Equal("bigup"))
 		})
 
 	})

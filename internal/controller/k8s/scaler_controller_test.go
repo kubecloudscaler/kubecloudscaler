@@ -44,7 +44,7 @@ var _ = Describe("Scaler Controller", func() {
 		}
 		scaler := &kubecloudscalerv1alpha3.K8s{
 			Spec: kubecloudscalerv1alpha3.K8sSpec{
-				Periods: []*common.ScalerPeriod{
+				Periods: []common.ScalerPeriod{
 					{
 						Type: "down",
 						Time: common.TimePeriod{
@@ -72,7 +72,7 @@ var _ = Describe("Scaler Controller", func() {
 						Namespace: "default",
 					},
 					Spec: kubecloudscalerv1alpha3.K8sSpec{
-						Periods: []*common.ScalerPeriod{
+						Periods: []common.ScalerPeriod{
 							{
 								Type: "down",
 								Time: common.TimePeriod{
@@ -97,7 +97,7 @@ var _ = Describe("Scaler Controller", func() {
 			// TODO(user): Cleanup logic after each test, like removing the resource instance.
 			resource := &kubecloudscalerv1alpha3.K8s{
 				Spec: kubecloudscalerv1alpha3.K8sSpec{
-					Periods: []*common.ScalerPeriod{
+					Periods: []common.ScalerPeriod{
 						{
 							Type: "down",
 							Time: common.TimePeriod{

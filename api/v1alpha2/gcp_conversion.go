@@ -20,6 +20,7 @@ import (
 	"github.com/rs/zerolog/log"
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
 
+	"github.com/kubecloudscaler/kubecloudscaler/api/common"
 	kubecloudscalercloudv1alpha3 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha3"
 )
 
@@ -34,7 +35,11 @@ func (src *Gcp) ConvertTo(dstRaw conversion.Hub) error {
 
 	// Spec
 	dst.Spec.DryRun = src.Spec.DryRun
-	dst.Spec.Periods = src.Spec.Periods
+	// Convert []*common.ScalerPeriod to []common.ScalerPeriod
+	dst.Spec.Periods = make([]common.ScalerPeriod, len(src.Spec.Periods))
+	for i, period := range src.Spec.Periods {
+		dst.Spec.Periods[i] = *period
+	}
 	dst.Spec.Config.ProjectId = src.Spec.ProjectId
 	dst.Spec.Config.Region = src.Spec.Region
 	dst.Spec.Config.AuthSecret = src.Spec.AuthSecret
@@ -62,7 +67,11 @@ func (dst *Gcp) ConvertFrom(srcRaw conversion.Hub) error {
 
 	// Spec
 	dst.Spec.DryRun = src.Spec.DryRun
-	dst.Spec.Periods = src.Spec.Periods
+	// Convert []common.ScalerPeriod to []*common.ScalerPeriod
+	dst.Spec.Periods = make([]*common.ScalerPeriod, len(src.Spec.Periods))
+	for i := range src.Spec.Periods {
+		dst.Spec.Periods[i] = &src.Spec.Periods[i]
+	}
 	dst.Spec.ProjectId = src.Spec.Config.ProjectId
 	dst.Spec.Region = src.Spec.Config.Region
 	dst.Spec.AuthSecret = src.Spec.Config.AuthSecret

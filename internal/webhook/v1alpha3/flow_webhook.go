@@ -189,7 +189,8 @@ func (v *FlowCustomValidator) validateResourceNameUniqueness(flow *kubecloudscal
 
 // validateFlowTimings validates that the sum of delays for each period doesn't exceed the period duration
 func (v *FlowCustomValidator) validateFlowTimings(flow *kubecloudscalercloudv1alpha3.Flow) error {
-	for _, period := range flow.Spec.Periods {
+	for i := range flow.Spec.Periods {
+		period := &flow.Spec.Periods[i]
 		// Find flows for this period
 		var periodFlows []kubecloudscalercloudv1alpha3.Flows
 		for _, f := range flow.Spec.Flows {

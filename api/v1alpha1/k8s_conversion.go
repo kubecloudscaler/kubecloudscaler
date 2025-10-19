@@ -20,6 +20,7 @@ import (
 	"github.com/rs/zerolog/log"
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
 
+	"github.com/kubecloudscaler/kubecloudscaler/api/common"
 	kubecloudscalercloudv1alpha3 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha3"
 )
 
@@ -34,7 +35,11 @@ func (src *K8s) ConvertTo(dstRaw conversion.Hub) error {
 
 	// Spec
 	dst.Spec.DryRun = src.Spec.DryRun
-	dst.Spec.Periods = src.Spec.Periods
+	// Convert []*common.ScalerPeriod to []common.ScalerPeriod
+	dst.Spec.Periods = make([]common.ScalerPeriod, len(src.Spec.Periods))
+	for i, period := range src.Spec.Periods {
+		dst.Spec.Periods[i] = *period
+	}
 	dst.Spec.Config.Namespaces = src.Spec.Namespaces
 	dst.Spec.Config.ExcludeNamespaces = src.Spec.ExcludeNamespaces
 	dst.Spec.Config.ForceExcludeSystemNamespaces = src.Spec.ForceExcludeSystemNamespaces
@@ -64,7 +69,11 @@ func (dst *K8s) ConvertFrom(srcRaw conversion.Hub) error {
 
 	// Spec
 	dst.Spec.DryRun = src.Spec.DryRun
-	dst.Spec.Periods = src.Spec.Periods
+	// Convert []common.ScalerPeriod to []*common.ScalerPeriod
+	dst.Spec.Periods = make([]*common.ScalerPeriod, len(src.Spec.Periods))
+	for i := range src.Spec.Periods {
+		dst.Spec.Periods[i] = &src.Spec.Periods[i]
+	}
 	dst.Spec.Namespaces = src.Spec.Config.Namespaces
 	dst.Spec.ExcludeNamespaces = src.Spec.Config.ExcludeNamespaces
 	dst.Spec.ForceExcludeSystemNamespaces = src.Spec.Config.ForceExcludeSystemNamespaces

@@ -18,7 +18,6 @@ package controller
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -43,6 +42,20 @@ type FlowReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
 	Logger *zerolog.Logger
+}
+
+// ResourceInfo contains information about a resource and its associated periods
+type ResourceInfo struct {
+	Type     string            // "k8s" or "gcp"
+	Resource interface{}       // K8sResource or GcpResource
+	Periods  []PeriodWithDelay // Associated periods with delays
+}
+
+// PeriodWithDelay contains period information with calculated delay
+type PeriodWithDelay struct {
+	Period    common.ScalerPeriod
+	Delay     time.Duration
+	StartTime time.Time
 }
 
 // +kubebuilder:rbac:groups=kubecloudscaler.cloud,resources=flows,verbs=get;list;watch;create;update;patch;delete
@@ -154,216 +167,296 @@ func (r *FlowReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 
 // processFlow processes the flow definition and creates/deploys resources
 func (r *FlowReconciler) processFlow(ctx context.Context, flow *kubecloudscalerv1alpha3.Flow) error {
-	// Convert periods to map for easier lookup
-	periodsMap := make(map[string]*common.ScalerPeriod)
-	for _, period := range flow.Spec.Periods {
-		periodName := ptr.Deref(period.Name, "")
-		periodsMap[periodName] = period
+	// Extract all resource names and period names from flows
+	resourceNames, periodNames, err := r.extractFlowData(flow)
+	if err != nil {
+		return fmt.Errorf("failed to extract flow data: %w", err)
 	}
 
-	// Convert K8s resources to map for easier lookup
-	k8sResourcesMap := make(map[string]kubecloudscalerv1alpha3.K8sResource)
-	for _, resource := range flow.Spec.Resources.K8s {
-		k8sResourcesMap[resource.Name] = resource
+	// Validate timing constraints for each period
+	if err := r.validatePeriodTimings(flow, periodNames); err != nil {
+		return fmt.Errorf("period timing validation failed: %w", err)
 	}
 
-	// Convert GCP resources to map for easier lookup
-	gcpResourcesMap := make(map[string]kubecloudscalerv1alpha3.GcpResource)
-	for _, resource := range flow.Spec.Resources.Gcp {
-		gcpResourcesMap[resource.Name] = resource
+	// Create resource mappings for easier lookup
+	resourceMappings, err := r.createResourceMappings(flow, resourceNames)
+	if err != nil {
+		return fmt.Errorf("failed to create resource mappings: %w", err)
 	}
 
-	// Process K8s resources with timing delays
-	for _, k8sResource := range flow.Spec.Resources.K8s {
-		if err := r.createAndDeployK8sResourceWithTiming(ctx, flow, k8sResource, periodsMap); err != nil {
-			return fmt.Errorf("failed to create K8s resource %s: %w", k8sResource.Name, err)
-		}
-	}
-
-	// Process GCP resources with timing delays
-	for _, gcpResource := range flow.Spec.Resources.Gcp {
-		if err := r.createAndDeployGcpResourceWithTiming(ctx, flow, gcpResource, periodsMap); err != nil {
-			return fmt.Errorf("failed to create GCP resource %s: %w", gcpResource.Name, err)
+	// Process each unique resource
+	for resourceName, resourceInfo := range resourceMappings {
+		if err := r.processResource(ctx, flow, resourceName, resourceInfo); err != nil {
+			return fmt.Errorf("failed to process resource %s: %w", resourceName, err)
 		}
 	}
 
 	return nil
 }
 
-// createAndDeployK8sResourceWithTiming creates and deploys a K8s resource with timing delays
-func (r *FlowReconciler) createAndDeployK8sResourceWithTiming(ctx context.Context, flow *kubecloudscalerv1alpha3.Flow, k8sResource kubecloudscalerv1alpha3.K8sResource, periodsMap map[string]*common.ScalerPeriod) error {
-	// Find the flow definition for this resource
-	var resourceFlow *kubecloudscalerv1alpha3.Flows
-	for _, f := range flow.Spec.Flows {
-		for _, resource := range f.Resources {
-			if resource.Name == k8sResource.Name {
-				resourceFlow = &f
+// extractFlowData extracts all resource names and period names from flows
+func (r *FlowReconciler) extractFlowData(flow *kubecloudscalerv1alpha3.Flow) (map[string]bool, map[string]bool, error) {
+	resourceNames := make(map[string]bool)
+	periodNames := make(map[string]bool)
+
+	for _, flowItem := range flow.Spec.Flows {
+		// Extract period name
+		periodNames[flowItem.PeriodName] = true
+
+		// Extract resource names
+		for _, resource := range flowItem.Resources {
+			resourceNames[resource.Name] = true
+		}
+	}
+
+	return resourceNames, periodNames, nil
+}
+
+// validatePeriodTimings validates that the sum of delays for each period doesn't exceed the period duration
+func (r *FlowReconciler) validatePeriodTimings(flow *kubecloudscalerv1alpha3.Flow, periodNames map[string]bool) error {
+	// Create period map for lookup
+	periodsMap := make(map[string]common.ScalerPeriod)
+	for i := range flow.Spec.Periods {
+		period := flow.Spec.Periods[i]
+		periodName := ptr.Deref(period.Name, "")
+		periodsMap[periodName] = period
+	}
+
+	for periodName := range periodNames {
+		period, exists := periodsMap[periodName]
+		if !exists {
+			return fmt.Errorf("period %s referenced in flows but not defined", periodName)
+		}
+
+		// Calculate total delay for this period
+		var totalDelay time.Duration
+		for _, flowItem := range flow.Spec.Flows {
+			if flowItem.PeriodName == periodName {
+				for _, resource := range flowItem.Resources {
+					if resource.Delay != nil {
+						delay, err := time.ParseDuration(*resource.Delay)
+						if err != nil {
+							return fmt.Errorf("invalid delay format for resource %s: %w", resource.Name, err)
+						}
+						totalDelay += delay
+					}
+				}
+			}
+		}
+
+		// Get period duration
+		periodDuration, err := r.getPeriodDuration(&period)
+		if err != nil {
+			return fmt.Errorf("failed to get period duration for %s: %w", periodName, err)
+		}
+
+		// Check if total delay exceeds period duration
+		if totalDelay > periodDuration {
+			return fmt.Errorf("total delay %v for period %s exceeds period duration %v",
+				totalDelay, periodName, periodDuration)
+		}
+	}
+
+	return nil
+}
+
+// createResourceMappings creates mappings for all resources with their associated periods
+func (r *FlowReconciler) createResourceMappings(flow *kubecloudscalerv1alpha3.Flow, resourceNames map[string]bool) (map[string]ResourceInfo, error) {
+	resourceMappings := make(map[string]ResourceInfo)
+
+	// Create period map for lookup
+	periodsMap := make(map[string]common.ScalerPeriod)
+	for i := range flow.Spec.Periods {
+		period := flow.Spec.Periods[i]
+		periodName := ptr.Deref(period.Name, "")
+		periodsMap[periodName] = period
+	}
+
+	// Process each resource name
+	for resourceName := range resourceNames {
+		// Find the resource in K8s resources
+		var k8sResource *kubecloudscalerv1alpha3.K8sResource
+		for _, resource := range flow.Spec.Resources.K8s {
+			if resource.Name == resourceName {
+				k8sResource = &resource
 				break
 			}
 		}
-		if resourceFlow != nil {
-			break
-		}
-	}
 
-	// If no flow definition found, create immediately
-	if resourceFlow == nil {
-		r.Logger.Debug().
-			Str("resource", k8sResource.Name).
-			Msg("no flow definition found for resource, creating immediately")
-		return nil
-	}
-
-	// Find the period for this flow using the map
-	targetPeriod, exists := periodsMap[resourceFlow.PeriodName]
-	if !exists {
-		return fmt.Errorf("period %s not found for resource %s", resourceFlow.PeriodName, k8sResource.Name)
-	}
-
-	// Calculate the delay for this specific resource
-	var resourceDelay time.Duration
-	for _, resource := range resourceFlow.Resources {
-		if resource.Name == k8sResource.Name {
-			if resource.Delay != nil {
-				delay, err := time.ParseDuration(*resource.Delay)
-				if err != nil {
-					return fmt.Errorf("invalid delay format for resource %s: %w", resource.Name, err)
-				}
-				resourceDelay = delay
-			}
-			break
-		}
-	}
-
-	// Calculate the scheduled start time (period start + delay)
-	scheduledStartTime, err := r.calculateScheduledStartTime(targetPeriod, resourceDelay)
-	if err != nil {
-		return fmt.Errorf("failed to calculate scheduled start time: %w", err)
-	}
-
-	// Check if it's time to deploy this resource
-	if time.Now().Before(scheduledStartTime) {
-		// Schedule for later deployment
-		requeueAfter := time.Until(scheduledStartTime)
-		r.Logger.Info().
-			Str("resource", k8sResource.Name).
-			Time("scheduledTime", scheduledStartTime).
-			Dur("requeueAfter", requeueAfter).
-			Msg("resource scheduled for later deployment")
-
-		// Return a special error to indicate requeue is needed
-		return fmt.Errorf("resource %s scheduled for %v, requeue after %v", k8sResource.Name, scheduledStartTime, requeueAfter)
-	}
-
-	// It's time to deploy, create the resource
-	return r.createAndDeployK8sResource(ctx, flow, k8sResource)
-}
-
-// createAndDeployGcpResourceWithTiming creates and deploys a GCP resource with timing delays
-func (r *FlowReconciler) createAndDeployGcpResourceWithTiming(ctx context.Context, flow *kubecloudscalerv1alpha3.Flow, gcpResource kubecloudscalerv1alpha3.GcpResource, periodsMap map[string]*common.ScalerPeriod) error {
-	// Find the flow definition for this resource
-	var resourceFlow *kubecloudscalerv1alpha3.Flows
-	for _, f := range flow.Spec.Flows {
-		for _, resource := range f.Resources {
-			if resource.Name == gcpResource.Name {
-				resourceFlow = &f
+		// Find the resource in GCP resources
+		var gcpResource *kubecloudscalerv1alpha3.GcpResource
+		for _, resource := range flow.Spec.Resources.Gcp {
+			if resource.Name == resourceName {
+				gcpResource = &resource
 				break
 			}
 		}
-		if resourceFlow != nil {
-			break
+
+		// Determine resource type and validate uniqueness
+		var resourceType string
+		var resourceObj interface{}
+		if k8sResource != nil && gcpResource != nil {
+			return nil, fmt.Errorf("resource %s is defined in both K8s and GCP resources", resourceName)
+		} else if k8sResource != nil {
+			resourceType = "k8s"
+			resourceObj = *k8sResource
+		} else if gcpResource != nil {
+			resourceType = "gcp"
+			resourceObj = *gcpResource
+		} else {
+			return nil, fmt.Errorf("resource %s referenced in flows but not defined in resources", resourceName)
 		}
-	}
 
-	// If no flow definition found, create immediately
-	if resourceFlow == nil {
-		r.Logger.Debug().
-			Str("resource", gcpResource.Name).
-			Msg("no flow definition found for resource, creating immediately")
-		return nil
-	}
+		// Find all periods associated with this resource
+		var periodsWithDelay []PeriodWithDelay
+		for _, flowItem := range flow.Spec.Flows {
+			for _, resource := range flowItem.Resources {
+				if resource.Name == resourceName {
+					period, exists := periodsMap[flowItem.PeriodName]
+					if !exists {
+						return nil, fmt.Errorf("period %s referenced in flows but not defined", flowItem.PeriodName)
+					}
 
-	// Find the period for this flow using the map
-	targetPeriod, exists := periodsMap[resourceFlow.PeriodName]
-	if !exists {
-		return fmt.Errorf("period %s not found for resource %s", resourceFlow.PeriodName, gcpResource.Name)
-	}
+					// Calculate delay
+					var delay time.Duration
+					if resource.Delay != nil {
+						parsedDelay, err := time.ParseDuration(*resource.Delay)
+						if err != nil {
+							return nil, fmt.Errorf("invalid delay format for resource %s: %w", resource.Name, err)
+						}
+						delay = parsedDelay
+					}
 
-	// Calculate the delay for this specific resource
-	var resourceDelay time.Duration
-	for _, resource := range resourceFlow.Resources {
-		if resource.Name == gcpResource.Name {
-			if resource.Delay != nil {
-				delay, err := time.ParseDuration(*resource.Delay)
-				if err != nil {
-					return fmt.Errorf("invalid delay format for resource %s: %w", resource.Name, err)
+					// Calculate start time (period start + delay)
+					startTime, err := r.calculatePeriodStartTime(&period, delay)
+					if err != nil {
+						return nil, fmt.Errorf("failed to calculate start time for period %s: %w", flowItem.PeriodName, err)
+					}
+					startTime = startTime.Add(delay)
+
+					periodsWithDelay = append(periodsWithDelay, PeriodWithDelay{
+						Period:    period,
+						Delay:     delay,
+						StartTime: startTime,
+					})
 				}
-				resourceDelay = delay
 			}
-			break
+		}
+
+		resourceMappings[resourceName] = ResourceInfo{
+			Type:     resourceType,
+			Resource: resourceObj,
+			Periods:  periodsWithDelay,
 		}
 	}
 
-	// Calculate the scheduled start time (period start + delay)
-	scheduledStartTime, err := r.calculateScheduledStartTime(targetPeriod, resourceDelay)
-	if err != nil {
-		return fmt.Errorf("failed to calculate scheduled start time: %w", err)
-	}
-
-	// Check if it's time to deploy this resource
-	if time.Now().Before(scheduledStartTime) {
-		// Schedule for later deployment
-		requeueAfter := time.Until(scheduledStartTime)
-		r.Logger.Info().
-			Str("resource", gcpResource.Name).
-			Time("scheduledTime", scheduledStartTime).
-			Dur("requeueAfter", requeueAfter).
-			Msg("resource scheduled for later deployment")
-
-		// Return a special error to indicate requeue is needed
-		return fmt.Errorf("resource %s scheduled for %v, requeue after %v", gcpResource.Name, scheduledStartTime, requeueAfter)
-	}
-
-	// It's time to deploy, create the resource
-	return r.createAndDeployGcpResource(ctx, flow, gcpResource)
+	return resourceMappings, nil
 }
 
-// calculateScheduledStartTime calculates when a resource should be deployed based on period start time and delay
-func (r *FlowReconciler) calculateScheduledStartTime(period *common.ScalerPeriod, delay time.Duration) (time.Time, error) {
-	var periodStartTime time.Time
-	var err error
+// processResource processes a single resource and creates the appropriate CR
+func (r *FlowReconciler) processResource(ctx context.Context, flow *kubecloudscalerv1alpha3.Flow, resourceName string, resourceInfo ResourceInfo) error {
+	switch resourceInfo.Type {
+	case "k8s":
+		k8sResource := resourceInfo.Resource.(kubecloudscalerv1alpha3.K8sResource)
+		return r.createK8sResource(ctx, flow, resourceName, k8sResource, resourceInfo.Periods)
+	case "gcp":
+		gcpResource := resourceInfo.Resource.(kubecloudscalerv1alpha3.GcpResource)
+		return r.createGcpResource(ctx, flow, resourceName, gcpResource, resourceInfo.Periods)
+	default:
+		return fmt.Errorf("unknown resource type: %s", resourceInfo.Type)
+	}
+}
 
+// calculatePeriodStartTime calculates the start time for a period with delay
+func (r *FlowReconciler) calculatePeriodStartTime(period *common.ScalerPeriod, delay time.Duration) (time.Time, error) {
 	if period.Time.Recurring != nil {
 		// For recurring periods, parse the start time
-		periodStartTime, err = time.Parse("15:04", period.Time.Recurring.StartTime)
+		startTime, err := time.Parse("15:04", period.Time.Recurring.StartTime)
 		if err != nil {
-			return time.Time{}, fmt.Errorf("failed to get next recurring period start: %w", err)
+			return time.Time{}, fmt.Errorf("failed to parse recurring start time: %w", err)
 		}
-	} else if period.Time.Fixed != nil {
-		// For fixed periods, parse the start time
-		periodStartTime, err = time.Parse("2006-01-02 15:04:05", period.Time.Fixed.StartTime)
-		if err != nil {
-			return time.Time{}, fmt.Errorf("failed to parse fixed period start time: %w", err)
-		}
-	} else {
-		return time.Time{}, errors.New("no valid time period found")
+		// Add the delay to the start time
+		startTime = startTime.Add(delay)
+		return startTime, nil
 	}
 
-	// Add the delay to the period start time
-	return periodStartTime.Add(delay), nil
+	if period.Time.Fixed != nil {
+		// For fixed periods, parse the start time
+		startTime, err := time.Parse("2006-01-02 15:04:05", period.Time.Fixed.StartTime)
+		if err != nil {
+			return time.Time{}, fmt.Errorf("failed to parse fixed start time: %w", err)
+		}
+		// Add the delay to the start time
+		startTime = startTime.Add(delay)
+		return startTime, nil
+	}
+
+	return time.Time{}, fmt.Errorf("no valid time period found")
 }
 
-// createAndDeployK8sResource creates and deploys a K8s resource with owner reference
-func (r *FlowReconciler) createAndDeployK8sResource(ctx context.Context, flow *kubecloudscalerv1alpha3.Flow, k8sResource kubecloudscalerv1alpha3.K8sResource) error {
+// getPeriodDuration calculates the duration of a period
+func (r *FlowReconciler) getPeriodDuration(period *common.ScalerPeriod) (time.Duration, error) {
+	if period.Time.Recurring != nil {
+		startTime, err := time.Parse("15:04", period.Time.Recurring.StartTime)
+		if err != nil {
+			return 0, fmt.Errorf("failed to parse start time: %w", err)
+		}
+		endTime, err := time.Parse("15:04", period.Time.Recurring.EndTime)
+		if err != nil {
+			return 0, fmt.Errorf("failed to parse end time: %w", err)
+		}
+
+		// Handle case where end time is before start time (next day)
+		if endTime.Before(startTime) {
+			return 0, fmt.Errorf("end time is before start time")
+		}
+
+		return endTime.Sub(startTime), nil
+	}
+
+	if period.Time.Fixed != nil {
+		startTime, err := time.Parse("2006-01-02 15:04:05", period.Time.Fixed.StartTime)
+		if err != nil {
+			return 0, fmt.Errorf("failed to parse start time: %w", err)
+		}
+		endTime, err := time.Parse("2006-01-02 15:04:05", period.Time.Fixed.EndTime)
+		if err != nil {
+			return 0, fmt.Errorf("failed to parse end time: %w", err)
+		}
+
+		return endTime.Sub(startTime), nil
+	}
+
+	return 0, fmt.Errorf("no valid time period found")
+}
+
+// createK8sResource creates a K8s resource CR with all associated periods
+func (r *FlowReconciler) createK8sResource(ctx context.Context, flow *kubecloudscalerv1alpha3.Flow, resourceName string, k8sResource kubecloudscalerv1alpha3.K8sResource, periodsWithDelay []PeriodWithDelay) error {
+	// Collect all periods for this resource
+	var allPeriods []common.ScalerPeriod
+	for _, periodWithDelay := range periodsWithDelay {
+		curPeriod := periodWithDelay.Period
+		if curPeriod.Time.Recurring != nil {
+			curPeriod.Time.Recurring.StartTime = periodWithDelay.StartTime.Format("15:04")
+		}
+		if curPeriod.Time.Fixed != nil {
+			curPeriod.Time.Fixed.StartTime = periodWithDelay.StartTime.Format("2006-01-02 15:04:05")
+		}
+		allPeriods = append(allPeriods, curPeriod)
+	}
+
 	// Create K8s object
 	k8sObj := &kubecloudscalerv1alpha3.K8s{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("%s-%s", flow.Name, k8sResource.Name),
-			Namespace: flow.Namespace,
+			Name: fmt.Sprintf("flow-%s-%s", flow.Name, resourceName),
+			Labels: map[string]string{
+				"flow":     flow.Name,
+				"resource": resourceName,
+			},
 		},
 		Spec: kubecloudscalerv1alpha3.K8sSpec{
 			DryRun:    false,
-			Periods:   flow.Spec.Periods,
+			Periods:   allPeriods,
 			Resources: k8sResource.Resources,
 			Config:    k8sResource.Config,
 		},
@@ -387,23 +480,32 @@ func (r *FlowReconciler) createAndDeployK8sResource(ctx context.Context, flow *k
 
 	r.Logger.Info().
 		Str("name", k8sObj.Name).
-		Str("namespace", k8sObj.Namespace).
+		Int("periods", len(allPeriods)).
 		Msg("created/updated K8s resource")
 
 	return nil
 }
 
-// createAndDeployGcpResource creates and deploys a GCP resource with owner reference
-func (r *FlowReconciler) createAndDeployGcpResource(ctx context.Context, flow *kubecloudscalerv1alpha3.Flow, gcpResource kubecloudscalerv1alpha3.GcpResource) error {
+// createGcpResource creates a GCP resource CR with all associated periods
+func (r *FlowReconciler) createGcpResource(ctx context.Context, flow *kubecloudscalerv1alpha3.Flow, resourceName string, gcpResource kubecloudscalerv1alpha3.GcpResource, periodsWithDelay []PeriodWithDelay) error {
+	// Collect all periods for this resource
+	var allPeriods []common.ScalerPeriod
+	for _, periodWithDelay := range periodsWithDelay {
+		allPeriods = append(allPeriods, periodWithDelay.Period)
+	}
+
 	// Create GCP object
 	gcpObj := &kubecloudscalerv1alpha3.Gcp{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("%s-%s", flow.Name, gcpResource.Name),
-			Namespace: flow.Namespace,
+			Name: fmt.Sprintf("flow-%s-%s", flow.Name, resourceName),
+			Labels: map[string]string{
+				"flow":     flow.Name,
+				"resource": resourceName,
+			},
 		},
 		Spec: kubecloudscalerv1alpha3.GcpSpec{
 			DryRun:    false,
-			Periods:   flow.Spec.Periods,
+			Periods:   allPeriods,
 			Resources: gcpResource.Resources,
 			Config:    gcpResource.Config,
 		},
@@ -427,7 +529,7 @@ func (r *FlowReconciler) createAndDeployGcpResource(ctx context.Context, flow *k
 
 	r.Logger.Info().
 		Str("name", gcpObj.Name).
-		Str("namespace", gcpObj.Namespace).
+		Int("periods", len(allPeriods)).
 		Msg("created/updated GCP resource")
 
 	return nil

@@ -110,13 +110,9 @@ func (in *FlowSpec) DeepCopyInto(out *FlowSpec) {
 	*out = *in
 	if in.Periods != nil {
 		in, out := &in.Periods, &out.Periods
-		*out = make([]*common.ScalerPeriod, len(*in))
+		*out = make([]common.ScalerPeriod, len(*in))
 		for i := range *in {
-			if (*in)[i] != nil {
-				in, out := &(*in)[i], &(*out)[i]
-				*out = new(common.ScalerPeriod)
-				(*in).DeepCopyInto(*out)
-			}
+			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
 	in.Resources.DeepCopyInto(&out.Resources)
@@ -284,13 +280,9 @@ func (in *GcpSpec) DeepCopyInto(out *GcpSpec) {
 	*out = *in
 	if in.Periods != nil {
 		in, out := &in.Periods, &out.Periods
-		*out = make([]*common.ScalerPeriod, len(*in))
+		*out = make([]common.ScalerPeriod, len(*in))
 		for i := range *in {
-			if (*in)[i] != nil {
-				in, out := &(*in)[i], &(*out)[i]
-				*out = new(common.ScalerPeriod)
-				(*in).DeepCopyInto(*out)
-			}
+			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
 	in.Resources.DeepCopyInto(&out.Resources)
@@ -418,13 +410,9 @@ func (in *K8sSpec) DeepCopyInto(out *K8sSpec) {
 	*out = *in
 	if in.Periods != nil {
 		in, out := &in.Periods, &out.Periods
-		*out = make([]*common.ScalerPeriod, len(*in))
+		*out = make([]common.ScalerPeriod, len(*in))
 		for i := range *in {
-			if (*in)[i] != nil {
-				in, out := &(*in)[i], &(*out)[i]
-				*out = new(common.ScalerPeriod)
-				(*in).DeepCopyInto(*out)
-			}
+			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
 	in.Resources.DeepCopyInto(&out.Resources)
