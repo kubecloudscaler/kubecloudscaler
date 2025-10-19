@@ -257,7 +257,7 @@ _Appears in:_
 | Field | Description | Default | Validation |
 | --- | --- | --- | --- |
 | `name` _string_ |  |  |  |
-| `delay` _string_ |  |  | Pattern: `^\d*s$` <br /> |
+| `delay` _string_ | Delay is the duration to delay the start of the period<br />It is a duration in minutes<br />It is optional and if not provided, the period will start at the start time of the period |  | Pattern: `^\d*m$` <br /> |
 
 
 #### FlowSpec
@@ -273,7 +273,7 @@ _Appears in:_
 
 | Field | Description | Default | Validation |
 | --- | --- | --- | --- |
-| `periods` _ScalerPeriod array_ | Time period to scale |  |  |
+| `periods` _[ScalerPeriod](#scalerperiod) array_ | Time period to scale |  |  |
 | `resources` _[Resources](#resources)_ | Resources |  |  |
 | `flows` _[Flows](#flows) array_ |  |  |  |
 
@@ -384,7 +384,7 @@ _Appears in:_
 | Field | Description | Default | Validation |
 | --- | --- | --- | --- |
 | `dryRun` _boolean_ | dry-run mode |  |  |
-| `periods` _ScalerPeriod array_ | Time period to scale |  |  |
+| `periods` _[ScalerPeriod](#scalerperiod) array_ | Time period to scale |  |  |
 | `resources` _[Resources](#resources)_ | Resources |  |  |
 | `config` _[GcpConfig](#gcpconfig)_ |  |  |  |
 
@@ -463,7 +463,7 @@ _Appears in:_
 | Field | Description | Default | Validation |
 | --- | --- | --- | --- |
 | `dryRun` _boolean_ | dry-run mode |  |  |
-| `periods` _ScalerPeriod array_ | Time period to scale |  |  |
+| `periods` _[ScalerPeriod](#scalerperiod) array_ | Time period to scale |  |  |
 | `resources` _[Resources](#resources)_ | Resources |  |  |
 | `config` _[K8sConfig](#k8sconfig)_ |  |  |  |
 
