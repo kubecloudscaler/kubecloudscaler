@@ -143,8 +143,8 @@ By default, all namespaces are included except system namespaces (`kube-system`,
 ### Configuration Options
 
 - **namespaces**: Specify exact namespaces to include (when set, only these namespaces are targeted)
-- **excludeNamespaces**: Exclude specific namespaces from selection
-- **forceExcludeSystemNamespaces**: Ensure system namespaces are always excluded (default: `false`)
+- **excludeNamespaces**: Exclude specific namespaces from selection. Will be ignored if `namespaces` is set.
+- **forceExcludeSystemNamespaces**: Ensure system namespaces are always excluded (default: `true`)
 
 **Example - Target Specific Namespaces**:
 ```yaml

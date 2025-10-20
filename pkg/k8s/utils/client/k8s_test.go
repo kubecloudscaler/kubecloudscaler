@@ -181,7 +181,7 @@ var _ = Describe("GetClient", func() {
 				clientset, err := clients.GetClient(nil)
 
 				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("error building config from flags"))
+				Expect(err.Error()).To(ContainSubstring("kubeconfig file does not exist"))
 				Expect(clientset).To(BeNil())
 			})
 		})

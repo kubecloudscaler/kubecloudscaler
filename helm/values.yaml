@@ -1,21 +1,21 @@
 controllerManager:
   manager:
     args:
-      - '--metrics-bind-address=:8443'
-      - '--leader-elect'
-      - '--health-probe-bind-address=:8081'
-      - '--webhook-cert-path=/tmp/k8s-webhook-server/serving-certs'
+    - --metrics-bind-address=:8443
+    - --leader-elect
+    - --health-probe-bind-address=:8081
+    - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
     containerSecurityContext:
       allowPrivilegeEscalation: false
       capabilities:
         drop:
-          - ALL
+        - ALL
       readOnlyRootFilesystem: true
     env:
-      enableWebhooks: 'true'
+      enableWebhooks: "true"
     image:
       repository: ghcr.io/kubecloudscaler/kubecloudscaler
-      tag: 1.5.2
+      tag: latest
     imagePullPolicy: IfNotPresent
     resources:
       limits:
@@ -35,18 +35,18 @@ controllerManager:
 kubernetesClusterDomain: cluster.local
 metricsService:
   ports:
-    - name: https
-      port: 8443
-      protocol: TCP
-      targetPort: 8443
+  - name: https
+    port: 8443
+    protocol: TCP
+    targetPort: 8443
   type: ClusterIP
 serviceAccount:
   annotations: {}
   create: true
-  name: ''
+  name: ""
 webhookService:
   ports:
-    - port: 443
-      protocol: TCP
-      targetPort: 9443
+  - port: 443
+    protocol: TCP
+    targetPort: 9443
   type: ClusterIP
