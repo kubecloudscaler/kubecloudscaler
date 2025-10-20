@@ -627,11 +627,13 @@ spec:
                     description: Disable events
                     type: boolean
                   excludeNamespaces:
-                    description: Exclude namespaces from downscaling
+                    description: Exclude namespaces from downscaling; will be ignored
+                      if `Namespaces` is set
                     items:
                       type: string
                     type: array
                   forceExcludeSystemNamespaces:
+                    default: true
                     description: Force exclude system namespaces
                     type: boolean
                   namespaces:

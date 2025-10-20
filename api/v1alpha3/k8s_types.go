@@ -45,9 +45,10 @@ type K8sSpec struct {
 type K8sConfig struct {
 	// Namespaces
 	Namespaces []string `json:"namespaces,omitempty"`
-	// Exclude namespaces from downscaling
+	// Exclude namespaces from downscaling; will be ignored if `Namespaces` is set
 	ExcludeNamespaces []string `json:"excludeNamespaces,omitempty"`
 	// Force exclude system namespaces
+	// +kubebuilder:default:=true
 	ForceExcludeSystemNamespaces bool `json:"forceExcludeSystemNamespaces,omitempty"`
 	// Deployment time annotation
 	DeploymentTimeAnnotation string `json:"deploymentTimeAnnotation,omitempty"`

@@ -3,6 +3,7 @@ package utils
 import (
 	"context"
 	"fmt"
+	"os"
 	"slices"
 	"strconv"
 	"strings"
@@ -24,7 +25,7 @@ func SetNamespaceList(ctx context.Context, config *Config) ([]string, error) {
 		nsList = config.Namespaces
 	} else {
 		// get all namespaces from the cluster
-		nsListItems, err := config.Client.CoreV1().Namespaces().List(context.Background(), metaV1.ListOptions{})
+		nsListItems, err := config.Client.CoreV1().Namespaces().List(ctx, metaV1.ListOptions{})
 		if err != nil {
 			logger.Debug().Msg("error listing namespaces")
 
@@ -32,27 +33,15 @@ func SetNamespaceList(ctx context.Context, config *Config) ([]string, error) {
 		}
 
 		for _, ns := range nsListItems.Items {
+			if slices.Contains(config.ExcludeNamespaces, ns.Name) {
+				continue
+			}
+
 			nsList = append(nsList, ns.Name)
 		}
 	}
 
-	// exclude namespaces
-	if len(config.ExcludeNamespaces) == 0 {
-		config.ExcludeNamespaces = DefaultExcludeNamespaces
-	}
-
-	for _, ns := range config.ExcludeNamespaces {
-		for i, n := range nsList {
-			if slices.Contains(DefaultExcludeNamespaces, n) {
-				continue
-			}
-
-			if n == ns {
-				nsList = append(nsList[:i], nsList[i+1:]...)
-			}
-		}
-	}
-
+	// force exclude system namespaces
 	if config.ForceExcludeSystemNamespaces {
 		for _, ns := range DefaultExcludeNamespaces {
 			for i, n := range nsList {
@@ -60,6 +49,13 @@ func SetNamespaceList(ctx context.Context, config *Config) ([]string, error) {
 					nsList = append(nsList[:i], nsList[i+1:]...)
 				}
 			}
+		}
+	}
+
+	// force always exclude my own namespace
+	for i, n := range nsList {
+		if n == os.Getenv("POD_NAMESPACE") {
+			nsList = append(nsList[:i], nsList[i+1:]...)
 		}
 	}
 
