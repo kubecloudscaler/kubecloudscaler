@@ -28,6 +28,7 @@ import (
 // +kubebuilder:rbac:groups=autoscaling,resources=horizontalpodautoscalers,verbs=get;list;update;patch
 // +kubebuilder:rbac:groups=core,resources=pods,verbs=get;list
 // +kubebuilder:rbac:groups="",resources=secrets,verbs=get
+// +kubebuilder:rbac:groups="",resources=namespaces,verbs=get;list
 
 // K8sSpec defines the desired state of K8s
 type K8sSpec struct {
