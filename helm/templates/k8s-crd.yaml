@@ -30,7 +30,7 @@ spec:
   - name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: Scaler is the Schema for the scalers API
+        description: K8s is the Schema for the k8s scalers API.
         properties:
           apiVersion:
             description: |-
@@ -50,7 +50,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: ScalerSpec defines the desired state of Scaler
+            description: K8sSpec defines the desired state of K8s scaler.
             properties:
               authSecret:
                 description: AuthSecret name
@@ -133,6 +133,8 @@ spec:
               periods:
                 description: Time period to scale
                 items:
+                  description: ScalerPeriod defines a scaling period with time constraints
+                    and replica limits.
                   properties:
                     maxReplicas:
                       description: Maximum replicas
@@ -147,8 +149,12 @@ spec:
                       pattern: ^(|[a-zA-Z0-9][a-zA-Z0-9_-]*)$
                       type: string
                     time:
+                      description: TimePeriod defines the time configuration for a scaling
+                        period.
                       properties:
                         fixed:
+                          description: FixedPeriod defines a fixed time period for scaling
+                            operations.
                           properties:
                             endTime:
                               pattern: ^\d{4}-(0?[1-9]|1[0,1,2])-(0?[1-9]|[12][0-9]|3[01])
@@ -176,6 +182,8 @@ spec:
                           - startTime
                           type: object
                         recurring:
+                          description: RecurringPeriod defines a recurring time period
+                            for scaling operations.
                           properties:
                             days:
                               items:
@@ -226,14 +234,17 @@ spec:
             - periods
             type: object
           status:
-            description: ScalerStatus defines the observed state of Scaler
+            description: ScalerStatus defines the observed state of Scaler.
             properties:
               comments:
                 type: string
               currentPeriod:
+                description: ScalerStatusPeriod defines the current period status for
+                  a scaler.
                 properties:
                   failed:
                     items:
+                      description: ScalerStatusFailed represents a failed scaling operation.
                       properties:
                         kind:
                           type: string
@@ -248,6 +259,8 @@ spec:
                       type: object
                     type: array
                   spec:
+                    description: RecurringPeriod defines a recurring time period for
+                      scaling operations.
                     properties:
                       days:
                         items:
@@ -279,6 +292,8 @@ spec:
                     type: string
                   success:
                     items:
+                      description: ScalerStatusSuccess represents a successful scaling
+                        operation.
                       properties:
                         comment:
                           type: string
@@ -307,7 +322,7 @@ spec:
   - name: v1alpha2
     schema:
       openAPIV3Schema:
-        description: Scaler is the Schema for the scalers API
+        description: K8s is the Schema for the k8s scalers API.
         properties:
           apiVersion:
             description: |-
@@ -327,7 +342,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: ScalerSpec defines the desired state of Scaler
+            description: K8sSpec defines the desired state of K8s scaler.
             properties:
               authSecret:
                 description: AuthSecret name
@@ -359,6 +374,8 @@ spec:
               periods:
                 description: Time period to scale
                 items:
+                  description: ScalerPeriod defines a scaling period with time constraints
+                    and replica limits.
                   properties:
                     maxReplicas:
                       description: Maximum replicas
@@ -373,8 +390,12 @@ spec:
                       pattern: ^(|[a-zA-Z0-9][a-zA-Z0-9_-]*)$
                       type: string
                     time:
+                      description: TimePeriod defines the time configuration for a scaling
+                        period.
                       properties:
                         fixed:
+                          description: FixedPeriod defines a fixed time period for scaling
+                            operations.
                           properties:
                             endTime:
                               pattern: ^\d{4}-(0?[1-9]|1[0,1,2])-(0?[1-9]|[12][0-9]|3[01])
@@ -402,6 +423,8 @@ spec:
                           - startTime
                           type: object
                         recurring:
+                          description: RecurringPeriod defines a recurring time period
+                            for scaling operations.
                           properties:
                             days:
                               items:
@@ -512,14 +535,17 @@ spec:
             - resources
             type: object
           status:
-            description: ScalerStatus defines the observed state of Scaler
+            description: ScalerStatus defines the observed state of Scaler.
             properties:
               comments:
                 type: string
               currentPeriod:
+                description: ScalerStatusPeriod defines the current period status for
+                  a scaler.
                 properties:
                   failed:
                     items:
+                      description: ScalerStatusFailed represents a failed scaling operation.
                       properties:
                         kind:
                           type: string
@@ -534,6 +560,8 @@ spec:
                       type: object
                     type: array
                   spec:
+                    description: RecurringPeriod defines a recurring time period for
+                      scaling operations.
                     properties:
                       days:
                         items:
@@ -565,6 +593,8 @@ spec:
                     type: string
                   success:
                     items:
+                      description: ScalerStatusSuccess represents a successful scaling
+                        operation.
                       properties:
                         comment:
                           type: string
@@ -616,6 +646,8 @@ spec:
             description: spec defines the desired state of K8s
             properties:
               config:
+                description: K8sConfig defines the configuration for Kubernetes resource
+                  management.
                 properties:
                   authSecret:
                     description: AuthSecret name
@@ -652,6 +684,8 @@ spec:
               periods:
                 description: Time period to scale
                 items:
+                  description: ScalerPeriod defines a scaling period with time constraints
+                    and replica limits.
                   properties:
                     maxReplicas:
                       description: Maximum replicas
@@ -666,8 +700,12 @@ spec:
                       pattern: ^(|[a-zA-Z0-9][a-zA-Z0-9_-]*)$
                       type: string
                     time:
+                      description: TimePeriod defines the time configuration for a scaling
+                        period.
                       properties:
                         fixed:
+                          description: FixedPeriod defines a fixed time period for scaling
+                            operations.
                           properties:
                             endTime:
                               pattern: ^\d{4}-(0?[1-9]|1[0,1,2])-(0?[1-9]|[12][0-9]|3[01])
@@ -695,6 +733,8 @@ spec:
                           - startTime
                           type: object
                         recurring:
+                          description: RecurringPeriod defines a recurring time period
+                            for scaling operations.
                           properties:
                             days:
                               items:
@@ -806,9 +846,12 @@ spec:
               comments:
                 type: string
               currentPeriod:
+                description: ScalerStatusPeriod defines the current period status for
+                  a scaler.
                 properties:
                   failed:
                     items:
+                      description: ScalerStatusFailed represents a failed scaling operation.
                       properties:
                         kind:
                           type: string
@@ -823,6 +866,8 @@ spec:
                       type: object
                     type: array
                   spec:
+                    description: RecurringPeriod defines a recurring time period for
+                      scaling operations.
                     properties:
                       days:
                         items:
@@ -854,6 +899,8 @@ spec:
                     type: string
                   success:
                     items:
+                      description: ScalerStatusSuccess represents a successful scaling
+                        operation.
                       properties:
                         comment:
                           type: string
