@@ -1,3 +1,4 @@
+// Package period provides type definitions for period management.
 package period
 
 import (
@@ -6,6 +7,7 @@ import (
 	"github.com/kubecloudscaler/kubecloudscaler/api/common"
 )
 
+// Period represents a scaling period configuration.
 type Period struct {
 	Period       *common.RecurringPeriod
 	Type         string

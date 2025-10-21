@@ -1,3 +1,4 @@
+// Package deployments provides utility functions for Deployment resource management.
 package deployments
 
 import (
@@ -9,6 +10,7 @@ import (
 	"github.com/kubecloudscaler/kubecloudscaler/pkg/k8s/utils"
 )
 
+// New creates a new Deployments resource manager.
 func New(ctx context.Context, config *utils.Config) (*Deployments, error) {
 	k8sResource, err := utils.InitConfig(ctx, config)
 	if err != nil {

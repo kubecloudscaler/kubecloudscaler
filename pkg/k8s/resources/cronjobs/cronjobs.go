@@ -1,3 +1,4 @@
+// Package cronjobs provides CronJob scaling functionality for Kubernetes resources.
 package cronjobs
 
 import (
@@ -17,6 +18,7 @@ func (c *Cronjobs) init(client kubernetes.Interface) {
 	c.Client = client.BatchV1()
 }
 
+// SetState sets the state of CronJob resources based on the current period.
 func (c *Cronjobs) SetState(ctx context.Context) ([]common.ScalerStatusSuccess, []common.ScalerStatusFailed, error) {
 	scalerStatusSuccess := []common.ScalerStatusSuccess{}
 	scalerStatusFailed := []common.ScalerStatusFailed{}

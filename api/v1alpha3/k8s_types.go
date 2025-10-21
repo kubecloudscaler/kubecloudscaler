@@ -43,6 +43,7 @@ type K8sSpec struct {
 	Config K8sConfig `json:"config,omitempty"`
 }
 
+// K8sConfig defines the configuration for Kubernetes resource management.
 type K8sConfig struct {
 	// Namespaces
 	Namespaces []string `json:"namespaces,omitempty"`

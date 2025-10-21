@@ -1,3 +1,4 @@
+// Package vminstances provides utility functions for VM instance management in GCP.
 package vminstances
 
 import (
@@ -19,7 +20,7 @@ func New(ctx context.Context, config *gcpUtils.Config) (*VMnstances, error) {
 		return nil, fmt.Errorf("GCP client cannot be nil")
 	}
 
-	if config.ProjectId == "" {
+	if config.ProjectID == "" {
 		return nil, fmt.Errorf("project ID cannot be empty")
 	}
 

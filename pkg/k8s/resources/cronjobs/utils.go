@@ -1,3 +1,4 @@
+// Package cronjobs provides utility functions for CronJob resource management.
 package cronjobs
 
 import (
@@ -9,6 +10,7 @@ import (
 	"github.com/kubecloudscaler/kubecloudscaler/pkg/k8s/utils"
 )
 
+// New creates a new Cronjobs resource manager.
 func New(ctx context.Context, config *utils.Config) (*Cronjobs, error) {
 	k8sResource, err := utils.InitConfig(ctx, config)
 	if err != nil {

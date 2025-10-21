@@ -1,3 +1,4 @@
+// Package utils provides utility functions for GCP resource management in the kubecloudscaler project.
 package utils
 
 import (
@@ -11,13 +12,13 @@ import (
 )
 
 // GetZonesFromRegion returns a list of zones for a given region using Regions API
-func GetZonesFromRegion(ctx context.Context, clients *ClientSet, projectId, region string) ([]string, error) {
+func GetZonesFromRegion(ctx context.Context, clients *ClientSet, projectID, region string) ([]string, error) {
 	if clients == nil || clients.Regions == nil {
 		return nil, fmt.Errorf("regions client is nil")
 	}
 
 	req := &computepb.GetRegionRequest{
-		Project: projectId,
+		Project: projectID,
 		Region:  region,
 	}
 
@@ -40,7 +41,13 @@ func GetZonesFromRegion(ctx context.Context, clients *ClientSet, projectId, regi
 
 // GetInstancesInZones returns all instances in the specified zones using apiv1
 // If labelSelector is provided, it will be converted to a GCP filter and applied at the API level
-func GetInstancesInZones(ctx context.Context, clients *ClientSet, projectId string, zones []string, labelSelector *metaV1.LabelSelector) ([]*computepb.Instance, error) {
+func GetInstancesInZones(
+	ctx context.Context,
+	clients *ClientSet,
+	projectID string,
+	zones []string,
+	labelSelector *metaV1.LabelSelector,
+) ([]*computepb.Instance, error) {
 	if clients == nil || clients.Instances == nil {
 		return nil, fmt.Errorf("instances client is nil")
 	}
@@ -51,7 +58,7 @@ func GetInstancesInZones(ctx context.Context, clients *ClientSet, projectId stri
 	var allInstances []*computepb.Instance
 	for _, zone := range zones {
 		req := &computepb.ListInstancesRequest{
-			Project: projectId,
+			Project: projectID,
 			Zone:    zone,
 		}
 
@@ -83,7 +90,7 @@ func buildGCPFilterFromLabelSelector(labelSelector *metaV1.LabelSelector) string
 		return ""
 	}
 
-	var filters []string
+	filters := make([]string, 0, len(labelSelector.MatchLabels))
 	for key, value := range labelSelector.MatchLabels {
 		// GCP filter format for labels: labels.key=value
 		filters = append(filters, fmt.Sprintf("labels.%s=%s", key, value))

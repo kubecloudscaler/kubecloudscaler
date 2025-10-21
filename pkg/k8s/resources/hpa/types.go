@@ -1,3 +1,4 @@
+// Package hpa provides type definitions for HorizontalPodAutoscaler resource management.
 package hpa
 
 import (
@@ -7,6 +8,7 @@ import (
 	"github.com/kubecloudscaler/kubecloudscaler/pkg/k8s/utils"
 )
 
+// HorizontalPodAutoscalers represents a HorizontalPodAutoscaler resource manager.
 type HorizontalPodAutoscalers struct {
 	Resource *utils.K8sResource
 	Client   v2.AutoscalingV2Interface

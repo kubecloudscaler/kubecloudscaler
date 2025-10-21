@@ -17,6 +17,7 @@ func (d *Deployments) init(client kubernetes.Interface) {
 	d.Client = client.AppsV1()
 }
 
+// SetState sets the state of Deployment resources based on the current period.
 func (d *Deployments) SetState(ctx context.Context) ([]common.ScalerStatusSuccess, []common.ScalerStatusFailed, error) {
 	scalerStatusSuccess := []common.ScalerStatusSuccess{}
 	scalerStatusFailed := []common.ScalerStatusFailed{}

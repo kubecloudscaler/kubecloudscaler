@@ -1,13 +1,23 @@
+// Package utils provides constants for Kubernetes resource management.
 package utils
 
 const (
-	AnnotationsPrefix       = "kubecloudscaler.cloud"
-	AnnotationsOrigValue    = "original-value"
+	// AnnotationsPrefix is the prefix for kubecloudscaler annotations.
+	AnnotationsPrefix = "kubecloudscaler.cloud"
+	// AnnotationsOrigValue is the annotation key for original values.
+	AnnotationsOrigValue = "original-value"
+	// AnnotationsMinOrigValue is the annotation key for minimum original values.
 	AnnotationsMinOrigValue = "min-original-value"
+	// AnnotationsMaxOrigValue is the annotation key for maximum original values.
 	AnnotationsMaxOrigValue = "max-original-value"
-	PeriodType              = "period-type"
-	PeriodStartTime         = "period-start-time"
-	PeriodEndTime           = "period-end-time"
-	PeriodTimezone          = "period-timezone"
-	FieldManager            = "kubecloudscaler"
+	// PeriodType is the annotation key for period type.
+	PeriodType = "period-type"
+	// PeriodStartTime is the annotation key for period start time.
+	PeriodStartTime = "period-start-time"
+	// PeriodEndTime is the annotation key for period end time.
+	PeriodEndTime = "period-end-time"
+	// PeriodTimezone is the annotation key for period timezone.
+	PeriodTimezone = "period-timezone"
+	// FieldManager is the field manager name for Kubernetes resources.
+	FieldManager = "kubecloudscaler"
 )

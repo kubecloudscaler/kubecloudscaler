@@ -1,4 +1,4 @@
-// Package v1alpha1 contains API Schema definitions for the k8s v1alpha1 API group
+// Package common contains shared API Schema definitions for the kubecloudscaler project.
 // +kubebuilder:object:generate=true
 // +groupName=kubecloudscaler.cloud
 package common

@@ -34,28 +34,33 @@ type FlowSpec struct {
 	Flows     []Flows   `json:"flows,omitempty"`
 }
 
+// Resources defines the configuration for managed resources in a flow.
 type Resources struct {
 	K8s []K8sResource `json:"k8s,omitempty"`
 	Gcp []GcpResource `json:"gcp,omitempty"`
 }
 
+// K8sResource defines a Kubernetes resource configuration in a flow.
 type K8sResource struct {
 	Name      string           `json:"name"`
 	Resources common.Resources `json:"resources"`
 	Config    K8sConfig        `json:"config,omitempty"`
 }
 
+// GcpResource defines a GCP resource configuration in a flow.
 type GcpResource struct {
 	Name      string           `json:"name"`
 	Resources common.Resources `json:"resources"`
 	Config    GcpConfig        `json:"config,omitempty"`
 }
 
+// Flows defines a flow configuration with period and resources.
 type Flows struct {
 	PeriodName string         `json:"periodName"`
 	Resources  []FlowResource `json:"resources"`
 }
 
+// FlowResource defines a resource within a flow.
 type FlowResource struct {
 	Name string `json:"name"`
 

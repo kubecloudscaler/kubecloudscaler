@@ -36,8 +36,8 @@ type GcpSpec struct {
 	// Time period to scale
 	Periods []*common.ScalerPeriod `json:"periods"`
 	// Resources
-	// ProjectId
-	ProjectId string `json:"projectId,omitempty"`
+	// ProjectID
+	ProjectID string `json:"projectId,omitempty"`
 	// Region
 	Region string `json:"region,omitempty"`
 	// Resources

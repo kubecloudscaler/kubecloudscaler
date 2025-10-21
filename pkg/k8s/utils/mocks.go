@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+// Package utils provides mock implementations for testing Kubernetes resource management.
 package utils
 
 import (
@@ -28,6 +29,7 @@ type MockKubernetesClient struct {
 	CoreV1Func func() CoreV1Interface
 }
 
+// CoreV1 returns a mock CoreV1Interface.
 func (m *MockKubernetesClient) CoreV1() CoreV1Interface {
 	if m.CoreV1Func != nil {
 		return m.CoreV1Func()
@@ -40,6 +42,7 @@ type MockCoreV1Interface struct {
 	NamespacesFunc func() NamespaceLister
 }
 
+// Namespaces returns a mock NamespaceLister.
 func (m *MockCoreV1Interface) Namespaces() NamespaceLister {
 	if m.NamespacesFunc != nil {
 		return m.NamespacesFunc()
@@ -52,6 +55,7 @@ type MockNamespaceLister struct {
 	ListFunc func(ctx context.Context, opts metaV1.ListOptions) (*coreV1.NamespaceList, error)
 }
 
+// List returns a mock namespace list.
 func (m *MockNamespaceLister) List(ctx context.Context, opts metaV1.ListOptions) (*coreV1.NamespaceList, error) {
 	if m.ListFunc != nil {
 		return m.ListFunc(ctx, opts)
@@ -68,6 +72,7 @@ type MockConfigProvider struct {
 	GetPeriodFunc                       func() interface{}
 }
 
+// GetNamespaces returns mock namespaces.
 func (m *MockConfigProvider) GetNamespaces() []string {
 	if m.GetNamespacesFunc != nil {
 		return m.GetNamespacesFunc()
@@ -75,6 +80,7 @@ func (m *MockConfigProvider) GetNamespaces() []string {
 	return []string{}
 }
 
+// GetExcludeNamespaces returns mock exclude namespaces.
 func (m *MockConfigProvider) GetExcludeNamespaces() []string {
 	if m.GetExcludeNamespacesFunc != nil {
 		return m.GetExcludeNamespacesFunc()
@@ -82,6 +88,7 @@ func (m *MockConfigProvider) GetExcludeNamespaces() []string {
 	return []string{}
 }
 
+// GetForceExcludeSystemNamespaces returns mock force exclude system namespaces flag.
 func (m *MockConfigProvider) GetForceExcludeSystemNamespaces() bool {
 	if m.GetForceExcludeSystemNamespacesFunc != nil {
 		return m.GetForceExcludeSystemNamespacesFunc()
@@ -89,6 +96,7 @@ func (m *MockConfigProvider) GetForceExcludeSystemNamespaces() bool {
 	return false
 }
 
+// GetLabelSelector returns mock label selector.
 func (m *MockConfigProvider) GetLabelSelector() *metaV1.LabelSelector {
 	if m.GetLabelSelectorFunc != nil {
 		return m.GetLabelSelectorFunc()
@@ -96,6 +104,7 @@ func (m *MockConfigProvider) GetLabelSelector() *metaV1.LabelSelector {
 	return nil
 }
 
+// GetPeriod returns mock period.
 func (m *MockConfigProvider) GetPeriod() interface{} {
 	if m.GetPeriodFunc != nil {
 		return m.GetPeriodFunc()
@@ -104,10 +113,12 @@ func (m *MockConfigProvider) GetPeriod() interface{} {
 }
 
 // MockAnnotationManager is a mock implementation of AnnotationManager
+//
+//nolint:dupl // This struct intentionally duplicates the interface structure for mocking
 type MockAnnotationManager struct {
 	AddAnnotationsFunc           func(annotations map[string]string, period interface{}) map[string]string
 	RemoveAnnotationsFunc        func(annotations map[string]string) map[string]string
-	AddMinMaxAnnotationsFunc     func(annot map[string]string, curPeriod interface{}, min *int32, max int32) map[string]string
+	AddMinMaxAnnotationsFunc     func(annot map[string]string, curPeriod interface{}, minReplicas *int32, max int32) map[string]string
 	RestoreMinMaxAnnotationsFunc func(annot map[string]string) (bool, *int32, int32, map[string]string, error)
 	AddBoolAnnotationsFunc       func(annot map[string]string, curPeriod interface{}, value bool) map[string]string
 	RestoreBoolAnnotationsFunc   func(annot map[string]string) (bool, *bool, map[string]string, error)
@@ -115,6 +126,7 @@ type MockAnnotationManager struct {
 	RestoreIntAnnotationsFunc    func(annot map[string]string) (bool, *int32, map[string]string, error)
 }
 
+// AddAnnotations returns mock annotations with period information.
 func (m *MockAnnotationManager) AddAnnotations(annotations map[string]string, period interface{}) map[string]string {
 	if m.AddAnnotationsFunc != nil {
 		return m.AddAnnotationsFunc(annotations, period)
@@ -122,6 +134,7 @@ func (m *MockAnnotationManager) AddAnnotations(annotations map[string]string, pe
 	return annotations
 }
 
+// RemoveAnnotations returns mock annotations with kubecloudscaler annotations removed.
 func (m *MockAnnotationManager) RemoveAnnotations(annotations map[string]string) map[string]string {
 	if m.RemoveAnnotationsFunc != nil {
 		return m.RemoveAnnotationsFunc(annotations)
@@ -129,13 +142,15 @@ func (m *MockAnnotationManager) RemoveAnnotations(annotations map[string]string)
 	return annotations
 }
 
-func (m *MockAnnotationManager) AddMinMaxAnnotations(annot map[string]string, curPeriod interface{}, min *int32, max int32) map[string]string {
+// AddMinMaxAnnotations returns mock annotations with min/max replicas.
+func (m *MockAnnotationManager) AddMinMaxAnnotations(annot map[string]string, curPeriod interface{}, minReplicas *int32, max int32) map[string]string {
 	if m.AddMinMaxAnnotationsFunc != nil {
-		return m.AddMinMaxAnnotationsFunc(annot, curPeriod, min, max)
+		return m.AddMinMaxAnnotationsFunc(annot, curPeriod, minReplicas, max)
 	}
 	return annot
 }
 
+// RestoreMinMaxAnnotations returns mock restored min/max annotations.
 func (m *MockAnnotationManager) RestoreMinMaxAnnotations(annot map[string]string) (bool, *int32, int32, map[string]string, error) {
 	if m.RestoreMinMaxAnnotationsFunc != nil {
 		return m.RestoreMinMaxAnnotationsFunc(annot)
@@ -143,6 +158,7 @@ func (m *MockAnnotationManager) RestoreMinMaxAnnotations(annot map[string]string
 	return true, nil, 0, annot, nil
 }
 
+// AddBoolAnnotations returns mock annotations with boolean value information.
 func (m *MockAnnotationManager) AddBoolAnnotations(annot map[string]string, curPeriod interface{}, value bool) map[string]string {
 	if m.AddBoolAnnotationsFunc != nil {
 		return m.AddBoolAnnotationsFunc(annot, curPeriod, value)
@@ -150,6 +166,7 @@ func (m *MockAnnotationManager) AddBoolAnnotations(annot map[string]string, curP
 	return annot
 }
 
+// RestoreBoolAnnotations returns mock restored boolean annotations.
 func (m *MockAnnotationManager) RestoreBoolAnnotations(annot map[string]string) (bool, *bool, map[string]string, error) {
 	if m.RestoreBoolAnnotationsFunc != nil {
 		return m.RestoreBoolAnnotationsFunc(annot)
@@ -157,6 +174,7 @@ func (m *MockAnnotationManager) RestoreBoolAnnotations(annot map[string]string) 
 	return true, nil, annot, nil
 }
 
+// AddIntAnnotations returns mock annotations with integer value information.
 func (m *MockAnnotationManager) AddIntAnnotations(annot map[string]string, curPeriod interface{}, value *int32) map[string]string {
 	if m.AddIntAnnotationsFunc != nil {
 		return m.AddIntAnnotationsFunc(annot, curPeriod, value)
@@ -164,6 +182,7 @@ func (m *MockAnnotationManager) AddIntAnnotations(annot map[string]string, curPe
 	return annot
 }
 
+// RestoreIntAnnotations returns mock restored integer annotations.
 func (m *MockAnnotationManager) RestoreIntAnnotations(annot map[string]string) (bool, *int32, map[string]string, error) {
 	if m.RestoreIntAnnotationsFunc != nil {
 		return m.RestoreIntAnnotationsFunc(annot)
@@ -180,7 +199,7 @@ func NewMockKubernetesClientWithNamespaces(namespaces []string) *MockKubernetesC
 			return &MockCoreV1Interface{
 				NamespacesFunc: func() NamespaceLister {
 					return &MockNamespaceLister{
-						ListFunc: func(ctx context.Context, opts metaV1.ListOptions) (*coreV1.NamespaceList, error) {
+						ListFunc: func(_ context.Context, _ metaV1.ListOptions) (*coreV1.NamespaceList, error) {
 							items := make([]coreV1.Namespace, len(namespaces))
 							for i, ns := range namespaces {
 								items[i] = coreV1.Namespace{
@@ -203,7 +222,7 @@ func NewMockKubernetesClientWithError(err error) *MockKubernetesClient {
 			return &MockCoreV1Interface{
 				NamespacesFunc: func() NamespaceLister {
 					return &MockNamespaceLister{
-						ListFunc: func(ctx context.Context, opts metaV1.ListOptions) (*coreV1.NamespaceList, error) {
+						ListFunc: func(_ context.Context, _ metaV1.ListOptions) (*coreV1.NamespaceList, error) {
 							return nil, err
 						},
 					}
@@ -214,7 +233,7 @@ func NewMockKubernetesClientWithError(err error) *MockKubernetesClient {
 }
 
 // NewMockConfigProvider creates a mock config provider with the specified values
-func NewMockConfigProvider(namespaces []string, excludeNamespaces []string, forceExcludeSystem bool) *MockConfigProvider {
+func NewMockConfigProvider(namespaces, excludeNamespaces []string, forceExcludeSystem bool) *MockConfigProvider {
 	return &MockConfigProvider{
 		GetNamespacesFunc: func() []string {
 			return namespaces

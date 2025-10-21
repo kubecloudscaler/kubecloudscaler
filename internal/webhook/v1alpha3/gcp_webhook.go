@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+// Package v1alpha3 provides webhook functionality for GCP resources in the kubecloudscaler API.
 package v1alpha3
 
 import (
@@ -23,8 +24,9 @@ import (
 	kubecloudscalerv1alpha3 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha3"
 )
 
-// nolint:unused
 // log is for logging in this package.
+//
+//nolint:unused // Variable is used for logging in webhook operations
 var gcplog = logf.Log.WithName("gcp-resource")
 
 // SetupGcpWebhookWithManager registers the webhook for Gcp in the manager.

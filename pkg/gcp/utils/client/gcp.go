@@ -1,3 +1,4 @@
+// Package client provides GCP client functionality for the kubecloudscaler project.
 package client
 
 import (
@@ -14,7 +15,7 @@ import (
 
 // GetClient creates a GCP Compute Engine client
 // It supports authentication via service account key from Kubernetes secret or default credentials
-func GetClient(secret *corev1.Secret, projectId string) (*gcpUtils.ClientSet, error) {
+func GetClient(secret *corev1.Secret, _ string) (*gcpUtils.ClientSet, error) {
 	var (
 		instancesClient      *compute.InstancesClient
 		regionsClient        *compute.RegionsClient

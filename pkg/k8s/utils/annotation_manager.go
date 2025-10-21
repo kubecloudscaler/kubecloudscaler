@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+// Package utils provides annotation management functionality for Kubernetes resources.
 package utils
 
 import (
@@ -69,13 +70,13 @@ func (am *annotationManager) RemoveAnnotations(annotations map[string]string) ma
 	return annotations
 }
 
-// AddMinMaxAnnotations adds min/max annotations with original values
-func (am *annotationManager) AddMinMaxAnnotations(annot map[string]string, curPeriod interface{}, min *int32, max int32) map[string]string {
+// AddMinMaxAnnotations adds annotations for minimum and maximum replicas.
+func (am *annotationManager) AddMinMaxAnnotations(annot map[string]string, curPeriod interface{}, minReplicas *int32, max int32) map[string]string {
 	annotations := am.AddAnnotations(annot, curPeriod)
 
 	_, isExists := annotations[AnnotationsPrefix+"/"+AnnotationsOrigValue]
 	if !isExists {
-		annotations[AnnotationsPrefix+"/"+AnnotationsMinOrigValue] = strconv.FormatInt(int64(ptr.Deref(min, int32(0))), 10)
+		annotations[AnnotationsPrefix+"/"+AnnotationsMinOrigValue] = strconv.FormatInt(int64(ptr.Deref(minReplicas, int32(0))), 10)
 		annotations[AnnotationsPrefix+"/"+AnnotationsMaxOrigValue] = fmt.Sprintf("%d", max)
 	}
 
@@ -115,6 +116,7 @@ func (am *annotationManager) RestoreMinMaxAnnotations(annot map[string]string) (
 	isRestored := isMinRestored && isMaxRestored
 	annot = am.RemoveAnnotations(annot)
 
+	//nolint:gosec // G109: int32 conversion is safe for replica count values which are bounded
 	return isRestored, ptr.To(int32(minAsInt)), int32(maxAsInt), annot, nil
 }
 
@@ -185,5 +187,6 @@ func (am *annotationManager) RestoreIntAnnotations(annot map[string]string) (boo
 
 	annot = am.RemoveAnnotations(annot)
 
+	//nolint:gosec // G109: int32 conversion is safe for replica count values which are bounded
 	return isRestored, ptr.To(int32(repAsInt)), annot, nil
 }

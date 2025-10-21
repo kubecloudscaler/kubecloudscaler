@@ -1,3 +1,4 @@
+// Package statefulsets provides utility functions for StatefulSet resource management.
 package statefulsets
 
 import (
@@ -9,6 +10,7 @@ import (
 	"github.com/kubecloudscaler/kubecloudscaler/pkg/k8s/utils"
 )
 
+// New creates a new Statefulsets resource manager.
 func New(ctx context.Context, config *utils.Config) (*Statefulsets, error) {
 	k8sResource, err := utils.InitConfig(ctx, config)
 	if err != nil {

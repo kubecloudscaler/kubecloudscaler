@@ -1,3 +1,4 @@
+// Package statefulsets provides type definitions for StatefulSet resource management.
 package statefulsets
 
 import (
@@ -7,6 +8,7 @@ import (
 	"github.com/kubecloudscaler/kubecloudscaler/pkg/k8s/utils"
 )
 
+// Statefulsets represents a StatefulSet resource manager.
 type Statefulsets struct {
 	Resource *utils.K8sResource
 	Client   v1.AppsV1Interface

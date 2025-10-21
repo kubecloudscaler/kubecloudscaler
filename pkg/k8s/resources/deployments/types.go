@@ -1,3 +1,4 @@
+// Package deployments provides type definitions for Deployment resource management.
 package deployments
 
 import (
@@ -7,6 +8,7 @@ import (
 	"github.com/kubecloudscaler/kubecloudscaler/pkg/k8s/utils"
 )
 
+// Deployments represents a Deployment resource manager.
 type Deployments struct {
 	Resource *utils.K8sResource
 	Client   v1.AppsV1Interface

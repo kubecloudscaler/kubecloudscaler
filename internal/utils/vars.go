@@ -1,3 +1,4 @@
+// Package utils provides utility functions for internal use in the kubecloudscaler project.
 package utils
 
 import "errors"

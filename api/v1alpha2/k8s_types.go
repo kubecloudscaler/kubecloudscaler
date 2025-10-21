@@ -28,7 +28,7 @@ import (
 // +kubebuilder:rbac:groups=core,resources=pods,verbs=get;list
 // +kubebuilder:rbac:groups="",resources=secrets,verbs=get
 
-// ScalerSpec defines the desired state of Scaler
+// K8sSpec defines the desired state of K8s scaler.
 type K8sSpec struct {
 	// dry-run mode
 	DryRun bool `json:"dryRun,omitempty"`
@@ -61,7 +61,7 @@ type K8sSpec struct {
 // +kubebuilder:resource:scope=Cluster
 // +genclient
 
-// Scaler is the Schema for the scalers API
+// K8s is the Schema for the k8s scalers API.
 type K8s struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -72,7 +72,7 @@ type K8s struct {
 
 // +kubebuilder:object:root=true
 
-// ScalerList contains a list of Scaler
+// K8sList contains a list of K8s scalers.
 type K8sList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

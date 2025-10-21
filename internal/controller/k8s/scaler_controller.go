@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+// Package k8s provides Kubernetes controller functionality for the kubecloudscaler project.
 package k8s
 
 import (
@@ -37,6 +38,11 @@ import (
 	k8sUtils "github.com/kubecloudscaler/kubecloudscaler/pkg/k8s/utils"
 	k8sClient "github.com/kubecloudscaler/kubecloudscaler/pkg/k8s/utils/client"
 	"github.com/kubecloudscaler/kubecloudscaler/pkg/resources"
+)
+
+const (
+	// RequeueDelaySeconds is the delay in seconds before requeuing a run-once period.
+	RequeueDelaySeconds = 5
 )
 
 // ScalerReconciler reconciles a Scaler object
@@ -65,6 +71,8 @@ type ScalerReconciler struct {
 //
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.18.4/pkg/reconcile
+//
+//nolint:gocognit // Reconcile function complexity is acceptable for controller logic
 func (r *ScalerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	// Fetch the Scaler object from the Kubernetes API
 	scaler := &kubecloudscalerv1alpha3.K8s{}
@@ -81,7 +89,7 @@ func (r *ScalerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	scalerFinalize := false
 
 	// Check if the object is being deleted by examining the DeletionTimestamp
-	if scaler.ObjectMeta.DeletionTimestamp.IsZero() {
+	if scaler.DeletionTimestamp.IsZero() {
 		// Object is not being deleted - ensure finalizer is present
 		// The finalizer ensures we can perform cleanup operations before deletion
 		if !controllerutil.ContainsFinalizer(scaler, scalerFinalizer) {
@@ -119,10 +127,9 @@ func (r *ScalerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 
 		// TODO: Implement proper secret handling for remote cluster authentication
 		return ctrl.Result{Requeue: false}, nil
-	} else {
-		// No authentication secret specified, use default cluster access
-		secret = nil
 	}
+	// No authentication secret specified, use default cluster access
+	secret = nil
 
 	// Initialize Kubernetes client for resource operations
 	// This client is used to interact with the target cluster (local or remote)
@@ -161,7 +168,7 @@ func (r *ScalerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	if err != nil {
 		// Handle run-once period - requeue until the period ends
 		if errors.Is(err, utils.ErrRunOncePeriod) {
-			return ctrl.Result{RequeueAfter: time.Until(resourceConfig.K8s.Period.GetEndTime.Add(5 * time.Second))}, nil
+			return ctrl.Result{RequeueAfter: time.Until(resourceConfig.K8s.Period.GetEndTime.Add(RequeueDelaySeconds * time.Second))}, nil
 		}
 
 		// Update status with error information
@@ -260,10 +267,10 @@ func (r *ScalerReconciler) SetupWithManager(mgr ctrl.Manager) error {
 // It ensures that only valid resource types are included and prevents mixing
 // of application resources (deployments, statefulsets) with HPA resources.
 func (r *ScalerReconciler) validResourceList(scaler *kubecloudscalerv1alpha3.K8s) ([]string, error) {
+	output := make([]string, 0, len(scaler.Spec.Resources.Types))
 	var (
-		output []string // Validated list of resources to scale
-		isApp  bool     // Flag indicating if app resources are present
-		isHpa  bool     // Flag indicating if HPA resources are present
+		isApp bool // Flag indicating if app resources are present
+		isHpa bool // Flag indicating if HPA resources are present
 	)
 
 	// Default to deployments if no resources are specified

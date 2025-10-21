@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+// Package controller provides flow controller functionality for the kubecloudscaler project.
 package controller
 
 import (
@@ -77,6 +78,8 @@ type PeriodWithDelay struct {
 //
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.22.1/pkg/reconcile
+//
+//nolint:gocognit // Reconcile function complexity is acceptable for controller logic
 func (r *FlowReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 
 	// Fetch the Flow object from the Kubernetes API
@@ -97,7 +100,7 @@ func (r *FlowReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	flowFinalize := false
 
 	// Check if the object is being deleted
-	if flow.ObjectMeta.DeletionTimestamp.IsZero() {
+	if flow.DeletionTimestamp.IsZero() {
 		// Object is not being deleted - ensure finalizer is present
 		if !controllerutil.ContainsFinalizer(flow, flowFinalizer) {
 			r.Logger.Info().Msg("adding finalizer")
@@ -213,6 +216,8 @@ func (r *FlowReconciler) extractFlowData(flow *kubecloudscalerv1alpha3.Flow) (ma
 }
 
 // validatePeriodTimings validates that the sum of delays for each period doesn't exceed the period duration
+//
+//nolint:gocognit // Validation function complexity is acceptable for comprehensive checks
 func (r *FlowReconciler) validatePeriodTimings(flow *kubecloudscalerv1alpha3.Flow, periodNames map[string]bool) error {
 	// Create period map for lookup
 	periodsMap := make(map[string]common.ScalerPeriod)
@@ -261,6 +266,8 @@ func (r *FlowReconciler) validatePeriodTimings(flow *kubecloudscalerv1alpha3.Flo
 }
 
 // createResourceMappings creates mappings for all resources with their associated periods
+//
+//nolint:gocognit // Resource mapping function complexity is acceptable for comprehensive processing
 func (r *FlowReconciler) createResourceMappings(flow *kubecloudscalerv1alpha3.Flow, resourceNames map[string]bool) (map[string]ResourceInfo, error) {
 	resourceMappings := make(map[string]ResourceInfo)
 
@@ -278,6 +285,7 @@ func (r *FlowReconciler) createResourceMappings(flow *kubecloudscalerv1alpha3.Fl
 		var k8sResource *kubecloudscalerv1alpha3.K8sResource
 		for _, resource := range flow.Spec.Resources.K8s {
 			if resource.Name == resourceName {
+				//nolint:gosec // Taking address of loop variable is safe here as it's used immediately
 				k8sResource = &resource
 				break
 			}
@@ -287,6 +295,7 @@ func (r *FlowReconciler) createResourceMappings(flow *kubecloudscalerv1alpha3.Fl
 		var gcpResource *kubecloudscalerv1alpha3.GcpResource
 		for _, resource := range flow.Spec.Resources.Gcp {
 			if resource.Name == resourceName {
+				//nolint:gosec // Taking address of loop variable is safe here as it's used immediately
 				gcpResource = &resource
 				break
 			}
@@ -354,13 +363,24 @@ func (r *FlowReconciler) createResourceMappings(flow *kubecloudscalerv1alpha3.Fl
 }
 
 // processResource processes a single resource and creates the appropriate CR
-func (r *FlowReconciler) processResource(ctx context.Context, flow *kubecloudscalerv1alpha3.Flow, resourceName string, resourceInfo ResourceInfo) error {
+func (r *FlowReconciler) processResource(
+	ctx context.Context,
+	flow *kubecloudscalerv1alpha3.Flow,
+	resourceName string,
+	resourceInfo ResourceInfo,
+) error {
 	switch resourceInfo.Type {
 	case "k8s":
-		k8sResource := resourceInfo.Resource.(kubecloudscalerv1alpha3.K8sResource)
+		k8sResource, ok := resourceInfo.Resource.(kubecloudscalerv1alpha3.K8sResource)
+		if !ok {
+			return fmt.Errorf("expected K8sResource, got %T", resourceInfo.Resource)
+		}
 		return r.createK8sResource(ctx, flow, resourceName, k8sResource, resourceInfo.Periods)
 	case "gcp":
-		gcpResource := resourceInfo.Resource.(kubecloudscalerv1alpha3.GcpResource)
+		gcpResource, ok := resourceInfo.Resource.(kubecloudscalerv1alpha3.GcpResource)
+		if !ok {
+			return fmt.Errorf("expected GcpResource, got %T", resourceInfo.Resource)
+		}
 		return r.createGcpResource(ctx, flow, resourceName, gcpResource, resourceInfo.Periods)
 	default:
 		return fmt.Errorf("unknown resource type: %s", resourceInfo.Type)
@@ -433,7 +453,7 @@ func (r *FlowReconciler) getPeriodDuration(period *common.ScalerPeriod) (time.Du
 // createK8sResource creates a K8s resource CR with all associated periods
 func (r *FlowReconciler) createK8sResource(ctx context.Context, flow *kubecloudscalerv1alpha3.Flow, resourceName string, k8sResource kubecloudscalerv1alpha3.K8sResource, periodsWithDelay []PeriodWithDelay) error {
 	// Collect all periods for this resource
-	var allPeriods []common.ScalerPeriod
+	allPeriods := make([]common.ScalerPeriod, 0, len(periodsWithDelay))
 	for _, periodWithDelay := range periodsWithDelay {
 		curPeriod := periodWithDelay.Period
 		if curPeriod.Time.Recurring != nil {
@@ -489,7 +509,7 @@ func (r *FlowReconciler) createK8sResource(ctx context.Context, flow *kubeclouds
 // createGcpResource creates a GCP resource CR with all associated periods
 func (r *FlowReconciler) createGcpResource(ctx context.Context, flow *kubecloudscalerv1alpha3.Flow, resourceName string, gcpResource kubecloudscalerv1alpha3.GcpResource, periodsWithDelay []PeriodWithDelay) error {
 	// Collect all periods for this resource
-	var allPeriods []common.ScalerPeriod
+	allPeriods := make([]common.ScalerPeriod, 0, len(periodsWithDelay))
 	for _, periodWithDelay := range periodsWithDelay {
 		allPeriods = append(allPeriods, periodWithDelay.Period)
 	}

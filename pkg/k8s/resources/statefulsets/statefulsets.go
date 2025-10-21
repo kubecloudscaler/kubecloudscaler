@@ -17,6 +17,7 @@ func (s *Statefulsets) init(client kubernetes.Interface) {
 	s.Client = client.AppsV1()
 }
 
+// SetState sets the state of StatefulSet resources based on the current period.
 func (s *Statefulsets) SetState(ctx context.Context) ([]common.ScalerStatusSuccess, []common.ScalerStatusFailed, error) {
 	scalerStatusSuccess := []common.ScalerStatusSuccess{}
 	scalerStatusFailed := []common.ScalerStatusFailed{}

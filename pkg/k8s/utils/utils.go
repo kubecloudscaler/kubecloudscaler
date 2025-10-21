@@ -1,3 +1,4 @@
+// Package utils provides utility functions for Kubernetes resource management.
 package utils
 
 import (
@@ -15,7 +16,7 @@ import (
 	periodPkg "github.com/kubecloudscaler/kubecloudscaler/pkg/period"
 )
 
-// We set namespaces into resources to be able to use k8s client
+// SetNamespaceList sets namespaces into resources to be able to use k8s client.
 func SetNamespaceList(ctx context.Context, config *Config) ([]string, error) {
 	logger := zerolog.Ctx(ctx)
 	nsList := []string{}
@@ -75,6 +76,7 @@ func addAnnotations(annotations map[string]string, period *periodPkg.Period) map
 	return annotations
 }
 
+// RemoveAnnotations removes all kubecloudscaler annotations from the given map.
 func RemoveAnnotations(annotations map[string]string) map[string]string {
 	for annot := range annotations {
 		if strings.HasPrefix(annot, AnnotationsPrefix) {
@@ -85,6 +87,7 @@ func RemoveAnnotations(annotations map[string]string) map[string]string {
 	return annotations
 }
 
+// PrepareSearch prepares search parameters for Kubernetes resource queries.
 func PrepareSearch(ctx context.Context, config *Config) ([]string, metaV1.ListOptions, error) {
 	logger := zerolog.Ctx(ctx)
 	var err error
@@ -134,6 +137,7 @@ func PrepareSearch(ctx context.Context, config *Config) ([]string, metaV1.ListOp
 	return nsList, listOptions, nil
 }
 
+// InitConfig initializes a K8sResource from the given configuration.
 func InitConfig(ctx context.Context, config *Config) (*K8sResource, error) {
 	resource := &K8sResource{
 		Period: config.Period,
@@ -150,18 +154,20 @@ func InitConfig(ctx context.Context, config *Config) (*K8sResource, error) {
 	return resource, nil
 }
 
-func AddMinMaxAnnotations(annot map[string]string, curPeriod *periodPkg.Period, min *int32, max int32) map[string]string {
+// AddMinMaxAnnotations adds min/max replica annotations to the given map.
+func AddMinMaxAnnotations(annot map[string]string, curPeriod *periodPkg.Period, minReplicas *int32, max int32) map[string]string {
 	annotations := addAnnotations(annot, curPeriod)
 
 	_, isExists := annotations[AnnotationsPrefix+"/"+AnnotationsOrigValue]
 	if !isExists {
-		annotations[AnnotationsPrefix+"/"+AnnotationsMinOrigValue] = strconv.FormatInt(int64(ptr.Deref(min, int32(0))), 10)
+		annotations[AnnotationsPrefix+"/"+AnnotationsMinOrigValue] = strconv.FormatInt(int64(ptr.Deref(minReplicas, int32(0))), 10)
 		annotations[AnnotationsPrefix+"/"+AnnotationsMaxOrigValue] = fmt.Sprintf("%d", max)
 	}
 
 	return annotations
 }
 
+// RestoreMinMaxAnnotations restores min/max replica annotations from the given map.
 func RestoreMinMaxAnnotations(annot map[string]string) (bool, *int32, int32, map[string]string, error) {
 	var (
 		minAsInt      int
@@ -194,9 +200,11 @@ func RestoreMinMaxAnnotations(annot map[string]string) (bool, *int32, int32, map
 	isRestored := isMinRestored && isMaxRestored
 	annot = RemoveAnnotations(annot)
 
+	//nolint:gosec // G109: int32 conversion is safe for replica count values which are bounded
 	return isRestored, ptr.To(int32(minAsInt)), int32(maxAsInt), annot, nil
 }
 
+// AddBoolAnnotations adds boolean value annotations to the given map.
 func AddBoolAnnotations(annot map[string]string, curPeriod *periodPkg.Period, value bool) map[string]string {
 	annotations := addAnnotations(annot, curPeriod)
 
@@ -208,6 +216,7 @@ func AddBoolAnnotations(annot map[string]string, curPeriod *periodPkg.Period, va
 	return annotations
 }
 
+// RestoreBoolAnnotations restores boolean value annotations from the given map.
 func RestoreBoolAnnotations(annot map[string]string) (bool, *bool, map[string]string, error) {
 	var (
 		repAsBool  bool
@@ -230,6 +239,7 @@ func RestoreBoolAnnotations(annot map[string]string) (bool, *bool, map[string]st
 	return isRestored, ptr.To(repAsBool), annot, nil
 }
 
+// AddIntAnnotations adds integer value annotations to the given map.
 func AddIntAnnotations(annot map[string]string, curPeriod *periodPkg.Period, value *int32) map[string]string {
 	annotations := addAnnotations(annot, curPeriod)
 
@@ -241,6 +251,7 @@ func AddIntAnnotations(annot map[string]string, curPeriod *periodPkg.Period, val
 	return annotations
 }
 
+// RestoreIntAnnotations restores integer value annotations from the given map.
 func RestoreIntAnnotations(annot map[string]string) (bool, *int32, map[string]string, error) {
 	var (
 		repAsInt   int
@@ -260,5 +271,6 @@ func RestoreIntAnnotations(annot map[string]string) (bool, *int32, map[string]st
 
 	annot = RemoveAnnotations(annot)
 
+	//nolint:gosec // G109: int32 conversion is safe for replica count values which are bounded
 	return isRestored, ptr.To(int32(repAsInt)), annot, nil
 }

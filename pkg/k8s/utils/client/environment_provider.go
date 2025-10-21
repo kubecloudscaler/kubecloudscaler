@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+// Package clients provides environment provider functionality for Kubernetes clients.
 package clients
 
 import (
@@ -41,5 +42,6 @@ func (ep *environmentProvider) FileExists(path string) bool {
 
 // ReadFile reads a file
 func (ep *environmentProvider) ReadFile(path string) ([]byte, error) {
+	//nolint:gosec // G304: File path comes from trusted kubeconfig environment variable
 	return os.ReadFile(path)
 }

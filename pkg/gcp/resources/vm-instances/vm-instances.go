@@ -1,3 +1,4 @@
+// Package vminstances provides VM instance scaling functionality for GCP resources.
 package vminstances
 
 import (
@@ -12,21 +13,26 @@ import (
 	gcpUtils "github.com/kubecloudscaler/kubecloudscaler/pkg/gcp/utils"
 )
 
+const (
+	// OperationTimeoutMinutes is the timeout for GCP operations in minutes.
+	OperationTimeoutMinutes = 5
+	// OperationCheckIntervalSeconds is the interval for checking operation status in seconds.
+	OperationCheckIntervalSeconds = 10
+)
+
 // SetState scales instances based on the current period
 func (c *VMnstances) SetState(ctx context.Context) ([]common.ScalerStatusSuccess, []common.ScalerStatusFailed, error) {
-	var (
-		success []common.ScalerStatusSuccess
-		failed  []common.ScalerStatusFailed
-	)
+	success := make([]common.ScalerStatusSuccess, 0)
+	failed := make([]common.ScalerStatusFailed, 0)
 
 	// Get all zones in the region
-	zones, err := gcpUtils.GetZonesFromRegion(ctx, c.Config.Client, c.Config.ProjectId, c.Config.Region)
+	zones, err := gcpUtils.GetZonesFromRegion(ctx, c.Config.Client, c.Config.ProjectID, c.Config.Region)
 	if err != nil {
 		return success, failed, fmt.Errorf("failed to get zones: %w", err)
 	}
 
 	// Get instances in the zones filtered by label selector (filter applied at GCP API level)
-	filteredInstances, err := gcpUtils.GetInstancesInZones(ctx, c.Config.Client, c.Config.ProjectId, zones, c.Config.LabelSelector)
+	filteredInstances, err := gcpUtils.GetInstancesInZones(ctx, c.Config.Client, c.Config.ProjectID, zones, c.Config.LabelSelector)
 	if err != nil {
 		return success, failed, fmt.Errorf("failed to get instances: %w", err)
 	}
@@ -129,54 +135,78 @@ func (c *VMnstances) applyInstanceState(ctx context.Context, instance *computepb
 	}
 }
 
-// startInstance starts a stopped instance
-func (c *VMnstances) startInstance(ctx context.Context, instance *computepb.Instance, zone string) error {
-	// Check if instance is already running
-	if gcpUtils.IsInstanceRunning(instance) {
+// executeInstanceOperation executes a common instance operation (start/stop)
+//
+//nolint:lll // Function signature requires long parameter names for clarity
+func (c *VMnstances) executeInstanceOperation(ctx context.Context, instance *computepb.Instance, zone, operation string, isAlreadyInState func(*computepb.Instance) bool, createRequest func(string, string, string) interface{}) error {
+	// Check if instance is already in the desired state
+	if isAlreadyInState(instance) {
 		return nil
 	}
 
-	// Start the instance
-	req := &computepb.StartInstanceRequest{
-		Project:  c.Config.ProjectId,
-		Zone:     zone,
-		Instance: instance.GetName(),
+	// Create the appropriate request
+	req := createRequest(c.Config.ProjectID, zone, instance.GetName())
+
+	// Execute the operation
+	var op interface{}
+	var err error
+
+	switch operation {
+	case "start":
+		startReq, ok := req.(*computepb.StartInstanceRequest)
+		if !ok {
+			return fmt.Errorf("expected *computepb.StartInstanceRequest, got %T", req)
+		}
+		op, err = c.Config.Client.Instances.Start(ctx, startReq)
+	case "stop":
+		stopReq, ok := req.(*computepb.StopInstanceRequest)
+		if !ok {
+			return fmt.Errorf("expected *computepb.StopInstanceRequest, got %T", req)
+		}
+		op, err = c.Config.Client.Instances.Stop(ctx, stopReq)
+	default:
+		return fmt.Errorf("unknown operation: %s", operation)
 	}
-	op, err := c.Config.Client.Instances.Start(ctx, req)
+
 	if err != nil {
-		return fmt.Errorf("failed to start instance %s: %w", instance.GetName(), err)
+		return fmt.Errorf("failed to %s instance %s: %w", operation, instance.GetName(), err)
 	}
 
 	// Wait for the operation to complete
 	if c.Config.WaitForOperation {
-		return c.waitForOperation(ctx, op.Proto(), zone)
+		operation, ok := op.(*computepb.Operation)
+		if !ok {
+			return fmt.Errorf("expected *computepb.Operation, got %T", op)
+		}
+		return c.waitForOperation(ctx, operation, zone)
 	}
 	return nil
 }
 
+// startInstance starts a stopped instance
+func (c *VMnstances) startInstance(ctx context.Context, instance *computepb.Instance, zone string) error {
+	return c.executeInstanceOperation(
+		ctx, instance, zone, "start", gcpUtils.IsInstanceRunning,
+		func(projectID, zone, instanceName string) interface{} {
+			return &computepb.StartInstanceRequest{
+				Project:  projectID,
+				Zone:     zone,
+				Instance: instanceName,
+			}
+		})
+}
+
 // stopInstance stops a running instance
 func (c *VMnstances) stopInstance(ctx context.Context, instance *computepb.Instance, zone string) error {
-	// Check if instance is already stopped
-	if gcpUtils.IsInstanceStopped(instance) {
-		return nil
-	}
-
-	// Stop the instance
-	req := &computepb.StopInstanceRequest{
-		Project:  c.Config.ProjectId,
-		Zone:     zone,
-		Instance: instance.GetName(),
-	}
-	op, err := c.Config.Client.Instances.Stop(ctx, req)
-	if err != nil {
-		return fmt.Errorf("failed to stop instance %s: %w", instance.GetName(), err)
-	}
-
-	// Wait for the operation to complete
-	if c.Config.WaitForOperation {
-		return c.waitForOperation(ctx, op.Proto(), zone)
-	}
-	return nil
+	return c.executeInstanceOperation(
+		ctx, instance, zone, "stop", gcpUtils.IsInstanceStopped,
+		func(projectID, zone, instanceName string) interface{} {
+			return &computepb.StopInstanceRequest{
+				Project:  projectID,
+				Zone:     zone,
+				Instance: instanceName,
+			}
+		})
 }
 
 // extractZoneFromInstance extracts the zone from the instance's self link
@@ -200,8 +230,8 @@ func (c *VMnstances) extractZoneFromInstance(instance *computepb.Instance) strin
 // waitForOperation waits for a GCP operation to complete
 func (c *VMnstances) waitForOperation(ctx context.Context, operation *computepb.Operation, zone string) error {
 	// Set a timeout for the operation
-	timeout := time.After(5 * time.Minute)
-	ticker := time.NewTicker(10 * time.Second)
+	timeout := time.After(OperationTimeoutMinutes * time.Minute)
+	ticker := time.NewTicker(OperationCheckIntervalSeconds * time.Second)
 	defer ticker.Stop()
 
 	for {
@@ -212,7 +242,7 @@ func (c *VMnstances) waitForOperation(ctx context.Context, operation *computepb.
 			// Check operation status
 			getReq := &computepb.GetZoneOperationRequest{
 				Operation: operation.GetName(),
-				Project:   c.Config.ProjectId,
+				Project:   c.Config.ProjectID,
 				Zone:      zone,
 			}
 			op, err := c.Config.Client.ZoneOperations.Get(ctx, getReq)

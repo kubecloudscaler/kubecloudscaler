@@ -1,6 +1,8 @@
+// Package common contains shared API Schema definitions for the kubecloudscaler project.
 // +kubebuilder:object:generate=true
 package common
 
+// ScalerPeriod defines a scaling period with time constraints and replica limits.
 type ScalerPeriod struct {
 	// +kubebuilder:validation:Enum=down;up
 	Type string     `json:"type"`
@@ -15,11 +17,13 @@ type ScalerPeriod struct {
 	Name *string `json:"name,omitempty"`
 }
 
+// TimePeriod defines the time configuration for a scaling period.
 type TimePeriod struct {
 	Recurring *RecurringPeriod `json:"recurring,omitempty"`
 	Fixed     *FixedPeriod     `json:"fixed,omitempty"`
 }
 
+// RecurringPeriod defines a recurring time period for scaling operations.
 type RecurringPeriod struct {
 	Days []string `json:"days"`
 	// +kubebuilder:validation:Pattern=`^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$`
@@ -35,6 +39,7 @@ type RecurringPeriod struct {
 	Reverse *bool `json:"reverse,omitempty"`
 }
 
+// FixedPeriod defines a fixed time period for scaling operations.
 type FixedPeriod struct {
 	// +kubebuilder:validation:Pattern=`^\d{4}-(0?[1-9]|1[0,1,2])-(0?[1-9]|[12][0-9]|3[01]) ([0-1]?[0-9]|2[0-3]):[0-5]?[0-9]:[0-5]?[0-9]$`
 	StartTime string `json:"startTime"`
@@ -50,12 +55,13 @@ type FixedPeriod struct {
 	Reverse *bool `json:"reverse,omitempty"`
 }
 
-// ScalerStatus defines the observed state of Scaler
+// ScalerStatus defines the observed state of Scaler.
 type ScalerStatus struct {
 	CurrentPeriod *ScalerStatusPeriod `json:"currentPeriod,omitempty"`
 	Comments      *string             `json:"comments,omitempty"`
 }
 
+// ScalerStatusPeriod defines the current period status for a scaler.
 type ScalerStatusPeriod struct {
 	Spec       *RecurringPeriod      `json:"spec"`
 	SpecSHA    string                `json:"specSHA"`
@@ -64,12 +70,14 @@ type ScalerStatusPeriod struct {
 	Failed     []ScalerStatusFailed  `json:"failed,omitempty"`
 }
 
+// ScalerStatusSuccess represents a successful scaling operation.
 type ScalerStatusSuccess struct {
 	Kind    string `json:"kind"`
 	Name    string `json:"name"`
 	Comment string `json:"comment,omitempty"`
 }
 
+// ScalerStatusFailed represents a failed scaling operation.
 type ScalerStatusFailed struct {
 	Kind   string `json:"kind"`
 	Name   string `json:"name"`

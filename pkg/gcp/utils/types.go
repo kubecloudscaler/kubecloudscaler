@@ -1,3 +1,4 @@
+// Package utils provides type definitions for GCP resource management.
 package utils
 
 import (
@@ -6,8 +7,9 @@ import (
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// GcpResource represents a GCP resource configuration.
 type GcpResource struct {
-	ProjectId string
+	ProjectID string
 	Region    string
 	Zone      string
 	Period    *periodPkg.Period `json:"period,omitempty"`
@@ -20,8 +22,9 @@ type ClientSet struct {
 	Regions        *compute.RegionsClient
 }
 
+// Config defines the configuration for GCP resource management.
 type Config struct {
-	ProjectId         string                `json:"projectId,omitempty"`
+	ProjectID         string                `json:"projectId,omitempty"`
 	Region            string                `json:"region,omitempty"`
 	Client            *ClientSet            `json:"client"`
 	Names             []string              `json:"names,omitempty"`
