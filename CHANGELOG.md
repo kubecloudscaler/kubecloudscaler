@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.5.3](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.5.2...v1.5.3) (2025-10-21)
+
+
+### Bug Fixes
+
+* excludeNamespaces ([#164](https://github.com/kubecloudscaler/kubecloudscaler/issues/164)) ([abb86c4](https://github.com/kubecloudscaler/kubecloudscaler/commit/abb86c40dd9b536fb80be0235371beb142eb492c))
+* rbac to allow listing namespaces ([cee0b7a](https://github.com/kubecloudscaler/kubecloudscaler/commit/cee0b7a094c53be544f505bc6e64709052605bcb))
+
 ## [1.5.2](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.5.1...v1.5.2) (2025-10-19)
 
 
