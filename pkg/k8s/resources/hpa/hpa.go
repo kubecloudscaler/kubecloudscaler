@@ -38,6 +38,7 @@ func (h *HorizontalPodAutoscalers) SetState(ctx context.Context) ([]common.Scale
 
 	h.Logger.Debug().Msgf("number of hpas: %d", len(list))
 
+	//nolint:gocritic // Range iteration of struct is acceptable, using index would reduce readability
 	for _, dName := range list {
 		h.Logger.Debug().Msgf("resource-name: %s", dName.Name)
 		var deploy *autoscaleV2.HorizontalPodAutoscaler

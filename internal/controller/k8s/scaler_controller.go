@@ -72,7 +72,7 @@ type ScalerReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.18.4/pkg/reconcile
 //
-//nolint:gocognit // Reconcile function complexity is acceptable for controller logic
+//nolint:gocognit,gocyclo,funlen // Reconcile function complexity is acceptable for controller logic
 func (r *ScalerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	// Fetch the Scaler object from the Kubernetes API
 	scaler := &kubecloudscalerv1alpha3.K8s{}

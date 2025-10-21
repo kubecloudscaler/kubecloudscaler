@@ -1,5 +1,7 @@
 // Package common provides shared API Schema definitions for the kubecloudscaler project.
 // +kubebuilder:object:generate=true
+//
+//nolint:revive // Package name 'common' is appropriate for shared API types
 package common
 
 import (

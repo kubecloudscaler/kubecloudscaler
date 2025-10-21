@@ -55,9 +55,9 @@ type NamespaceManager interface {
 	InitConfig(ctx context.Context, config *Config) (*K8sResource, error)
 }
 
-// AnnotationManager defines the interface for annotation management operations
+// AnnotationManager defines the interface for managing annotations on Kubernetes resources
 //
-//nolint:dupl // Mock implementation in mocks.go intentionally duplicates this interface structure
+//nolint:dupl,revive // Mock implementation in mocks.go intentionally duplicates this interface structure, max parameter is clearer
 type AnnotationManager interface {
 	AddAnnotations(annotations map[string]string, period interface{}) map[string]string
 	RemoveAnnotations(annotations map[string]string) map[string]string

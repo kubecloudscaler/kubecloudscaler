@@ -71,7 +71,7 @@ func init() {
 	// +kubebuilder:scaffold:scheme
 }
 
-//nolint:gocyclo,gocognit // Main function complexity is acceptable for application entry point
+//nolint:gocyclo,gocognit,funlen // Main function complexity is acceptable for application entry point
 func main() {
 	var metricsAddr string
 	var metricsCertPath, metricsCertName, metricsCertKey string

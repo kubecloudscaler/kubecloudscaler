@@ -1,4 +1,6 @@
 // Package utils provides utility functions for internal use in the kubecloudscaler project.
+//
+//nolint:revive // Package name 'utils' is acceptable for internal utility functions
 package utils
 
 import "errors"

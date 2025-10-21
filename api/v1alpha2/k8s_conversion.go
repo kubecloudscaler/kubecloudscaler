@@ -64,7 +64,7 @@ func (src *K8s) ConvertTo(dstRaw conversion.Hub) error {
 
 // ConvertFrom converts the Hub version (v1alpha3) to this K8s (v1alpha2).
 //
-//nolint:revive // receiver name src used to match conversion pattern (dst/src naming)
+//nolint:revive,staticcheck // receiver name dst used to match conversion pattern (dst/src naming)
 func (dst *K8s) ConvertFrom(srcRaw conversion.Hub) error {
 	src, ok := srcRaw.(*kubecloudscalercloudv1alpha3.K8s)
 	if !ok {

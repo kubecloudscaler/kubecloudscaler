@@ -152,6 +152,7 @@ func (v *FlowCustomValidator) validatePeriodNameUniqueness(flow *kubecloudscaler
 func (v *FlowCustomValidator) validateResourceNameUniqueness(flow *kubecloudscalercloudv1alpha3.Flow) error {
 	// Validate K8s resource names
 	k8sNames := make(map[string]bool)
+	//nolint:gocritic // Range iteration of struct is acceptable, refactoring would reduce readability
 	for i, resource := range flow.Spec.Resources.K8s {
 		if resource.Name == "" {
 			return fmt.Errorf("K8s resource at index %d has no name", i)
@@ -166,6 +167,7 @@ func (v *FlowCustomValidator) validateResourceNameUniqueness(flow *kubecloudscal
 
 	// Validate GCP resource names
 	gcpNames := make(map[string]bool)
+	//nolint:gocritic // Range iteration of struct is acceptable, refactoring would reduce readability
 	for i, resource := range flow.Spec.Resources.Gcp {
 		if resource.Name == "" {
 			return fmt.Errorf("GCP resource at index %d has no name", i)

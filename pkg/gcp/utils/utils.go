@@ -1,4 +1,6 @@
 // Package utils provides utility functions for GCP resource management in the kubecloudscaler project.
+//
+//nolint:revive // Package name 'utils' is acceptable for GCP utility functions
 package utils
 
 import (

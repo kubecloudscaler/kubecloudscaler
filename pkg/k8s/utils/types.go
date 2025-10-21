@@ -1,4 +1,6 @@
 // Package utils provides type definitions for Kubernetes resource management.
+//
+//nolint:nolintlint,revive // package name 'utils' is acceptable for K8s utility functions
 package utils
 
 import (

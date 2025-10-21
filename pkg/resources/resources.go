@@ -14,6 +14,9 @@ import (
 	// "github.com/kubecloudscaler/kubecloudscaler/pkg/k8s/resources/horizontalpodautoscalers"
 )
 
+// NewResource creates a new resource instance based on the resource type name.
+// It returns the created resource or an error if the resource type is invalid.
+//
 //nolint:gocyclo // Resource factory complexity is acceptable for switch-based resource selection
 func NewResource(resourceName string, config Config, logger *zerolog.Logger) (IResource, error) {
 	ctx := context.Background()

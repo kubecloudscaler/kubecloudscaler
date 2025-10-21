@@ -56,6 +56,8 @@ type MockNamespaceLister struct {
 }
 
 // List returns a mock namespace list.
+//
+//nolint:gocritic // metav1.ListOptions is a Kubernetes API type, passing by value is idiomatic
 func (m *MockNamespaceLister) List(ctx context.Context, opts metaV1.ListOptions) (*coreV1.NamespaceList, error) {
 	if m.ListFunc != nil {
 		return m.ListFunc(ctx, opts)
@@ -114,7 +116,7 @@ func (m *MockConfigProvider) GetPeriod() interface{} {
 
 // MockAnnotationManager is a mock implementation of AnnotationManager
 //
-//nolint:dupl // This struct intentionally duplicates the interface structure for mocking
+//nolint:dupl,revive // This struct intentionally duplicates the interface structure for mocking, max parameter is clearer than renaming
 type MockAnnotationManager struct {
 	AddAnnotationsFunc           func(annotations map[string]string, period interface{}) map[string]string
 	RemoveAnnotationsFunc        func(annotations map[string]string) map[string]string
@@ -143,7 +145,14 @@ func (m *MockAnnotationManager) RemoveAnnotations(annotations map[string]string)
 }
 
 // AddMinMaxAnnotations returns mock annotations with min/max replicas.
-func (m *MockAnnotationManager) AddMinMaxAnnotations(annot map[string]string, curPeriod interface{}, minReplicas *int32, max int32) map[string]string {
+//
+//nolint:gocritic,revive // Mock function signature must match interface, max parameter is clearer
+func (m *MockAnnotationManager) AddMinMaxAnnotations(
+	annot map[string]string,
+	curPeriod interface{},
+	minReplicas *int32,
+	max int32,
+) map[string]string {
 	if m.AddMinMaxAnnotationsFunc != nil {
 		return m.AddMinMaxAnnotationsFunc(annot, curPeriod, minReplicas, max)
 	}
@@ -151,6 +160,8 @@ func (m *MockAnnotationManager) AddMinMaxAnnotations(annot map[string]string, cu
 }
 
 // RestoreMinMaxAnnotations returns mock restored min/max annotations.
+//
+//nolint:gocritic // Multiple return values needed to match interface
 func (m *MockAnnotationManager) RestoreMinMaxAnnotations(annot map[string]string) (bool, *int32, int32, map[string]string, error) {
 	if m.RestoreMinMaxAnnotationsFunc != nil {
 		return m.RestoreMinMaxAnnotationsFunc(annot)
@@ -167,6 +178,8 @@ func (m *MockAnnotationManager) AddBoolAnnotations(annot map[string]string, curP
 }
 
 // RestoreBoolAnnotations returns mock restored boolean annotations.
+//
+//nolint:gocritic // Multiple return values needed to match interface
 func (m *MockAnnotationManager) RestoreBoolAnnotations(annot map[string]string) (bool, *bool, map[string]string, error) {
 	if m.RestoreBoolAnnotationsFunc != nil {
 		return m.RestoreBoolAnnotationsFunc(annot)
@@ -183,6 +196,8 @@ func (m *MockAnnotationManager) AddIntAnnotations(annot map[string]string, curPe
 }
 
 // RestoreIntAnnotations returns mock restored integer annotations.
+//
+//nolint:gocritic // Multiple return values needed to match interface
 func (m *MockAnnotationManager) RestoreIntAnnotations(annot map[string]string) (bool, *int32, map[string]string, error) {
 	if m.RestoreIntAnnotationsFunc != nil {
 		return m.RestoreIntAnnotationsFunc(annot)

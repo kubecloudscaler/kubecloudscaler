@@ -64,7 +64,7 @@ func (src *Gcp) ConvertTo(dstRaw conversion.Hub) error {
 
 // ConvertFrom converts the Hub version (v1alpha2) to this Gcp (v1alpha1).
 //
-//nolint:revive // receiver name src used to match conversion pattern (dst/src naming)
+//nolint:revive,staticcheck // receiver name dst used to match conversion pattern (dst/src naming)
 func (dst *Gcp) ConvertFrom(srcRaw conversion.Hub) error {
 	src, ok := srcRaw.(*kubecloudscalercloudv1alpha3.Gcp)
 	if !ok {

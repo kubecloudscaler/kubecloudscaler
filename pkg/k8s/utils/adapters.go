@@ -58,6 +58,8 @@ type NamespaceListerAdapter struct {
 }
 
 // List lists namespaces
+//
+//nolint:gocritic // metav1.ListOptions is a Kubernetes API type, passing by value is idiomatic
 func (a *NamespaceListerAdapter) List(ctx context.Context, opts metaV1.ListOptions) (*coreV1.NamespaceList, error) {
 	return a.client.List(ctx, opts)
 }

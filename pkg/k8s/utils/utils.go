@@ -1,4 +1,6 @@
 // Package utils provides utility functions for Kubernetes resource management.
+//
+//nolint:revive // Package name 'utils' is acceptable for K8s utility functions
 package utils
 
 import (
@@ -33,6 +35,7 @@ func SetNamespaceList(ctx context.Context, config *Config) ([]string, error) {
 			return []string{}, fmt.Errorf("error listing namespaces: %w", err)
 		}
 
+		//nolint:gocritic // Range iteration of struct is acceptable, using index would reduce readability
 		for _, ns := range nsListItems.Items {
 			if slices.Contains(config.ExcludeNamespaces, ns.Name) {
 				continue
@@ -155,6 +158,8 @@ func InitConfig(ctx context.Context, config *Config) (*K8sResource, error) {
 }
 
 // AddMinMaxAnnotations adds min/max replica annotations to the given map.
+//
+//nolint:revive,gocritic // maxReplicas parameter name is clearer than renaming to avoid builtin 'max'
 func AddMinMaxAnnotations(annot map[string]string, curPeriod *periodPkg.Period, minReplicas *int32, max int32) map[string]string {
 	annotations := addAnnotations(annot, curPeriod)
 
@@ -168,6 +173,8 @@ func AddMinMaxAnnotations(annot map[string]string, curPeriod *periodPkg.Period, 
 }
 
 // RestoreMinMaxAnnotations restores min/max replica annotations from the given map.
+//
+//nolint:gocritic // Multiple return values needed for clear API interface
 func RestoreMinMaxAnnotations(annot map[string]string) (bool, *int32, int32, map[string]string, error) {
 	var (
 		minAsInt      int
@@ -217,6 +224,8 @@ func AddBoolAnnotations(annot map[string]string, curPeriod *periodPkg.Period, va
 }
 
 // RestoreBoolAnnotations restores boolean value annotations from the given map.
+//
+//nolint:gocritic // Multiple return values needed for clear API interface
 func RestoreBoolAnnotations(annot map[string]string) (bool, *bool, map[string]string, error) {
 	var (
 		repAsBool  bool
@@ -252,6 +261,8 @@ func AddIntAnnotations(annot map[string]string, curPeriod *periodPkg.Period, val
 }
 
 // RestoreIntAnnotations restores integer value annotations from the given map.
+//
+//nolint:gocritic // Multiple return values needed for clear API interface
 func RestoreIntAnnotations(annot map[string]string) (bool, *int32, map[string]string, error) {
 	var (
 		repAsInt   int

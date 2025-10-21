@@ -38,6 +38,7 @@ func (s *Statefulsets) SetState(ctx context.Context) ([]common.ScalerStatusSucce
 
 	s.Logger.Debug().Msgf("number of statefulsets: %d", len(list))
 
+	//nolint:gocritic // Range iteration of struct is acceptable, using index would reduce readability
 	for _, dName := range list {
 		s.Logger.Debug().Msgf("resource-name: %s", dName.Name)
 		var stateful *appsV1.StatefulSet

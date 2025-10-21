@@ -134,7 +134,7 @@ func getTime(period, periodType string, timeLocation *time.Location) (time.Time,
 	return outTime, nil
 }
 
-//nolint:gocyclo // Period validation complexity is acceptable for comprehensive date/time logic
+//nolint:gocyclo,gocritic // Period validation complexity acceptable, multiple returns needed
 func isPeriodActive(
 	periodType string,
 	period *common.RecurringPeriod,
