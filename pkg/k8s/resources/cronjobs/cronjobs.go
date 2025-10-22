@@ -62,7 +62,7 @@ func (c *Cronjobs) SetState(ctx context.Context) ([]common.ScalerStatusSuccess, 
 		case "down":
 			c.Logger.Debug().Msgf("scaling down: %s", cName.Name)
 
-			cronjob.Annotations = utils.AddBoolAnnotations(cronjob.Annotations, c.Resource.Period, suspended)
+			cronjob.Annotations = utils.AddBoolAnnotations(cronjob.Annotations, c.Resource.Period, ptr.Deref(cronjob.Spec.Suspend, false))
 
 			cronjob.Spec.Suspend = ptr.To(suspended)
 
