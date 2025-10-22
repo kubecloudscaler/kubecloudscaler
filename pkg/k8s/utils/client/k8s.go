@@ -1,3 +1,4 @@
+// Package clients provides Kubernetes client creation functionality.
 package clients
 
 import (

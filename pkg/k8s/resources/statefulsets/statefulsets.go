@@ -17,6 +17,7 @@ func (s *Statefulsets) init(client kubernetes.Interface) {
 	s.Client = client.AppsV1()
 }
 
+// SetState sets the state of StatefulSet resources based on the current period.
 func (s *Statefulsets) SetState(ctx context.Context) ([]common.ScalerStatusSuccess, []common.ScalerStatusFailed, error) {
 	scalerStatusSuccess := []common.ScalerStatusSuccess{}
 	scalerStatusFailed := []common.ScalerStatusFailed{}
@@ -37,6 +38,7 @@ func (s *Statefulsets) SetState(ctx context.Context) ([]common.ScalerStatusSucce
 
 	s.Logger.Debug().Msgf("number of statefulsets: %d", len(list))
 
+	//nolint:gocritic // Range iteration of struct is acceptable, using index would reduce readability
 	for _, dName := range list {
 		s.Logger.Debug().Msgf("resource-name: %s", dName.Name)
 		var stateful *appsV1.StatefulSet

@@ -1,3 +1,4 @@
+// Package cronjobs provides type definitions for CronJob resource management.
 package cronjobs
 
 import (
@@ -7,6 +8,7 @@ import (
 	"github.com/kubecloudscaler/kubecloudscaler/pkg/k8s/utils"
 )
 
+// Cronjobs represents a CronJob resource manager.
 type Cronjobs struct {
 	Resource *utils.K8sResource
 	Client   v1.BatchV1Interface

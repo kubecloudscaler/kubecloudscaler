@@ -41,11 +41,14 @@ spec:
             properties:
               flows:
                 items:
+                  description: Flows defines a flow configuration with period and
+                    resources.
                   properties:
                     periodName:
                       type: string
                     resources:
                       items:
+                        description: FlowResource defines a resource within a flow.
                         properties:
                           delay:
                             description: |-
@@ -68,6 +71,8 @@ spec:
               periods:
                 description: Time period to scale
                 items:
+                  description: ScalerPeriod defines a scaling period with time constraints
+                    and replica limits.
                   properties:
                     maxReplicas:
                       description: Maximum replicas
@@ -82,8 +87,12 @@ spec:
                       pattern: ^(|[a-zA-Z0-9][a-zA-Z0-9_-]*)$
                       type: string
                     time:
+                      description: TimePeriod defines the time configuration for a
+                        scaling period.
                       properties:
                         fixed:
+                          description: FixedPeriod defines a fixed time period for
+                            scaling operations.
                           properties:
                             endTime:
                               pattern: ^\d{4}-(0?[1-9]|1[0,1,2])-(0?[1-9]|[12][0-9]|3[01])
@@ -111,6 +120,8 @@ spec:
                           - startTime
                           type: object
                         recurring:
+                          description: RecurringPeriod defines a recurring time period
+                            for scaling operations.
                           properties:
                             days:
                               items:
@@ -154,8 +165,12 @@ spec:
                 properties:
                   gcp:
                     items:
+                      description: GcpResource defines a GCP resource configuration
+                        in a flow.
                       properties:
                         config:
+                          description: GcpConfig defines the configuration for GCP
+                            resource management.
                           properties:
                             authSecret:
                               description: AuthSecret name
@@ -168,7 +183,7 @@ spec:
                               - up
                               type: string
                             projectId:
-                              description: ProjectId
+                              description: ProjectID
                               type: string
                             region:
                               description: Region
@@ -187,6 +202,8 @@ spec:
                         name:
                           type: string
                         resources:
+                          description: Resources defines the configuration for managed
+                            resources.
                           properties:
                             labelSelector:
                               description: Labels selectors
@@ -255,8 +272,12 @@ spec:
                     type: array
                   k8s:
                     items:
+                      description: K8sResource defines a Kubernetes resource configuration
+                        in a flow.
                       properties:
                         config:
+                          description: K8sConfig defines the configuration for Kubernetes
+                            resource management.
                           properties:
                             authSecret:
                               description: AuthSecret name
@@ -291,6 +312,8 @@ spec:
                         name:
                           type: string
                         resources:
+                          description: Resources defines the configuration for managed
+                            resources.
                           properties:
                             labelSelector:
                               description: Labels selectors

@@ -42,9 +42,10 @@ type GcpSpec struct {
 	Config GcpConfig `json:"config,omitempty"`
 }
 
+// GcpConfig defines the configuration for GCP resource management.
 type GcpConfig struct {
-	// ProjectId
-	ProjectId string `json:"projectId"`
+	// ProjectID
+	ProjectID string `json:"projectId"`
 	// Region
 	Region string `json:"region,omitempty"`
 	// AuthSecret name

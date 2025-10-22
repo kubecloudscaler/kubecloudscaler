@@ -1,7 +1,8 @@
+// Package period provides period management functionality for the kubecloudscaler project.
 package period
 
 import (
-	"crypto/sha1" //nolint: gosec
+	"crypto/sha1" //nolint:gosec // SHA1 is used for hash generation, not cryptographic security
 	"encoding/json"
 	"fmt"
 	"slices"
@@ -12,6 +13,14 @@ import (
 	"k8s.io/utils/ptr"
 )
 
+const (
+	// SundayIndex represents Sunday in the week days slice (index 7).
+	SundayIndex = 7
+	// EndTimeInclusiveSeconds is added to make end time inclusive.
+	EndTimeInclusiveSeconds = 59
+)
+
+// New creates a new Period from the given ScalerPeriod configuration.
 func New(period *common.ScalerPeriod) (*Period, error) {
 	var err error
 
@@ -56,7 +65,7 @@ func New(period *common.ScalerPeriod) (*Period, error) {
 		return nil, fmt.Errorf("error marshalling period: %w", err)
 	}
 
-	curPeriod.Hash = fmt.Sprintf("%x", sha1.Sum(periodData)) //nolint: gosec
+	curPeriod.Hash = fmt.Sprintf("%x", sha1.Sum(periodData)) //nolint:gosec // SHA1 is used for hash generation, not cryptographic security
 
 	return curPeriod, nil
 }
@@ -80,7 +89,7 @@ func isDay(day string, localTime *time.Time) (bool, error) {
 	switch indexedDay {
 	case -1:
 		return false, fmt.Errorf("%w: %s", ErrBadDay, day)
-	case 7:
+	case SundayIndex:
 		indexedDay = localDay
 	}
 
@@ -125,6 +134,7 @@ func getTime(period, periodType string, timeLocation *time.Location) (time.Time,
 	return outTime, nil
 }
 
+//nolint:gocyclo,gocritic // Period validation complexity acceptable, multiple returns needed
 func isPeriodActive(
 	periodType string,
 	period *common.RecurringPeriod,
@@ -177,7 +187,7 @@ func isPeriodActive(
 		return false, time.Time{}, time.Time{}, nil, err
 	}
 
-	endTime = endTime.Add(time.Second * 59) // end time is inclusive, so we add 59 seconds
+	endTime = endTime.Add(time.Second * EndTimeInclusiveSeconds) // end time is inclusive, so we add 59 seconds
 
 	if startTime.After(endTime) {
 		return false, time.Time{}, time.Time{}, nil, ErrStartAfterEnd

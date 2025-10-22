@@ -1,3 +1,4 @@
+// Package utils provides utility functions for internal use in the kubecloudscaler project.
 package utils
 
 import (
@@ -10,6 +11,8 @@ import (
 	periodPkg "github.com/kubecloudscaler/kubecloudscaler/pkg/period"
 )
 
+// IgnoreDeletionPredicate returns a predicate that ignores deletion events.
+// It only processes updates where the generation changes and deletes where the state is unknown.
 func IgnoreDeletionPredicate() predicate.Predicate {
 	return predicate.Funcs{
 		UpdateFunc: func(e event.UpdateEvent) bool {
@@ -23,6 +26,9 @@ func IgnoreDeletionPredicate() predicate.Predicate {
 	}
 }
 
+// ValidatePeriod validates and returns the active period from the given periods.
+// It checks if any period is currently active and updates the status accordingly.
+// If forceRestore is true, it uses a restore period that spans the entire day.
 func ValidatePeriod(periods []*common.ScalerPeriod, status *common.ScalerStatus, forceRestore bool) (*periodPkg.Period, error) {
 	// check we are in an active period
 	restorePeriod := &common.ScalerPeriod{

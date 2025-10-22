@@ -38,8 +38,8 @@ type GcpSpec struct {
 	// Resources
 	Resources common.Resources `json:"resources"`
 
-	// ProjectId
-	ProjectId string `json:"projectId"`
+	// ProjectID
+	ProjectID string `json:"projectId"`
 	// Region
 	Region string `json:"region,omitempty"`
 	// AuthSecret name

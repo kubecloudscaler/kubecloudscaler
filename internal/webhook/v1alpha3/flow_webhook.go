@@ -32,7 +32,6 @@ import (
 	kubecloudscalercloudv1alpha3 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha3"
 )
 
-// nolint:unused
 // log is for logging in this package.
 var flowlog = logf.Log.WithName("flow-resource")
 
@@ -48,6 +47,8 @@ func SetupFlowWebhookWithManager(mgr ctrl.Manager) error {
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
 // NOTE: The 'path' attribute must follow a specific pattern and should not be modified directly here.
 // Modifying the path for an invalid path can cause API server errors; failing to locate the webhook.
+//
+//nolint:lll // Kubebuilder webhook annotation cannot be split across lines
 // +kubebuilder:webhook:path=/validate-kubecloudscaler-cloud-v1alpha3-flow,mutating=false,failurePolicy=fail,sideEffects=None,groups=kubecloudscaler.cloud,resources=flows,verbs=create;update,versions=v1alpha3,name=vflow-v1alpha3.kb.io,admissionReviewVersions=v1
 
 // FlowCustomValidator struct is responsible for validating the Flow resource
@@ -79,7 +80,7 @@ func (v *FlowCustomValidator) ValidateCreate(_ context.Context, obj runtime.Obje
 }
 
 // ValidateUpdate implements webhook.CustomValidator so a webhook will be registered for the type Flow.
-func (v *FlowCustomValidator) ValidateUpdate(_ context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
+func (v *FlowCustomValidator) ValidateUpdate(_ context.Context, _, newObj runtime.Object) (admission.Warnings, error) {
 	flow, ok := newObj.(*kubecloudscalercloudv1alpha3.Flow)
 	if !ok {
 		return nil, fmt.Errorf("expected a Flow object for the newObj but got %T", newObj)
@@ -96,7 +97,7 @@ func (v *FlowCustomValidator) ValidateUpdate(_ context.Context, oldObj, newObj r
 }
 
 // ValidateDelete implements webhook.CustomValidator so a webhook will be registered for the type Flow.
-func (v *FlowCustomValidator) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+func (v *FlowCustomValidator) ValidateDelete(_ context.Context, obj runtime.Object) (admission.Warnings, error) {
 	flow, ok := obj.(*kubecloudscalercloudv1alpha3.Flow)
 	if !ok {
 		return nil, fmt.Errorf("expected a Flow object but got %T", obj)
@@ -151,6 +152,7 @@ func (v *FlowCustomValidator) validatePeriodNameUniqueness(flow *kubecloudscaler
 func (v *FlowCustomValidator) validateResourceNameUniqueness(flow *kubecloudscalercloudv1alpha3.Flow) error {
 	// Validate K8s resource names
 	k8sNames := make(map[string]bool)
+	//nolint:gocritic // Range iteration of struct is acceptable, refactoring would reduce readability
 	for i, resource := range flow.Spec.Resources.K8s {
 		if resource.Name == "" {
 			return fmt.Errorf("K8s resource at index %d has no name", i)
@@ -165,6 +167,7 @@ func (v *FlowCustomValidator) validateResourceNameUniqueness(flow *kubecloudscal
 
 	// Validate GCP resource names
 	gcpNames := make(map[string]bool)
+	//nolint:gocritic // Range iteration of struct is acceptable, refactoring would reduce readability
 	for i, resource := range flow.Spec.Resources.Gcp {
 		if resource.Name == "" {
 			return fmt.Errorf("GCP resource at index %d has no name", i)
@@ -188,6 +191,8 @@ func (v *FlowCustomValidator) validateResourceNameUniqueness(flow *kubecloudscal
 }
 
 // validateFlowTimings validates that the sum of delays for each period doesn't exceed the period duration
+//
+//nolint:gocognit // Validation function complexity is acceptable for comprehensive timing checks
 func (v *FlowCustomValidator) validateFlowTimings(flow *kubecloudscalercloudv1alpha3.Flow) error {
 	for i := range flow.Spec.Periods {
 		period := &flow.Spec.Periods[i]

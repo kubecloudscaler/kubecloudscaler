@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+// Package utils provides interface definitions for Kubernetes resource management.
 package utils
 
 import (
@@ -54,11 +55,13 @@ type NamespaceManager interface {
 	InitConfig(ctx context.Context, config *Config) (*K8sResource, error)
 }
 
-// AnnotationManager defines the interface for annotation management operations
+// AnnotationManager defines the interface for managing annotations on Kubernetes resources
+//
+//nolint:dupl,revive // Mock implementation in mocks.go intentionally duplicates this interface structure, max parameter is clearer
 type AnnotationManager interface {
 	AddAnnotations(annotations map[string]string, period interface{}) map[string]string
 	RemoveAnnotations(annotations map[string]string) map[string]string
-	AddMinMaxAnnotations(annot map[string]string, curPeriod interface{}, min *int32, max int32) map[string]string
+	AddMinMaxAnnotations(annot map[string]string, curPeriod interface{}, minReplicas *int32, max int32) map[string]string
 	RestoreMinMaxAnnotations(annot map[string]string) (bool, *int32, int32, map[string]string, error)
 	AddBoolAnnotations(annot map[string]string, curPeriod interface{}, value bool) map[string]string
 	RestoreBoolAnnotations(annot map[string]string) (bool, *bool, map[string]string, error)

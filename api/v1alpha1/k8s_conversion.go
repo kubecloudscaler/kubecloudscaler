@@ -17,6 +17,8 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"fmt"
+
 	"github.com/rs/zerolog/log"
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
 
@@ -26,7 +28,10 @@ import (
 
 // ConvertTo converts this K8s (v1alpha1) to the Hub version (v1alpha2).
 func (src *K8s) ConvertTo(dstRaw conversion.Hub) error {
-	dst := dstRaw.(*kubecloudscalercloudv1alpha3.K8s)
+	dst, ok := dstRaw.(*kubecloudscalercloudv1alpha3.K8s)
+	if !ok {
+		return fmt.Errorf("expected *kubecloudscalercloudv1alpha3.K8s, got %T", dstRaw)
+	}
 	log.Debug().Msgf("ConvertTo: Converting K8s from Spoke version v1alpha1 to Hub version v1alpha3;"+
 		"source: %s/%s, target: %s/%s", src.Namespace, src.Name, dst.Namespace, dst.Name)
 
@@ -58,9 +63,14 @@ func (src *K8s) ConvertTo(dstRaw conversion.Hub) error {
 	return nil
 }
 
-// ConvertFrom converts the Hub version (v1alpha2) to this K8s (v1alpha1).
+// ConvertFrom converts the Hub version (v1alpha3) to this K8s (v1alpha1).
+//
+//nolint:revive,staticcheck // receiver name dst used to match conversion pattern (dst/src naming)
 func (dst *K8s) ConvertFrom(srcRaw conversion.Hub) error {
-	src := srcRaw.(*kubecloudscalercloudv1alpha3.K8s)
+	src, ok := srcRaw.(*kubecloudscalercloudv1alpha3.K8s)
+	if !ok {
+		return fmt.Errorf("expected *kubecloudscalercloudv1alpha3.K8s, got %T", srcRaw)
+	}
 	log.Debug().Msgf("ConvertFrom: Converting K8s from Hub version v1alpha3 to Spoke version v1alpha1;"+
 		"source: %s/%s, target: %s/%s", src.Namespace, src.Name, dst.Namespace, dst.Name)
 

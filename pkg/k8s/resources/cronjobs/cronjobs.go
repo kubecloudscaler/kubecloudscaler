@@ -1,3 +1,4 @@
+// Package cronjobs provides CronJob scaling functionality for Kubernetes resources.
 package cronjobs
 
 import (
@@ -17,6 +18,7 @@ func (c *Cronjobs) init(client kubernetes.Interface) {
 	c.Client = client.BatchV1()
 }
 
+// SetState sets the state of CronJob resources based on the current period.
 func (c *Cronjobs) SetState(ctx context.Context) ([]common.ScalerStatusSuccess, []common.ScalerStatusFailed, error) {
 	scalerStatusSuccess := []common.ScalerStatusSuccess{}
 	scalerStatusFailed := []common.ScalerStatusFailed{}
@@ -38,6 +40,7 @@ func (c *Cronjobs) SetState(ctx context.Context) ([]common.ScalerStatusSuccess, 
 
 	c.Logger.Debug().Msgf("number of cronjobs: %d", len(list))
 
+	//nolint:gocritic // Range iteration of struct is acceptable, using index would reduce readability
 	for _, cName := range list {
 		c.Logger.Debug().Msgf("resource-name: %s", cName.Name)
 

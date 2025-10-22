@@ -7,9 +7,11 @@
 
 ## kubecloudscaler.cloud/common
 
-Package v1alpha1 contains API Schema definitions for the k8s v1alpha1 API group
+Package common contains shared API Schema definitions for the kubecloudscaler project.
 
+Package common contains shared API Schema definitions for the kubecloudscaler project.
 
+Package common provides shared API Schema definitions for the kubecloudscaler project.
 
 
 
@@ -17,7 +19,7 @@ Package v1alpha1 contains API Schema definitions for the k8s v1alpha1 API group
 
 
 
-
+FixedPeriod defines a fixed time period for scaling operations.
 
 
 
@@ -38,7 +40,7 @@ _Appears in:_
 
 
 
-
+RecurringPeriod defines a recurring time period for scaling operations.
 
 
 
@@ -61,7 +63,7 @@ _Appears in:_
 
 
 
-
+Resources defines the configuration for managed resources.
 
 
 
@@ -82,7 +84,7 @@ _Appears in:_
 
 
 
-
+ScalerPeriod defines a scaling period with time constraints and replica limits.
 
 
 
@@ -104,7 +106,7 @@ _Appears in:_
 
 
 
-ScalerStatus defines the observed state of Scaler
+ScalerStatus defines the observed state of Scaler.
 
 
 
@@ -122,7 +124,7 @@ _Appears in:_
 
 
 
-
+ScalerStatusFailed represents a failed scaling operation.
 
 
 
@@ -140,7 +142,7 @@ _Appears in:_
 
 
 
-
+ScalerStatusPeriod defines the current period status for a scaler.
 
 
 
@@ -160,7 +162,7 @@ _Appears in:_
 
 
 
-
+ScalerStatusSuccess represents a successful scaling operation.
 
 
 
@@ -178,7 +180,7 @@ _Appears in:_
 
 
 
-
+TimePeriod defines the time configuration for a scaling period.
 
 
 
@@ -194,6 +196,7 @@ _Appears in:_
 
 ## kubecloudscaler.cloud/v1alpha3
 
+Package v1alpha3 contains API Schema definitions for the kubecloudscaler v1alpha3 API group.
 
 Package v1alpha3 contains API Schema definitions for the  v1alpha3 API group.
 
@@ -247,7 +250,7 @@ FlowList contains a list of Flow
 
 
 
-
+FlowResource defines a resource within a flow.
 
 
 
@@ -298,7 +301,7 @@ _Appears in:_
 
 
 
-
+Flows defines a flow configuration with period and resources.
 
 
 
@@ -334,7 +337,7 @@ Gcp is the Schema for the gcps API
 
 
 
-
+GcpConfig defines the configuration for GCP resource management.
 
 
 
@@ -344,7 +347,7 @@ _Appears in:_
 
 | Field | Description | Default | Validation |
 | --- | --- | --- | --- |
-| `projectId` _string_ | ProjectId |  |  |
+| `projectId` _string_ | ProjectID |  |  |
 | `region` _string_ | Region |  |  |
 | `authSecret` _string_ | AuthSecret name |  |  |
 | `restoreOnDelete` _boolean_ | Restore resource state on CR deletion (default: true) | true |  |
@@ -356,7 +359,7 @@ _Appears in:_
 
 
 
-
+GcpResource defines a GCP resource configuration in a flow.
 
 
 
@@ -412,7 +415,7 @@ K8s is the Schema for the k8s API
 
 
 
-
+K8sConfig defines the configuration for Kubernetes resource management.
 
 
 
@@ -423,8 +426,8 @@ _Appears in:_
 | Field | Description | Default | Validation |
 | --- | --- | --- | --- |
 | `namespaces` _string array_ | Namespaces |  |  |
-| `excludeNamespaces` _string array_ | Exclude namespaces from downscaling |  |  |
-| `forceExcludeSystemNamespaces` _boolean_ | Force exclude system namespaces |  |  |
+| `excludeNamespaces` _string array_ | Exclude namespaces from downscaling; will be ignored if `Namespaces` is set |  |  |
+| `forceExcludeSystemNamespaces` _boolean_ | Force exclude system namespaces | true |  |
 | `deploymentTimeAnnotation` _string_ | Deployment time annotation |  |  |
 | `disableEvents` _boolean_ | Disable events |  |  |
 | `authSecret` _string_ | AuthSecret name |  |  |
@@ -435,7 +438,7 @@ _Appears in:_
 
 
 
-
+K8sResource defines a Kubernetes resource configuration in a flow.
 
 
 
@@ -472,7 +475,7 @@ _Appears in:_
 
 
 
-
+Resources defines the configuration for managed resources in a flow.
 
 
 

@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+// Package utils provides namespace management functionality for Kubernetes resources.
 package utils
 
 import (
@@ -33,6 +34,8 @@ type namespaceManager struct {
 }
 
 // NewNamespaceManager creates a new namespace manager
+//
+//nolint:gocritic // zerolog.Logger is designed to be passed by value
 func NewNamespaceManager(client KubernetesClient, logger zerolog.Logger) NamespaceManager {
 	return &namespaceManager{
 		client: client,
@@ -55,6 +58,7 @@ func (nm *namespaceManager) SetNamespaceList(ctx context.Context, config *Config
 			return []string{}, fmt.Errorf("error listing namespaces: %w", err)
 		}
 
+		//nolint:gocritic // Range iteration of struct is acceptable, using index would reduce readability
 		for _, ns := range nsListItems.Items {
 			if slices.Contains(config.ExcludeNamespaces, ns.Name) {
 				continue

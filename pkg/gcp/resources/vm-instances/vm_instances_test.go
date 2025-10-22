@@ -24,7 +24,7 @@ var _ = Describe("ComputeInstances", func() {
 		ctx = log.Logger.WithContext(ctx)
 		config = &utils.Config{
 			Client:            &utils.ClientSet{},
-			ProjectId:         "test-project",
+			ProjectID:         "test-project",
 			Region:            "us-central1",
 			DefaultPeriodType: "down",
 		}
@@ -72,7 +72,7 @@ var _ = Describe("ComputeInstances", func() {
 
 		Context("when project ID is empty", func() {
 			BeforeEach(func() {
-				config.ProjectId = ""
+				config.ProjectID = ""
 			})
 
 			It("should return an error", func() {

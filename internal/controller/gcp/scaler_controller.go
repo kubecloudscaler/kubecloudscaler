@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+// Package gcp provides GCP controller functionality for the kubecloudscaler project.
 package gcp
 
 import (
@@ -36,6 +37,11 @@ import (
 	gcpUtils "github.com/kubecloudscaler/kubecloudscaler/pkg/gcp/utils"
 	gcpClient "github.com/kubecloudscaler/kubecloudscaler/pkg/gcp/utils/client"
 	"github.com/kubecloudscaler/kubecloudscaler/pkg/resources"
+)
+
+const (
+	// RequeueDelaySeconds is the delay in seconds before requeuing a run-once period.
+	RequeueDelaySeconds = 5
 )
 
 // ScalerReconciler reconciles a Scaler object
@@ -64,6 +70,8 @@ type ScalerReconciler struct {
 //
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.18.4/pkg/reconcile
+//
+//nolint:gocognit,gocyclo,funlen // Reconcile function complexity is acceptable for controller logic
 func (r *ScalerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	// Fetch the Scaler object from the Kubernetes API
 	scaler := &kubecloudscalerv1alpha3.Gcp{}
@@ -80,7 +88,7 @@ func (r *ScalerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	scalerFinalize := false
 
 	// Check if the object is being deleted by examining the DeletionTimestamp
-	if scaler.ObjectMeta.DeletionTimestamp.IsZero() {
+	if scaler.DeletionTimestamp.IsZero() {
 		// Object is not being deleted - ensure finalizer is present
 		// The finalizer ensures we can perform cleanup operations before deletion
 		if !controllerutil.ContainsFinalizer(scaler, scalerFinalizer) {
@@ -122,7 +130,8 @@ func (r *ScalerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 
 	// Initialize GCP client for resource operations
 	// This client is used to interact with the GCP Compute Engine API
-	gcpClient, err := gcpClient.GetClient(secret, scaler.Spec.Config.ProjectId)
+	//nolint:gocritic // gcpClient variable name intentionally shadows imported package for clarity
+	gcpClient, err := gcpClient.GetClient(secret, scaler.Spec.Config.ProjectID)
 	if err != nil {
 		r.Logger.Error().Err(err).Msg("unable to get GCP client")
 
@@ -133,7 +142,7 @@ func (r *ScalerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	resourceConfig := resources.Config{
 		GCP: &gcpUtils.Config{
 			Client:            gcpClient,
-			ProjectId:         scaler.Spec.Config.ProjectId,
+			ProjectID:         scaler.Spec.Config.ProjectID,
 			Region:            scaler.Spec.Config.Region,
 			Names:             scaler.Spec.Resources.Names,
 			LabelSelector:     scaler.Spec.Resources.LabelSelector,
@@ -157,7 +166,7 @@ func (r *ScalerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	if err != nil {
 		// Handle run-once period - requeue until the period ends
 		if errors.Is(err, utils.ErrRunOncePeriod) {
-			return ctrl.Result{RequeueAfter: time.Until(resourceConfig.GCP.Period.GetEndTime.Add(5 * time.Second))}, nil
+			return ctrl.Result{RequeueAfter: time.Until(resourceConfig.GCP.Period.GetEndTime.Add(RequeueDelaySeconds * time.Second))}, nil
 		}
 
 		// Update status with error information
@@ -178,17 +187,7 @@ func (r *ScalerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 
 	// Validate and filter the list of resources to be scaled
 	// This ensures only valid resource types are processed
-	resourceList, err := r.validResourceList(scaler)
-	if err != nil {
-		r.Logger.Error().Err(err).Msg("unable to get valid resources")
-		scaler.Status.Comments = ptr.To(err.Error())
-
-		if err := r.Status().Update(ctx, scaler); err != nil {
-			r.Logger.Error().Err(err).Msg("unable to update scaler status")
-		}
-
-		return ctrl.Result{}, nil
-	}
+	resourceList := r.validResourceList(scaler)
 
 	r.Logger.Debug().Msgf("resourceList: %v", resourceList)
 
@@ -256,11 +255,11 @@ func (r *ScalerReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 // validResourceList validates and filters the list of resources to be scaled.
 // It ensures that only valid resource types are included for GCP resources.
-func (r *ScalerReconciler) validResourceList(scaler *kubecloudscalerv1alpha3.Gcp) ([]string, error) {
+func (r *ScalerReconciler) validResourceList(scaler *kubecloudscalerv1alpha3.Gcp) []string {
 	// Default to compute instances if no resources are specified
 	if len(scaler.Spec.Resources.Types) == 0 {
 		scaler.Spec.Resources.Types = []string{resources.DefaultGCPResourceType}
 	}
 
-	return scaler.Spec.Resources.Types, nil
+	return scaler.Spec.Resources.Types
 }

@@ -17,6 +17,7 @@ func (d *Deployments) init(client kubernetes.Interface) {
 	d.Client = client.AppsV1()
 }
 
+// SetState sets the state of Deployment resources based on the current period.
 func (d *Deployments) SetState(ctx context.Context) ([]common.ScalerStatusSuccess, []common.ScalerStatusFailed, error) {
 	scalerStatusSuccess := []common.ScalerStatusSuccess{}
 	scalerStatusFailed := []common.ScalerStatusFailed{}
@@ -37,6 +38,7 @@ func (d *Deployments) SetState(ctx context.Context) ([]common.ScalerStatusSucces
 
 	d.Logger.Debug().Msgf("number of deployments: %d", len(list))
 
+	//nolint:gocritic // Range iteration of struct is acceptable, using index would reduce readability
 	for _, dName := range list {
 		d.Logger.Debug().Msgf("resource-name: %s", dName.Name)
 		var deploy *appsV1.Deployment

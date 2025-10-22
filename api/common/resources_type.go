@@ -1,10 +1,14 @@
+// Package common provides shared API Schema definitions for the kubecloudscaler project.
 // +kubebuilder:object:generate=true
+//
+//nolint:revive // Package name 'common' is appropriate for shared API types
 package common
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// Resources defines the configuration for managed resources.
 type Resources struct {
 	// Types of resources
 	// K8s: deployments, statefulsets, ... (default: deployments)

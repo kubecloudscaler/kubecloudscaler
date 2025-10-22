@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+// Package utils provides adapter implementations for Kubernetes resource management.
 package utils
 
 import (
@@ -57,6 +58,8 @@ type NamespaceListerAdapter struct {
 }
 
 // List lists namespaces
+//
+//nolint:gocritic // metav1.ListOptions is a Kubernetes API type, passing by value is idiomatic
 func (a *NamespaceListerAdapter) List(ctx context.Context, opts metaV1.ListOptions) (*coreV1.NamespaceList, error) {
 	return a.client.List(ctx, opts)
 }
@@ -65,9 +68,7 @@ func (a *NamespaceListerAdapter) List(ctx context.Context, opts metaV1.ListOptio
 func NewFakeKubernetesClient(objects ...interface{}) KubernetesClient {
 	// Convert interface{} to runtime.Object
 	runtimeObjects := make([]interface{}, len(objects))
-	for i, obj := range objects {
-		runtimeObjects[i] = obj
-	}
+	copy(runtimeObjects, objects)
 	fakeClient := fake.NewSimpleClientset()
 	return NewKubernetesClientAdapter(fakeClient)
 }
