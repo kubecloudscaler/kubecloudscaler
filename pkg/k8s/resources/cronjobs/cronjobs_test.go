@@ -115,6 +115,7 @@ var _ = Describe("Cronjobs", func() {
 				updatedCronJob, err := fakeClient.BatchV1().CronJobs(testNamespace).Get(ctx, testCronjob, metaV1.GetOptions{})
 				Expect(err).ToNot(HaveOccurred())
 				Expect(updatedCronJob.Annotations).To(HaveKey(utils.AnnotationsPrefix + "/" + utils.AnnotationsOrigValue))
+				Expect(updatedCronJob.Annotations[utils.AnnotationsPrefix+"/"+utils.AnnotationsOrigValue]).To(Equal("false"))
 			})
 		})
 

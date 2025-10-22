@@ -64,11 +64,19 @@ type Flows struct {
 type FlowResource struct {
 	Name string `json:"name"`
 
-	// Delay is the duration to delay the start of the period
+	// StartTimeDelay is the duration to delay the start of the period
 	// It is a duration in minutes
 	// It is optional and if not provided, the period will start at the start time of the period
 	// +kubebuilder:validation:Pattern=`^\d*m$`
-	Delay *string `json:"delay,omitempty"`
+	// +kubebuilder:default:="0m"
+	StartTimeDelay string `json:"startTimeDelay,omitempty"`
+
+	// EndTimeDelay is the duration to delay the end of the period
+	// It is a duration in minutes
+	// It is optional and if not provided, the period will end at the end time of the period
+	// +kubebuilder:validation:Pattern=`^\d*m$`
+	// +kubebuilder:default:="0m"
+	EndTimeDelay string `json:"endTimeDelay,omitempty"`
 }
 
 // FlowStatus defines the observed state of Flow.
