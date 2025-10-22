@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.5.4](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.5.3...v1.5.4) (2025-10-22)
+
+
+### Bug Fixes
+
+* cronjobs original value annotation ([929eb88](https://github.com/kubecloudscaler/kubecloudscaler/commit/929eb88113a1487942c97dd94afe07ea55fdbb0a))
+* **deps:** update all non-major dependencies ([#168](https://github.com/kubecloudscaler/kubecloudscaler/issues/168)) ([c711efa](https://github.com/kubecloudscaler/kubecloudscaler/commit/c711efac54d9ff4d9af0e413eb0dc2f7efc62644))
+* lint ([#166](https://github.com/kubecloudscaler/kubecloudscaler/issues/166)) ([2b002d2](https://github.com/kubecloudscaler/kubecloudscaler/commit/2b002d2fe3645b4d080b5978be0e4f5204afc383))
+
 ## [1.5.3](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.5.2...v1.5.3) (2025-10-21)
 
 
