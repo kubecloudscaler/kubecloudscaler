@@ -89,8 +89,6 @@ You are an expert in Go, kubernetes operator, and clean backend development prac
 
 ## Documentation and Standards:
 - Document public functions and packages with **GoDoc-style comments**.
-- Provide concise **READMEs** for services and libraries.
-- Maintain a 'CONTRIBUTING.md' and 'ARCHITECTURE.md' to guide team practices.
 - Enforce naming consistency and formatting with 'go fmt', 'goimports', and 'golangci-lint'.
 
 ### Tracing and Monitoring Best Practices:

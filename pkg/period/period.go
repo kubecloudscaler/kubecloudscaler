@@ -27,6 +27,7 @@ func New(period *common.ScalerPeriod) (*Period, error) {
 	curPeriod := &Period{
 		IsActive: false,
 		Type:     period.Type,
+		Name:     period.Name,
 	}
 
 	// first check for the fixed period by converting to recuuring one

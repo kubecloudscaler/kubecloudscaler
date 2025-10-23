@@ -26,7 +26,6 @@ import (
 	"github.com/rs/zerolog"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -224,7 +223,7 @@ func (r *FlowReconciler) validatePeriodTimings(flow *kubecloudscalerv1alpha3.Flo
 	periodsMap := make(map[string]common.ScalerPeriod)
 	for i := range flow.Spec.Periods {
 		period := flow.Spec.Periods[i]
-		periodName := ptr.Deref(period.Name, "")
+		periodName := period.Name
 		periodsMap[periodName] = period
 	}
 
@@ -279,7 +278,7 @@ func (r *FlowReconciler) createResourceMappings(
 	periodsMap := make(map[string]common.ScalerPeriod)
 	for i := range flow.Spec.Periods {
 		period := flow.Spec.Periods[i]
-		periodName := ptr.Deref(period.Name, "")
+		periodName := period.Name
 		periodsMap[periodName] = period
 	}
 

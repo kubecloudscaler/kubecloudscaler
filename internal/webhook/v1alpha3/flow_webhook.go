@@ -22,7 +22,6 @@ import (
 	"time"
 
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
@@ -133,7 +132,7 @@ func (v *FlowCustomValidator) validatePeriodNameUniqueness(flow *kubecloudscaler
 	periodNames := make(map[string]bool)
 
 	for i, period := range flow.Spec.Periods {
-		periodName := ptr.Deref(period.Name, "")
+		periodName := period.Name
 		if periodName == "" {
 			return fmt.Errorf("period at index %d has no name", i)
 		}
@@ -199,7 +198,7 @@ func (v *FlowCustomValidator) validateFlowTimings(flow *kubecloudscalercloudv1al
 		// Find flows for this period
 		var periodFlows []kubecloudscalercloudv1alpha3.Flows
 		for _, f := range flow.Spec.Flows {
-			if f.PeriodName == ptr.Deref(period.Name, "") {
+			if f.PeriodName == period.Name {
 				periodFlows = append(periodFlows, f)
 			}
 		}
@@ -211,7 +210,7 @@ func (v *FlowCustomValidator) validateFlowTimings(flow *kubecloudscalercloudv1al
 		// Get period duration
 		periodDuration, err := v.getPeriodDuration(period)
 		if err != nil {
-			return fmt.Errorf("failed to get period duration for %s: %w", ptr.Deref(period.Name, ""), err)
+			return fmt.Errorf("failed to get period duration for %s: %w", period.Name, err)
 		}
 
 		// Calculate total delay for this period
@@ -231,7 +230,7 @@ func (v *FlowCustomValidator) validateFlowTimings(flow *kubecloudscalercloudv1al
 			// Check if total delay exceeds period duration
 			if totalDelay > periodDuration {
 				return fmt.Errorf("total delay %v for period %s exceeds period duration %v",
-					totalDelay, ptr.Deref(period.Name, ""), periodDuration)
+					totalDelay, period.Name, periodDuration)
 			}
 		}
 	}

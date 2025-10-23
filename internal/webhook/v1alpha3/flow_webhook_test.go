@@ -45,7 +45,7 @@ var _ = Describe("Flow Webhook Validation", func() {
 					Periods: []common.ScalerPeriod{
 						{
 							Type: "up",
-							Name: ptr.To("test-period"),
+							Name: "test-period",
 							Time: common.TimePeriod{
 								Recurring: &common.RecurringPeriod{
 									Days:      []string{"Monday", "Tuesday"},
@@ -90,7 +90,7 @@ var _ = Describe("Flow Webhook Validation", func() {
 					Periods: []common.ScalerPeriod{
 						{
 							Type: "up",
-							Name: ptr.To("duplicate-name"),
+							Name: "duplicate-name",
 							Time: common.TimePeriod{
 								Recurring: &common.RecurringPeriod{
 									Days:      []string{"Monday"},
@@ -101,7 +101,7 @@ var _ = Describe("Flow Webhook Validation", func() {
 						},
 						{
 							Type: "down",
-							Name: ptr.To("duplicate-name"), // Duplicate name
+							Name: "duplicate-name", // Duplicate name
 							Time: common.TimePeriod{
 								Recurring: &common.RecurringPeriod{
 									Days:      []string{"Tuesday"},
@@ -151,7 +151,7 @@ var _ = Describe("Flow Webhook Validation", func() {
 					Periods: []common.ScalerPeriod{
 						{
 							Type: "up",
-							Name: ptr.To("test-period"),
+							Name: "test-period",
 							Time: common.TimePeriod{
 								Recurring: &common.RecurringPeriod{
 									Days:      []string{"Monday"},
@@ -192,7 +192,7 @@ var _ = Describe("Flow Webhook Validation", func() {
 					Periods: []common.ScalerPeriod{
 						{
 							Type: "up",
-							Name: ptr.To("test-period"),
+							Name: "test-period",
 							Time: common.TimePeriod{
 								Recurring: &common.RecurringPeriod{
 									Days:      []string{"Monday"},
@@ -235,7 +235,7 @@ var _ = Describe("Flow Webhook Validation", func() {
 					Periods: []common.ScalerPeriod{
 						{
 							Type: "up",
-							Name: ptr.To("short-period"),
+							Name: "short-period",
 							Time: common.TimePeriod{
 								Recurring: &common.RecurringPeriod{
 									Days:      []string{"Monday"},
@@ -281,7 +281,7 @@ var _ = Describe("Flow Webhook Validation", func() {
 					Periods: []common.ScalerPeriod{
 						{
 							Type: "up",
-							Name: ptr.To("test-period"),
+							Name: "test-period",
 							Time: common.TimePeriod{
 								Recurring: &common.RecurringPeriod{
 									Days:      []string{"Monday"},
@@ -329,7 +329,7 @@ var _ = Describe("Flow Webhook Validation", func() {
 					Periods: []common.ScalerPeriod{
 						{
 							Type: "up",
-							Name: ptr.To("test-period"),
+							Name: "test-period",
 							Time: common.TimePeriod{
 								Recurring: &common.RecurringPeriod{
 									Days:      []string{"Monday"},
@@ -347,7 +347,7 @@ var _ = Describe("Flow Webhook Validation", func() {
 					Periods: []common.ScalerPeriod{
 						{
 							Type: "up",
-							Name: ptr.To("test-period"),
+							Name: "test-period",
 							Time: common.TimePeriod{
 								Recurring: &common.RecurringPeriod{
 									Days:      []string{"Monday", "Tuesday"}, // Added Tuesday
@@ -371,7 +371,7 @@ var _ = Describe("Flow Webhook Validation", func() {
 					Periods: []common.ScalerPeriod{
 						{
 							Type: "up",
-							Name: ptr.To("test-period"),
+							Name: "test-period",
 							Time: common.TimePeriod{
 								Recurring: &common.RecurringPeriod{
 									Days:      []string{"Monday"},
@@ -389,7 +389,7 @@ var _ = Describe("Flow Webhook Validation", func() {
 					Periods: []common.ScalerPeriod{
 						{
 							Type: "up",
-							Name: ptr.To("duplicate-name"),
+							Name: "duplicate-name",
 							Time: common.TimePeriod{
 								Recurring: &common.RecurringPeriod{
 									Days:      []string{"Monday"},
@@ -400,7 +400,7 @@ var _ = Describe("Flow Webhook Validation", func() {
 						},
 						{
 							Type: "down",
-							Name: ptr.To("duplicate-name"), // Duplicate name
+							Name: "duplicate-name", // Duplicate name
 							Time: common.TimePeriod{
 								Recurring: &common.RecurringPeriod{
 									Days:      []string{"Tuesday"},
@@ -427,7 +427,7 @@ var _ = Describe("Flow Webhook Validation", func() {
 					Periods: []common.ScalerPeriod{
 						{
 							Type: "up",
-							Name: ptr.To("test-period"),
+							Name: "test-period",
 							Time: common.TimePeriod{
 								Recurring: &common.RecurringPeriod{
 									Days:      []string{"Monday"},

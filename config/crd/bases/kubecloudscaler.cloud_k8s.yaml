@@ -246,6 +246,8 @@ spec:
                       - reason
                       type: object
                     type: array
+                  name:
+                    type: string
                   spec:
                     description: RecurringPeriod defines a recurring time period for
                       scaling operations.
@@ -548,6 +550,8 @@ spec:
                       - reason
                       type: object
                     type: array
+                  name:
+                    type: string
                   spec:
                     description: RecurringPeriod defines a recurring time period for
                       scaling operations.
@@ -856,6 +860,8 @@ spec:
                       - reason
                       type: object
                     type: array
+                  name:
+                    type: string
                   spec:
                     description: RecurringPeriod defines a recurring time period for
                       scaling operations.

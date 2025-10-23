@@ -68,7 +68,7 @@ var _ = Describe("Flow Controller", func() {
 					Periods: []common.ScalerPeriod{
 						{
 							Type: "up",
-							Name: ptr.To("bigup"),
+							Name: "bigup",
 							Time: common.TimePeriod{
 								Recurring: &common.RecurringPeriod{
 									Days:      []string{"Monday", "Tuesday", "Wednesday", "Thursday", "Friday"},
@@ -139,7 +139,7 @@ var _ = Describe("Flow Controller", func() {
 				Namespace: "default",
 			}, k8sResource)).To(Succeed())
 			Expect(k8sResource.Spec.Periods).To(HaveLen(1))
-			Expect(ptr.Deref(k8sResource.Spec.Periods[0].Name, "")).To(Equal("bigup"))
+			Expect(k8sResource.Spec.Periods[0].Name).To(Equal("bigup"))
 		})
 
 	})
