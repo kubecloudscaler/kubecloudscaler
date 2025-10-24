@@ -10,6 +10,7 @@ import (
 // Period represents a scaling period configuration.
 type Period struct {
 	Period       *common.RecurringPeriod
+	Name         string
 	Type         string
 	IsActive     bool
 	Hash         string

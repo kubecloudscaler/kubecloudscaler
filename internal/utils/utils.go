@@ -31,8 +31,9 @@ func IgnoreDeletionPredicate() predicate.Predicate {
 // If forceRestore is true, it uses a restore period that spans the entire day.
 func ValidatePeriod(periods []*common.ScalerPeriod, status *common.ScalerStatus, forceRestore bool) (*periodPkg.Period, error) {
 	// check we are in an active period
-	restorePeriod := &common.ScalerPeriod{
-		Type: "restore",
+	noactionPeriod := &common.ScalerPeriod{
+		Type: "noaction",
+		Name: "noaction",
 		Time: common.TimePeriod{
 			Recurring: &common.RecurringPeriod{
 				Days:      []string{"all"},
@@ -43,11 +44,11 @@ func ValidatePeriod(periods []*common.ScalerPeriod, status *common.ScalerStatus,
 		},
 	}
 
-	onPeriod, err := periodPkg.New(restorePeriod)
+	onPeriod, err := periodPkg.New(noactionPeriod)
 	if err != nil {
-		log.Error().Err(err).Msg("unable to load restore period")
+		log.Error().Err(err).Msg("unable to load noaction period")
 
-		return nil, ErrLoadRestorePeriod
+		return nil, ErrLoadNoactionPeriod
 	}
 
 	if !forceRestore {
@@ -88,6 +89,7 @@ func ValidatePeriod(periods []*common.ScalerPeriod, status *common.ScalerStatus,
 	status.CurrentPeriod.Spec = onPeriod.Period
 	status.CurrentPeriod.SpecSHA = onPeriod.Hash
 	status.CurrentPeriod.Type = onPeriod.Type
+	status.CurrentPeriod.Name = onPeriod.Name
 
 	return onPeriod, nil
 }

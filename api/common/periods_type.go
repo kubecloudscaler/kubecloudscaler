@@ -14,7 +14,7 @@ type ScalerPeriod struct {
 
 	// Name of the period
 	// +kubebuilder:validation:Pattern=`^(|[a-zA-Z0-9][a-zA-Z0-9_-]*)$`
-	Name *string `json:"name,omitempty"`
+	Name string `json:"name,omitempty"`
 }
 
 // TimePeriod defines the time configuration for a scaling period.
@@ -65,6 +65,7 @@ type ScalerStatus struct {
 type ScalerStatusPeriod struct {
 	Spec       *RecurringPeriod      `json:"spec"`
 	SpecSHA    string                `json:"specSHA"`
+	Name       string                `json:"name,omitempty"`
 	Type       string                `json:"type"`
 	Successful []ScalerStatusSuccess `json:"success,omitempty"`
 	Failed     []ScalerStatusFailed  `json:"failed,omitempty"`

@@ -10,6 +10,8 @@ const (
 	AnnotationsMinOrigValue = "min-original-value"
 	// AnnotationsMaxOrigValue is the annotation key for maximum original values.
 	AnnotationsMaxOrigValue = "max-original-value"
+	// AnnotationIgnore is the annotation key for ignoring the resource.
+	AnnotationIgnore = "ignore"
 	// PeriodType is the annotation key for period type.
 	PeriodType = "period-type"
 	// PeriodStartTime is the annotation key for period start time.
