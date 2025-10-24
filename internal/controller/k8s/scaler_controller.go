@@ -74,6 +74,8 @@ type ScalerReconciler struct {
 //
 //nolint:gocognit,gocyclo,funlen // Reconcile function complexity is acceptable for controller logic
 func (r *ScalerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	currentStatus := common.ScalerStatus{}
+
 	// Fetch the Scaler object from the Kubernetes API
 	scaler := &kubecloudscalerv1alpha3.K8s{}
 	if err := r.Get(ctx, req.NamespacedName, scaler); err != nil {
@@ -158,6 +160,8 @@ func (r *ScalerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		periods[i] = &scaler.Spec.Periods[i]
 	}
 
+	currentStatus = scaler.Status
+
 	// Validate and determine the current time period for scaling operations
 	// This determines whether resources should be scaled up or down based on the current time
 	resourceConfig.K8s.Period, err = utils.ValidatePeriod(
@@ -183,7 +187,7 @@ func (r *ScalerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 
 	if scaler.Status != (common.ScalerStatus{}) &&
 		resourceConfig.K8s.Period.Name == "noaction" &&
-		scaler.Status.CurrentPeriod.Name == resourceConfig.K8s.Period.Name {
+		currentStatus.CurrentPeriod.Name == resourceConfig.K8s.Period.Name {
 		r.Logger.Debug().Msg("no action period, skipping reconciliation")
 		return ctrl.Result{RequeueAfter: utils.ReconcileSuccessDuration}, nil
 	}
