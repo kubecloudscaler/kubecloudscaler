@@ -42,6 +42,7 @@ metricsService:
   type: ClusterIP
 serviceAccount:
   annotations: {}
+  automount: true
   create: true
   name: ""
 webhookService:
