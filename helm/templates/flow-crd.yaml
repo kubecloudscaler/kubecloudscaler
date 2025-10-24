@@ -50,14 +50,23 @@ spec:
                       items:
                         description: FlowResource defines a resource within a flow.
                         properties:
-                          delay:
+                          endTimeDelay:
+                            default: 0m
                             description: |-
-                              Delay is the duration to delay the start of the period
+                              EndTimeDelay is the duration to delay the end of the period
                               It is a duration in minutes
-                              It is optional and if not provided, the period will start at the start time of the period
+                              It is optional and if not provided, the period will end at the end time of the period
                             pattern: ^\d*m$
                             type: string
                           name:
+                            type: string
+                          startTimeDelay:
+                            default: 0m
+                            description: |-
+                              StartTimeDelay is the duration to delay the start of the period
+                              It is a duration in minutes
+                              It is optional and if not provided, the period will start at the start time of the period
+                            pattern: ^\d*m$
                             type: string
                         required:
                         - name

@@ -53,9 +53,11 @@ type ResourceInfo struct {
 
 // PeriodWithDelay contains period information with calculated delay
 type PeriodWithDelay struct {
-	Period    common.ScalerPeriod
-	Delay     time.Duration
-	StartTime time.Time
+	Period         common.ScalerPeriod
+	StartTimeDelay time.Duration
+	EndTimeDelay   time.Duration
+	StartTime      time.Time
+	EndTime        time.Time
 }
 
 // +kubebuilder:rbac:groups=kubecloudscaler.cloud,resources=flows,verbs=get;list;watch;create;update;patch;delete
@@ -238,10 +240,17 @@ func (r *FlowReconciler) validatePeriodTimings(flow *kubecloudscalerv1alpha3.Flo
 		for _, flowItem := range flow.Spec.Flows {
 			if flowItem.PeriodName == periodName {
 				for _, resource := range flowItem.Resources {
-					if resource.Delay != nil {
-						delay, err := time.ParseDuration(*resource.Delay)
+					if resource.StartTimeDelay != "" {
+						delay, err := time.ParseDuration(resource.StartTimeDelay)
 						if err != nil {
-							return fmt.Errorf("invalid delay format for resource %s: %w", resource.Name, err)
+							return fmt.Errorf("invalid start time delay format for resource %s: %w", resource.Name, err)
+						}
+						totalDelay += delay
+					}
+					if resource.EndTimeDelay != "" {
+						delay, err := time.ParseDuration(resource.EndTimeDelay)
+						if err != nil {
+							return fmt.Errorf("invalid end time delay format for resource %s: %w", resource.Name, err)
 						}
 						totalDelay += delay
 					}
@@ -333,26 +342,42 @@ func (r *FlowReconciler) createResourceMappings(
 					}
 
 					// Calculate delay
-					var delay time.Duration
-					if resource.Delay != nil {
-						parsedDelay, err := time.ParseDuration(*resource.Delay)
+					var startTimeDelay time.Duration
+					var endTimeDelay time.Duration
+					var err error
+					if resource.StartTimeDelay != "" {
+						startTimeDelay, err = time.ParseDuration(resource.StartTimeDelay)
 						if err != nil {
-							return nil, fmt.Errorf("invalid delay format for resource %s: %w", resource.Name, err)
+							return nil, fmt.Errorf("invalid start time delay format for resource %s: %w", resource.Name, err)
 						}
-						delay = parsedDelay
+					}
+					if resource.EndTimeDelay != "" {
+						endTimeDelay, err = time.ParseDuration(resource.EndTimeDelay)
+						if err != nil {
+							return nil, fmt.Errorf("invalid end time delay format for resource %s: %w", resource.Name, err)
+						}
 					}
 
 					// Calculate start time (period start + delay)
-					startTime, err := r.calculatePeriodStartTime(&period, delay)
+					startTime, err := r.calculatePeriodStartTime(&period, startTimeDelay)
 					if err != nil {
 						return nil, fmt.Errorf("failed to calculate start time for period %s: %w", flowItem.PeriodName, err)
 					}
-					startTime = startTime.Add(delay)
+					startTime = startTime.Add(startTimeDelay)
+
+					// Calculate start time (period start + delay)
+					endTime, err := r.calculatePeriodEndTime(&period, endTimeDelay)
+					if err != nil {
+						return nil, fmt.Errorf("failed to calculate start time for period %s: %w", flowItem.PeriodName, err)
+					}
+					endTime = endTime.Add(-endTimeDelay)
 
 					periodsWithDelay = append(periodsWithDelay, PeriodWithDelay{
-						Period:    period,
-						Delay:     delay,
-						StartTime: startTime,
+						Period:         period,
+						StartTimeDelay: startTimeDelay,
+						EndTimeDelay:   endTimeDelay,
+						StartTime:      startTime,
+						EndTime:        endTime,
 					})
 				}
 			}
@@ -401,8 +426,6 @@ func (r *FlowReconciler) calculatePeriodStartTime(period *common.ScalerPeriod, d
 		if err != nil {
 			return time.Time{}, fmt.Errorf("failed to parse recurring start time: %w", err)
 		}
-		// Add the delay to the start time
-		startTime = startTime.Add(delay)
 		return startTime, nil
 	}
 
@@ -412,12 +435,33 @@ func (r *FlowReconciler) calculatePeriodStartTime(period *common.ScalerPeriod, d
 		if err != nil {
 			return time.Time{}, fmt.Errorf("failed to parse fixed start time: %w", err)
 		}
-		// Add the delay to the start time
-		startTime = startTime.Add(delay)
 		return startTime, nil
 	}
 
 	return time.Time{}, fmt.Errorf("no valid time period found")
+}
+
+// calculatePeriodEndTime calculates the end time for a period with delay
+func (r *FlowReconciler) calculatePeriodEndTime(period *common.ScalerPeriod, delay time.Duration) (time.Time, error) {
+	if period.Time.Recurring != nil {
+		// For recurring periods, parse the end time
+		endTime, err := time.Parse("15:04", period.Time.Recurring.EndTime)
+		if err != nil {
+			return time.Time{}, fmt.Errorf("failed to parse recurring end time: %w", err)
+		}
+		return endTime, nil
+	}
+
+	if period.Time.Fixed != nil {
+		// For fixed periods, parse the end time
+		endTime, err := time.Parse("2006-01-02 15:04:05", period.Time.Fixed.EndTime)
+		if err != nil {
+			return time.Time{}, fmt.Errorf("failed to parse fixed end time: %w", err)
+		}
+		return endTime, nil
+	}
+
+	return time.Time{}, fmt.Errorf("no valid end time found")
 }
 
 // getPeriodDuration calculates the duration of a period

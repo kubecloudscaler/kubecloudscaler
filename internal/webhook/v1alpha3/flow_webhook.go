@@ -218,8 +218,8 @@ func (v *FlowCustomValidator) validateFlowTimings(flow *kubecloudscalercloudv1al
 			totalDelay := time.Duration(0)
 
 			for _, resource := range f.Resources {
-				if resource.Delay != nil {
-					delay, err := time.ParseDuration(*resource.Delay)
+				if resource.StartTimeDelay != "" {
+					delay, err := time.ParseDuration(resource.StartTimeDelay)
 					if err != nil {
 						return fmt.Errorf("invalid delay format for resource %s: %w", resource.Name, err)
 					}
