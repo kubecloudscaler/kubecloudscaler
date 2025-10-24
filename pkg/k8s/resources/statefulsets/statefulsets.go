@@ -57,19 +57,6 @@ func (s *Statefulsets) SetState(ctx context.Context) ([]common.ScalerStatusSucce
 			continue
 		}
 
-		if _, exists := stateful.Annotations[utils.AnnotationsPrefix+"/"+utils.AnnotationIgnore]; exists {
-			scalerStatusSuccess = append(
-				scalerStatusSuccess,
-				common.ScalerStatusSuccess{
-					Kind:    "statefulset",
-					Name:    dName.Name,
-					Comment: "ignored due to annotation",
-				},
-			)
-
-			continue
-		}
-
 		switch s.Resource.Period.Type {
 		case "down":
 			s.Logger.Debug().Msgf("scaling down: %s", dName.Name)

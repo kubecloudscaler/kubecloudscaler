@@ -63,7 +63,7 @@ func (am *annotationManager) AddAnnotations(annotations map[string]string, perio
 // RemoveAnnotations removes all kubecloudscaler annotations from the map
 func (am *annotationManager) RemoveAnnotations(annotations map[string]string) map[string]string {
 	for annot := range annotations {
-		if strings.HasPrefix(annot, AnnotationsPrefix) && annot != (AnnotationsPrefix+"/"+AnnotationIgnore) {
+		if strings.HasPrefix(annot, AnnotationsPrefix) {
 			delete(annotations, annot)
 		}
 	}

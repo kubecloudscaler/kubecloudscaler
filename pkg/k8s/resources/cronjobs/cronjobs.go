@@ -58,19 +58,6 @@ func (c *Cronjobs) SetState(ctx context.Context) ([]common.ScalerStatusSuccess, 
 			continue
 		}
 
-		if _, exists := cronjob.Annotations[utils.AnnotationsPrefix+"/"+utils.AnnotationIgnore]; exists {
-			scalerStatusSuccess = append(
-				scalerStatusSuccess,
-				common.ScalerStatusSuccess{
-					Kind:    "cronjob",
-					Name:    cName.Name,
-					Comment: "ignored due to annotation",
-				},
-			)
-
-			continue
-		}
-
 		switch c.Resource.Period.Type {
 		case "down":
 			c.Logger.Debug().Msgf("scaling down: %s", cName.Name)

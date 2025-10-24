@@ -57,19 +57,6 @@ func (d *Deployments) SetState(ctx context.Context) ([]common.ScalerStatusSucces
 			continue
 		}
 
-		if _, exists := deploy.Annotations[utils.AnnotationsPrefix+"/"+utils.AnnotationIgnore]; exists {
-			scalerStatusSuccess = append(
-				scalerStatusSuccess,
-				common.ScalerStatusSuccess{
-					Kind:    "deployment",
-					Name:    dName.Name,
-					Comment: "ignored due to annotation",
-				},
-			)
-
-			continue
-		}
-
 		switch d.Resource.Period.Type {
 		case "down":
 			d.Logger.Debug().Msgf("scaling down: %s", dName.Name)
