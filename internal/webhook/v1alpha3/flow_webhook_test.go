@@ -21,7 +21,6 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"k8s.io/utils/ptr"
 
 	"github.com/kubecloudscaler/kubecloudscaler/api/common"
 	kubecloudscalerv1alpha3 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha3"
@@ -70,8 +69,8 @@ var _ = Describe("Flow Webhook Validation", func() {
 							PeriodName: "test-period",
 							Resources: []kubecloudscalerv1alpha3.FlowResource{
 								{
-									Name:  "test-k8s-resource",
-									Delay: ptr.To("600s"),
+									Name:           "test-k8s-resource",
+									StartTimeDelay: "5m",
 								},
 							},
 						},
@@ -260,8 +259,8 @@ var _ = Describe("Flow Webhook Validation", func() {
 							PeriodName: "short-period",
 							Resources: []kubecloudscalerv1alpha3.FlowResource{
 								{
-									Name:  "test-k8s-resource",
-									Delay: ptr.To("7200s"), // Exceeds 1 hour period
+									Name:           "test-k8s-resource",
+									StartTimeDelay: "70m", // Exceeds 1 hour period
 								},
 							},
 						},
@@ -306,8 +305,8 @@ var _ = Describe("Flow Webhook Validation", func() {
 							PeriodName: "test-period",
 							Resources: []kubecloudscalerv1alpha3.FlowResource{
 								{
-									Name:  "test-k8s-resource",
-									Delay: ptr.To("invalid-duration"), // Invalid format
+									Name:           "test-k8s-resource",
+									StartTimeDelay: "invalid-duration", // Invalid format
 								},
 							},
 						},

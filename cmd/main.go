@@ -262,11 +262,8 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err := (&flowController.FlowReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-		Logger: &logger,
-	}).SetupWithManager(mgr); err != nil {
+	flowReconciler := flowController.NewFlowReconciler(mgr.GetClient(), mgr.GetScheme(), &logger)
+	if err := flowReconciler.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Flow")
 		os.Exit(1)
 	}
