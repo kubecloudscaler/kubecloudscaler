@@ -1,4 +1,4 @@
-FROM cgr.dev/chainguard/static@sha256:01f45a2a6b87a54e242361c217335b4e792b09b92cd4b0780f8b253e27d299bb
+FROM cgr.dev/chainguard/static@sha256:939a132511fcbc2702e0e251b6f3ea368c0ad4f114678ae5973903352357d01a
 LABEL org.opencontainers.image.source https://github.com/kubecloudscaler/kubecloudscaler
 ENTRYPOINT ["/kubecloudscaler"]
 COPY kubecloudscaler /
