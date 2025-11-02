@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+// Package service provides interfaces for the flow service.
 package service
 
 import (
@@ -34,8 +35,20 @@ type FlowProcessor interface {
 
 // ResourceCreator defines the interface for creating K8s and GCP resources
 type ResourceCreator interface {
-	CreateK8sResource(ctx context.Context, flow *kubecloudscalerv1alpha3.Flow, resourceName string, k8sResource kubecloudscalerv1alpha3.K8sResource, periodsWithDelay []types.PeriodWithDelay) error
-	CreateGcpResource(ctx context.Context, flow *kubecloudscalerv1alpha3.Flow, resourceName string, gcpResource kubecloudscalerv1alpha3.GcpResource, periodsWithDelay []types.PeriodWithDelay) error
+	CreateK8sResource(
+		ctx context.Context,
+		flow *kubecloudscalerv1alpha3.Flow,
+		resourceName string,
+		k8sResource kubecloudscalerv1alpha3.K8sResource,
+		periodsWithDelay []types.PeriodWithDelay,
+	) error
+	CreateGcpResource(
+		ctx context.Context,
+		flow *kubecloudscalerv1alpha3.Flow,
+		resourceName string,
+		gcpResource kubecloudscalerv1alpha3.GcpResource,
+		periodsWithDelay []types.PeriodWithDelay,
+	) error
 }
 
 // FlowValidator defines the interface for validating flow configurations
@@ -53,10 +66,17 @@ type TimeCalculator interface {
 
 // ResourceMapper defines the interface for mapping resources with periods
 type ResourceMapper interface {
-	CreateResourceMappings(flow *kubecloudscalerv1alpha3.Flow, resourceNames map[string]bool) (map[string]types.ResourceInfo, error)
+	CreateResourceMappings(
+		flow *kubecloudscalerv1alpha3.Flow,
+		resourceNames map[string]bool,
+	) (map[string]types.ResourceInfo, error)
 }
 
 // StatusUpdater defines the interface for updating flow status
 type StatusUpdater interface {
-	UpdateFlowStatus(ctx context.Context, flow *kubecloudscalerv1alpha3.Flow, condition metav1.Condition) (ctrl.Result, error)
+	UpdateFlowStatus(
+		ctx context.Context,
+		flow *kubecloudscalerv1alpha3.Flow,
+		condition metav1.Condition,
+	) (ctrl.Result, error)
 }

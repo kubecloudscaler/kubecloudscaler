@@ -106,8 +106,8 @@ func (r *FlowReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		Msg("reconciling flow")
 
 	// Handle finalizer management
-	if result, shouldReturn := r.handleFinalizers(ctx, flow); shouldReturn {
-		return result, nil
+	if r.handleFinalizers(ctx, flow) {
+		return ctrl.Result{}, nil
 	}
 
 	// Process flow and create resources
@@ -135,7 +135,7 @@ func (r *FlowReconciler) fetchFlow(ctx context.Context, req ctrl.Request) (*kube
 }
 
 // handleFinalizers handles finalizer management for proper cleanup
-func (r *FlowReconciler) handleFinalizers(ctx context.Context, flow *kubecloudscalerv1alpha3.Flow) (ctrl.Result, bool) {
+func (r *FlowReconciler) handleFinalizers(ctx context.Context, flow *kubecloudscalerv1alpha3.Flow) bool {
 	flowFinalizer := "kubecloudscaler.cloud/flow-finalizer"
 
 	if flow.DeletionTimestamp.IsZero() {
@@ -144,10 +144,10 @@ func (r *FlowReconciler) handleFinalizers(ctx context.Context, flow *kubecloudsc
 			r.Logger.Info().Msg("adding finalizer")
 			controllerutil.AddFinalizer(flow, flowFinalizer)
 			if err := r.Update(ctx, flow); err != nil {
-				return ctrl.Result{}, true
+				return true
 			}
 		}
-		return ctrl.Result{}, false
+		return false
 	}
 
 	// Object is being deleted - handle finalizer cleanup
@@ -156,13 +156,13 @@ func (r *FlowReconciler) handleFinalizers(ctx context.Context, flow *kubecloudsc
 		r.Logger.Info().Msg("removing finalizer")
 		controllerutil.RemoveFinalizer(flow, flowFinalizer)
 		if err := r.Update(ctx, flow); err != nil {
-			return ctrl.Result{}, true
+			return true
 		}
-		return ctrl.Result{}, true
+		return true
 	}
 
 	// Finalizer already removed, stop reconciliation
-	return ctrl.Result{}, true
+	return true
 }
 
 // handleProcessingError handles processing errors and determines if requeue is needed
