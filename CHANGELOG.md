@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.5.5](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.5.4...v1.5.5) (2025-11-02)
+
+
+### Bug Fixes
+
+* add start and end delay to flows ([#172](https://github.com/kubecloudscaler/kubecloudscaler/issues/172)) ([2ac2e05](https://github.com/kubecloudscaler/kubecloudscaler/commit/2ac2e05c7074bb4b0862c305b3ecbbb865da4bb6))
+* **deps:** update all non-major dependencies ([#175](https://github.com/kubecloudscaler/kubecloudscaler/issues/175)) ([3fc6ed9](https://github.com/kubecloudscaler/kubecloudscaler/commit/3fc6ed94427f85a990ccf3609e4f295312fe443e))
+* return in flow controller ([d715084](https://github.com/kubecloudscaler/kubecloudscaler/commit/d7150845bf0879780a8e5931cb2379c6b6c1b780))
+
 ## [1.5.4](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.5.3...v1.5.4) (2025-10-22)
 
 
