@@ -210,7 +210,7 @@ ENVTEST_VERSION ?= $(shell go list -m -f "{{ .Version }}" sigs.k8s.io/controller
 #ENVTEST_K8S_VERSION is the version of Kubernetes to use for setting up ENVTEST binaries (i.e. 1.31)
 ENVTEST_K8S_VERSION ?= $(shell go list -m -f "{{ .Version }}" k8s.io/api | awk -F'[v.]' '{printf "1.%d", $$3}')
 GOLANGCI_LINT_VERSION ?= v2.5.0
-HELMIFY_VERSION ?= v0.4.18
+HELMIFY_VERSION ?= v0.4.19
 GEN_CRD_DOCS_VERSION ?= master
 
 .PHONY: kustomize
@@ -244,7 +244,7 @@ $(GOLANGCI_LINT): $(LOCALBIN)
 .PHONY: helmify
 helmify: $(HELMIFY) ## Download golangci-lint locally if necessary.
 $(HELMIFY): $(LOCALBIN)
-	$(call go-install-tool,$(HELMIFY),github.com/golgoth31/helmify/cmd/helmify,$(HELMIFY_VERSION))
+	$(call go-install-tool,$(HELMIFY),github.com/arttor/helmify/cmd/helmify,$(HELMIFY_VERSION))
 
 .PHONY: gen-crd-docs
 gen-crd-docs: $(GEN_CRD_DOCS) ## Download golangci-lint locally if necessary.

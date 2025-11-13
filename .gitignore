@@ -34,3 +34,5 @@ docs/.hugo_build.lock
 
 local
 tmp/
+
+.DS_Store
