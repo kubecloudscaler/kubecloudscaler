@@ -1,5 +1,7 @@
 package statefulsets
 
+// +kubebuilder:rbac:groups=apps,resources=statefulsets,verbs=get;list;update;patch
+
 import (
 	"context"
 	"fmt"

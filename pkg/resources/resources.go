@@ -10,6 +10,7 @@ import (
 	vminstances "github.com/kubecloudscaler/kubecloudscaler/pkg/gcp/resources/vm-instances"
 	"github.com/kubecloudscaler/kubecloudscaler/pkg/k8s/resources/cronjobs"
 	"github.com/kubecloudscaler/kubecloudscaler/pkg/k8s/resources/deployments"
+	ars "github.com/kubecloudscaler/kubecloudscaler/pkg/k8s/resources/github_autoscalingrunnersets"
 	"github.com/kubecloudscaler/kubecloudscaler/pkg/k8s/resources/statefulsets"
 	// "github.com/kubecloudscaler/kubecloudscaler/pkg/k8s/resources/horizontalpodautoscalers"
 )
@@ -61,6 +62,15 @@ func NewResource(resourceName string, config Config, logger *zerolog.Logger) (IR
 		resource, err = vminstances.New(ctx, config.GCP)
 		if err != nil {
 			return nil, fmt.Errorf("error creating vm-instances resource: %w", err)
+		}
+
+	case "github-ars":
+		if config.K8s == nil {
+			return nil, fmt.Errorf("K8s config is required for github-ars resource")
+		}
+		resource, err = ars.New(ctx, config.K8s)
+		if err != nil {
+			return nil, fmt.Errorf("error creating github-ars resource: %w", err)
 		}
 
 	default:

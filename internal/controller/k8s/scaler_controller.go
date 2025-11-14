@@ -135,7 +135,7 @@ func (r *ScalerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 
 	// Initialize Kubernetes client for resource operations
 	// This client is used to interact with the target cluster (local or remote)
-	kubeClient, err := k8sClient.GetClient(secret)
+	kubeClient, dynamicClient, err := k8sClient.GetClient(secret)
 	if err != nil {
 		r.Logger.Error().Err(err).Msg("unable to get k8s client")
 
@@ -146,6 +146,7 @@ func (r *ScalerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	resourceConfig := resources.Config{
 		K8s: &k8sUtils.Config{
 			Client:                       kubeClient,
+			DynamicClient:                dynamicClient,
 			Names:                        scaler.Spec.Resources.Names,                     // Target resources for scaling
 			Namespaces:                   scaler.Spec.Config.Namespaces,                   // Target namespaces for scaling
 			ExcludeNamespaces:            scaler.Spec.Config.ExcludeNamespaces,            // Namespaces to exclude from scaling

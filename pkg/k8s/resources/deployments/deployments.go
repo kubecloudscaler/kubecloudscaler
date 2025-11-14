@@ -1,5 +1,7 @@
 package deployments
 
+// +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;update;patch
+
 import (
 	"context"
 	"fmt"

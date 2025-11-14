@@ -64,10 +64,11 @@ var _ = Describe("GetClient", func() {
 
 	Context("when secret is provided", func() {
 		It("should create client with secret-based configuration", func() {
-			clientset, err := clients.GetClient(testSecret)
+			clientset, dynamicClient, err := clients.GetClient(testSecret)
 
 			Expect(err).ToNot(HaveOccurred())
 			Expect(clientset).ToNot(BeNil())
+			Expect(dynamicClient).ToNot(BeNil())
 		})
 
 		It("should handle secret with missing URL", func() {
@@ -78,11 +79,12 @@ var _ = Describe("GetClient", func() {
 				},
 			}
 
-			clientset, err := clients.GetClient(invalidSecret)
+			clientset, dynamicClient, err := clients.GetClient(invalidSecret)
 
 			// Should fail because invalid CA data
 			Expect(err).To(HaveOccurred())
 			Expect(clientset).To(BeNil())
+			Expect(dynamicClient).To(BeNil())
 		})
 
 		It("should handle secret with missing token", func() {
@@ -93,11 +95,12 @@ var _ = Describe("GetClient", func() {
 				},
 			}
 
-			clientset, err := clients.GetClient(invalidSecret)
+			clientset, dynamicClient, err := clients.GetClient(invalidSecret)
 
 			// Should fail because invalid CA data
 			Expect(err).To(HaveOccurred())
 			Expect(clientset).To(BeNil())
+			Expect(dynamicClient).To(BeNil())
 		})
 
 		It("should handle secret with missing CA data", func() {
@@ -108,11 +111,12 @@ var _ = Describe("GetClient", func() {
 				},
 			}
 
-			clientset, err := clients.GetClient(invalidSecret)
+			clientset, dynamicClient, err := clients.GetClient(invalidSecret)
 
 			// Should fail because missing CA data
 			Expect(err).To(HaveOccurred())
 			Expect(clientset).To(BeNil())
+			Expect(dynamicClient).To(BeNil())
 		})
 
 		It("should handle empty secret data", func() {
@@ -120,11 +124,12 @@ var _ = Describe("GetClient", func() {
 				Data: map[string][]byte{},
 			}
 
-			clientset, err := clients.GetClient(emptySecret)
+			clientset, dynamicClient, err := clients.GetClient(emptySecret)
 
 			// Should fail because missing required data
 			Expect(err).To(HaveOccurred())
 			Expect(clientset).To(BeNil())
+			Expect(dynamicClient).To(BeNil())
 		})
 	})
 
@@ -132,7 +137,7 @@ var _ = Describe("GetClient", func() {
 		It("should attempt to use in-cluster config", func() {
 			// This test will likely fail in non-cluster environments
 			// but we can test the error handling
-			_, err := clients.GetClient(nil)
+			_, _, err := clients.GetClient(nil)
 
 			// In a test environment, this will likely fail with in-cluster config
 			// but the function should handle the error gracefully
@@ -168,21 +173,23 @@ var _ = Describe("GetClient", func() {
 				// Set KUBECONFIG environment variable
 				os.Setenv("KUBECONFIG", kubeconfigPath)
 
-				clientset, err := clients.GetClient(nil)
+				clientset, dynamicClient, err := clients.GetClient(nil)
 
 				Expect(err).ToNot(HaveOccurred())
 				Expect(clientset).ToNot(BeNil())
+				Expect(dynamicClient).ToNot(BeNil())
 			})
 
 			It("should handle invalid kubeconfig file", func() {
 				// Set KUBECONFIG to a non-existent file
 				os.Setenv("KUBECONFIG", "/non/existent/path")
 
-				clientset, err := clients.GetClient(nil)
+				clientset, dynamicClient, err := clients.GetClient(nil)
 
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("kubeconfig file does not exist"))
 				Expect(clientset).To(BeNil())
+				Expect(dynamicClient).To(BeNil())
 			})
 		})
 
@@ -191,11 +198,12 @@ var _ = Describe("GetClient", func() {
 				// Ensure KUBECONFIG is not set
 				os.Unsetenv("KUBECONFIG")
 
-				clientset, err := clients.GetClient(nil)
+				clientset, dynamicClient, err := clients.GetClient(nil)
 
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("error getting in-cluster config"))
 				Expect(clientset).To(BeNil())
+				Expect(dynamicClient).To(BeNil())
 			})
 		})
 	})

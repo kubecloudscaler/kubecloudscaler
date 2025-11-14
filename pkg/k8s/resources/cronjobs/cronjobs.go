@@ -1,6 +1,8 @@
 // Package cronjobs provides CronJob scaling functionality for Kubernetes resources.
 package cronjobs
 
+// +kubebuilder:rbac:groups=batch,resources=cronjobs,verbs=get;list;update;patch
+
 import (
 	"context"
 	"fmt"
