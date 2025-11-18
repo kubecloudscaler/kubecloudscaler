@@ -81,9 +81,13 @@ func (am *annotationManager) AddMinMaxAnnotations(
 ) map[string]string {
 	annotations := am.AddAnnotations(annot, curPeriod)
 
-	_, isExists := annotations[AnnotationsPrefix+"/"+AnnotationsOrigValue]
+	_, isExists := annotations[AnnotationsPrefix+"/"+AnnotationsMinOrigValue]
 	if !isExists {
 		annotations[AnnotationsPrefix+"/"+AnnotationsMinOrigValue] = strconv.FormatInt(int64(ptr.Deref(minReplicas, int32(0))), 10)
+	}
+
+	_, isExists = annotations[AnnotationsPrefix+"/"+AnnotationsMaxOrigValue]
+	if !isExists {
 		annotations[AnnotationsPrefix+"/"+AnnotationsMaxOrigValue] = fmt.Sprintf("%d", max)
 	}
 
