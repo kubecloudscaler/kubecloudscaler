@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "helm.fullname" . }}-controller-manager-metrics-service
+  name: {{ include "helm.fullname" . }}-metrics-service
   labels:
     control-plane: controller-manager
   {{- include "helm.labels" . | nindent 4 }}
