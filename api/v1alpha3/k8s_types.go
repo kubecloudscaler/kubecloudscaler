@@ -22,10 +22,6 @@ import (
 	"github.com/kubecloudscaler/kubecloudscaler/api/common"
 )
 
-// +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;update;patch
-// +kubebuilder:rbac:groups=apps,resources=statefulsets,verbs=get;list;update;patch
-// +kubebuilder:rbac:groups=batch,resources=cronjobs,verbs=get;list;update;patch
-// +kubebuilder:rbac:groups=autoscaling,resources=horizontalpodautoscalers,verbs=get;list;update;patch
 // +kubebuilder:rbac:groups=core,resources=pods,verbs=get;list
 // +kubebuilder:rbac:groups="",resources=secrets,verbs=get
 // +kubebuilder:rbac:groups="",resources=namespaces,verbs=get;list

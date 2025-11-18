@@ -9,6 +9,7 @@ var (
 		"deployments",
 		"statefulsets",
 		"cronjobs",
+		"github-ars",
 		// "horizontalpodautoscalers",
 		// "hpa",
 	}

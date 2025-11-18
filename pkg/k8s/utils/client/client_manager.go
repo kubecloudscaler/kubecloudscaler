@@ -21,6 +21,7 @@ import (
 	"fmt"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 )
@@ -39,8 +40,8 @@ func NewClientManager(configBuilder ConfigBuilder, clientFactory ClientFactory) 
 	}
 }
 
-// GetClient returns a kubernetes clientset
-func (cm *clientManager) GetClient(secret *corev1.Secret) (*kubernetes.Clientset, error) {
+// GetClient returns a kubernetes clientset and dynamic client
+func (cm *clientManager) GetClient(secret *corev1.Secret) (*kubernetes.Clientset, dynamic.Interface, error) {
 	var config *rest.Config
 	var err error
 
@@ -51,13 +52,13 @@ func (cm *clientManager) GetClient(secret *corev1.Secret) (*kubernetes.Clientset
 	}
 
 	if err != nil {
-		return nil, fmt.Errorf("error building config: %w", err)
+		return nil, nil, fmt.Errorf("error building config: %w", err)
 	}
 
-	clientset, err := cm.clientFactory.CreateClient(config)
+	clientset, dynamicClient, err := cm.clientFactory.CreateClient(config)
 	if err != nil {
-		return nil, fmt.Errorf("error creating client: %w", err)
+		return nil, nil, fmt.Errorf("error creating client: %w", err)
 	}
 
-	return clientset, nil
+	return clientset, dynamicClient, nil
 }

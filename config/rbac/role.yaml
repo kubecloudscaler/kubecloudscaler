@@ -19,6 +19,15 @@ rules:
   verbs:
   - get
 - apiGroups:
+  - actions.github.com
+  resources:
+  - autoscalingrunnersets
+  verbs:
+  - get
+  - list
+  - patch
+  - update
+- apiGroups:
   - apps
   resources:
   - deployments

@@ -19,6 +19,7 @@ package clients
 import (
 	"fmt"
 
+	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 )
@@ -31,16 +32,21 @@ func NewClientFactory() ClientFactory {
 	return &clientFactory{}
 }
 
-// CreateClient creates a Kubernetes client from config
-func (cf *clientFactory) CreateClient(config *rest.Config) (*kubernetes.Clientset, error) {
+// CreateClient creates a Kubernetes clientset and dynamic client from config
+func (cf *clientFactory) CreateClient(config *rest.Config) (*kubernetes.Clientset, dynamic.Interface, error) {
 	if config == nil {
-		return nil, fmt.Errorf("config cannot be nil")
+		return nil, nil, fmt.Errorf("config cannot be nil")
 	}
 
 	clientset, err := kubernetes.NewForConfig(config)
 	if err != nil {
-		return nil, fmt.Errorf("error creating clientset: %w", err)
+		return nil, nil, fmt.Errorf("error creating clientset: %w", err)
 	}
 
-	return clientset, nil
+	dynamicClient, err := dynamic.NewForConfig(config)
+	if err != nil {
+		return nil, nil, fmt.Errorf("error creating dynamic client: %w", err)
+	}
+
+	return clientset, dynamicClient, nil
 }

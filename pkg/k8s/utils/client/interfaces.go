@@ -19,6 +19,7 @@ package clients
 
 import (
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 )
@@ -32,7 +33,7 @@ type ConfigBuilder interface {
 
 // ClientFactory defines the interface for creating Kubernetes clients
 type ClientFactory interface {
-	CreateClient(config *rest.Config) (*kubernetes.Clientset, error)
+	CreateClient(config *rest.Config) (*kubernetes.Clientset, dynamic.Interface, error)
 }
 
 // EnvironmentProvider defines the interface for environment operations
@@ -49,5 +50,5 @@ type SecretValidator interface {
 
 // ClientManager defines the interface for managing Kubernetes clients
 type ClientManager interface {
-	GetClient(secret *corev1.Secret) (*kubernetes.Clientset, error)
+	GetClient(secret *corev1.Secret) (*kubernetes.Clientset, dynamic.Interface, error)
 }

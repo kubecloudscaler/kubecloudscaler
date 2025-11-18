@@ -78,6 +78,7 @@ KubeCloudScaler can manage various types of Kubernetes workload resources. By de
 - **deployments** (default) - Standard Kubernetes Deployments
 - **statefulsets** - StatefulSets for stateful applications
 - **cronjobs** - Scheduled job resources
+- **github-ars** - Github AutoscalingRunnerSet
 
 > [!WARNING]
 > Application resources (deployments, statefulsets, cronjobs) cannot be managed simultaneously with HPA resources as they serve conflicting purposes. The controller validates this at runtime.

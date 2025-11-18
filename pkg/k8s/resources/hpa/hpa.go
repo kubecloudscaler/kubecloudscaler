@@ -1,5 +1,7 @@
 package hpa
 
+// +kubebuilder:rbac:groups=autoscaling,resources=horizontalpodautoscalers,verbs=get;list;update;patch
+
 import (
 	"context"
 	"fmt"
