@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.1](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.6.0...v1.6.1) (2025-11-18)
+
+
+### Bug Fixes
+
+* reduce metrics service name length ([1e27738](https://github.com/kubecloudscaler/kubecloudscaler/commit/1e27738f343d330f5047089a1a22c46858c74638))
+
 ## [1.6.0](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.5.5...v1.6.0) (2025-11-18)
 
 
