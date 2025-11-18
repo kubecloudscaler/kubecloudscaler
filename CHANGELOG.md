@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.6.0](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.5.5...v1.6.0) (2025-11-18)
+
+
+### Features
+
+* add GitHub autoscalingrunnersets ([#182](https://github.com/kubecloudscaler/kubecloudscaler/issues/182)) ([95b0608](https://github.com/kubecloudscaler/kubecloudscaler/commit/95b0608f570c9df9fd14c528a10f02a6cd206982))
+
+
+### Bug Fixes
+
+* **deps:** update all non-major dependencies ([#177](https://github.com/kubecloudscaler/kubecloudscaler/issues/177)) ([981f1b2](https://github.com/kubecloudscaler/kubecloudscaler/commit/981f1b2b123201fa62cf5e2d655577f358bf5972))
+
 ## [1.5.5](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.5.4...v1.5.5) (2025-11-02)
 
 
