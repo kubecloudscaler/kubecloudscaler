@@ -153,6 +153,7 @@ _Appears in:_
 | --- | --- | --- | --- |
 | `spec` _[RecurringPeriod](#recurringperiod)_ |  |  |  |
 | `specSHA` _string_ |  |  |  |
+| `name` _string_ |  |  |  |
 | `type` _string_ |  |  |  |
 | `success` _[ScalerStatusSuccess](#scalerstatussuccess) array_ |  |  |  |
 | `failed` _[ScalerStatusFailed](#scalerstatusfailed) array_ |  |  |  |
@@ -260,7 +261,8 @@ _Appears in:_
 | Field | Description | Default | Validation |
 | --- | --- | --- | --- |
 | `name` _string_ |  |  |  |
-| `delay` _string_ | Delay is the duration to delay the start of the period<br />It is a duration in minutes<br />It is optional and if not provided, the period will start at the start time of the period |  | Pattern: `^\d*m$` <br /> |
+| `startTimeDelay` _string_ | StartTimeDelay is the duration to delay the start of the period<br />It is a duration in minutes<br />It is optional and if not provided, the period will start at the start time of the period | 0m | Pattern: `^\d*m$` <br /> |
+| `endTimeDelay` _string_ | EndTimeDelay is the duration to delay the end of the period<br />It is a duration in minutes<br />It is optional and if not provided, the period will end at the end time of the period | 0m | Pattern: `^\d*m$` <br /> |
 
 
 #### FlowSpec
