@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.2](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.6.1...v1.6.2) (2025-11-18)
+
+
+### Bug Fixes
+
+* minmaxannotations ([c6102e6](https://github.com/kubecloudscaler/kubecloudscaler/commit/c6102e674fe06e0067f66a5bc5578e5affc0b431))
+
 ## [1.6.1](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.6.0...v1.6.1) (2025-11-18)
 
 
