@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.6.3](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.6.2...v1.6.3) (2025-11-19)
+
+
+### Bug Fixes
+
+* ars annotations ([af030d8](https://github.com/kubecloudscaler/kubecloudscaler/commit/af030d8f2f134b056d034703760ebeeee6aa5eb8))
+* panic if currentStatus is empty (new CR) ([a1e2224](https://github.com/kubecloudscaler/kubecloudscaler/commit/a1e2224574c294a4f8efb63057d8deae76090699))
+
 ## [1.6.2](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.6.1...v1.6.2) (2025-11-18)
 
 
