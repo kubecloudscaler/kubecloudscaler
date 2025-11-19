@@ -32,6 +32,7 @@ func (h *GithubAutoscalingRunnersets) init(client dynamic.Interface) {
 		Version:  "v1alpha1",
 		Resource: "autoscalingrunnersets",
 	})
+	h.AnnotationManager = utils.NewAnnotationManager()
 }
 
 // SetState sets the state of Github Autoscaling Runnersets resources based on the current period.
@@ -76,7 +77,7 @@ func (h *GithubAutoscalingRunnersets) SetState(ctx context.Context) ([]common.Sc
 		case "down":
 			h.Logger.Debug().Msgf("scaling down: %s", runnerSet.Name)
 
-			runnerSet.Annotations = utils.AddMinMaxAnnotations(
+			runnerSet.Annotations = h.AnnotationManager.AddMinMaxAnnotations(
 				runnerSet.Annotations,
 				h.Resource.Period,
 				intPtrToInt32Ptr(runnerSet.Spec.MinRunners),
@@ -88,7 +89,7 @@ func (h *GithubAutoscalingRunnersets) SetState(ctx context.Context) ([]common.Sc
 		case "up":
 			h.Logger.Debug().Msgf("scaling up: %s", runnerSet.Name)
 
-			runnerSet.Annotations = utils.AddMinMaxAnnotations(
+			runnerSet.Annotations = h.AnnotationManager.AddMinMaxAnnotations(
 				runnerSet.Annotations,
 				h.Resource.Period,
 				intPtrToInt32Ptr(runnerSet.Spec.MinRunners),
@@ -108,7 +109,7 @@ func (h *GithubAutoscalingRunnersets) SetState(ctx context.Context) ([]common.Sc
 			)
 
 			isAlreadyRestored, minReplicas, maxReplicas, annotations, err =
-				utils.RestoreMinMaxAnnotations(runnerSet.Annotations)
+				h.AnnotationManager.RestoreMinMaxAnnotations(runnerSet.Annotations)
 			if err != nil {
 				scalerStatusFailed = append(
 					scalerStatusFailed,

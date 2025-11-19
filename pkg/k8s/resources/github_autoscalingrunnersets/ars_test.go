@@ -75,8 +75,9 @@ var _ = Describe("GithubAutoscalingRunnersets", func() {
 		)
 
 		manager = &ars.GithubAutoscalingRunnersets{
-			Resource: resource,
-			Logger:   &log.Logger,
+			Resource:          resource,
+			Logger:            &log.Logger,
+			AnnotationManager: utils.NewAnnotationManager(),
 		}
 		manager.Client = dynClient.Resource(gvr)
 	}

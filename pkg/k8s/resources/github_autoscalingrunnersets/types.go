@@ -10,7 +10,8 @@ import (
 
 // GithubAutoscalingRunnersets represents a Github Autoscaling Runnerset resource manager.
 type GithubAutoscalingRunnersets struct {
-	Resource *utils.K8sResource
-	Client   dynamic.NamespaceableResourceInterface
-	Logger   *zerolog.Logger
+	Resource          *utils.K8sResource
+	Client            dynamic.NamespaceableResourceInterface
+	Logger            *zerolog.Logger
+	AnnotationManager utils.AnnotationManager
 }
