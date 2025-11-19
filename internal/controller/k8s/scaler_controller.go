@@ -186,11 +186,12 @@ func (r *ScalerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{Requeue: false}, nil
 	}
 
-	if scaler.Status != (common.ScalerStatus{}) &&
-		resourceConfig.K8s.Period.Name == "noaction" &&
-		currentStatus.CurrentPeriod.Name == resourceConfig.K8s.Period.Name {
-		r.Logger.Debug().Msg("no action period, skipping reconciliation")
-		return ctrl.Result{RequeueAfter: utils.ReconcileSuccessDuration}, nil
+	if currentStatus != (common.ScalerStatus{}) {
+		if resourceConfig.K8s.Period.Name == "noaction" &&
+			currentStatus.CurrentPeriod.Name == resourceConfig.K8s.Period.Name {
+			r.Logger.Debug().Msg("no action period, skipping reconciliation")
+			return ctrl.Result{RequeueAfter: utils.ReconcileSuccessDuration}, nil
+		}
 	}
 
 	// Track results of scaling operations

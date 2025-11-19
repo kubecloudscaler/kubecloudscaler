@@ -155,6 +155,8 @@ var _ = Describe("GithubAutoscalingRunnersets", func() {
 			updated := getRunnerSet("test-ns", "rs-up")
 			Expect(*updated.Spec.MinRunners).To(Equal(8))
 			Expect(*updated.Spec.MaxRunners).To(Equal(12))
+			Expect(updated.Annotations).To(HaveKeyWithValue(utils.AnnotationsPrefix+"/"+utils.AnnotationsMinOrigValue, "2"))
+			Expect(updated.Annotations).To(HaveKeyWithValue(utils.AnnotationsPrefix+"/"+utils.AnnotationsMaxOrigValue, "5"))
 		})
 
 		It("restores original runners", func() {

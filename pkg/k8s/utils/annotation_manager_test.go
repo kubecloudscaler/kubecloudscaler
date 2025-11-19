@@ -131,16 +131,16 @@ var _ = Describe("AnnotationManager", func() {
 
 		It("should not overwrite existing original values", func() {
 			annotations := map[string]string{
-				AnnotationsPrefix + "/" + AnnotationsOrigValue: "existing",
+				AnnotationsPrefix + "/" + AnnotationsMinOrigValue: "existing",
+				AnnotationsPrefix + "/" + AnnotationsMaxOrigValue: "existing",
 			}
 			min := int32(2)
 			max := int32(10)
 
 			result := annotationMgr.AddMinMaxAnnotations(annotations, mockPeriod, &min, max)
 
-			Expect(result).To(HaveKeyWithValue(AnnotationsPrefix+"/"+AnnotationsOrigValue, "existing"))
-			Expect(result).ToNot(HaveKey(AnnotationsPrefix + "/" + AnnotationsMinOrigValue))
-			Expect(result).ToNot(HaveKey(AnnotationsPrefix + "/" + AnnotationsMaxOrigValue))
+			Expect(result).To(HaveKeyWithValue(AnnotationsPrefix+"/"+AnnotationsMinOrigValue, "existing"))
+			Expect(result).To(HaveKeyWithValue(AnnotationsPrefix+"/"+AnnotationsMaxOrigValue, "existing"))
 		})
 
 		It("should handle nil min value", func() {
