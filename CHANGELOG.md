@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.4](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.6.3...v1.6.4) (2025-11-20)
+
+
+### Bug Fixes
+
+* **deps:** update github.com/actions/actions-runner-controller digest to 6d07b8d ([#186](https://github.com/kubecloudscaler/kubecloudscaler/issues/186)) ([e415878](https://github.com/kubecloudscaler/kubecloudscaler/commit/e41587856f15f56549dd17b0cd1b9788763d3142))
+
 ## [1.6.3](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.6.2...v1.6.3) (2025-11-19)
 
 
