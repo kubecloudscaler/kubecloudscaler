@@ -19,38 +19,51 @@ package k8s
 
 import (
 	"context"
-	"errors"
-	"slices"
-	"time"
 
 	"github.com/rs/zerolog"
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	"github.com/kubecloudscaler/kubecloudscaler/api/common"
 	kubecloudscalerv1alpha3 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha3"
+	"github.com/kubecloudscaler/kubecloudscaler/internal/controller/k8s/service"
+	scalerService "github.com/kubecloudscaler/kubecloudscaler/internal/controller/scaler/service"
 	"github.com/kubecloudscaler/kubecloudscaler/internal/utils"
-	k8sUtils "github.com/kubecloudscaler/kubecloudscaler/pkg/k8s/utils"
-	k8sClient "github.com/kubecloudscaler/kubecloudscaler/pkg/k8s/utils/client"
-	"github.com/kubecloudscaler/kubecloudscaler/pkg/resources"
-)
-
-const (
-	// RequeueDelaySeconds is the delay in seconds before requeuing a run-once period.
-	RequeueDelaySeconds = 5
 )
 
 // ScalerReconciler reconciles a Scaler object
 // It manages the lifecycle of K8s resources by scaling them up/down based on configured periods
 type ScalerReconciler struct {
-	client.Client                 // Kubernetes client for API operations
-	Scheme        *runtime.Scheme // Scheme for type conversion and serialization
-	Logger        *zerolog.Logger
+	client.Client
+	Scheme *runtime.Scheme
+	Logger *zerolog.Logger
+
+	// Services for clean architecture
+	scalerProcessor *service.ScalerProcessorService
+}
+
+// NewScalerReconciler creates a new ScalerReconciler with all required services
+func NewScalerReconciler(
+	k8sClient client.Client,
+	scheme *runtime.Scheme,
+	logger *zerolog.Logger,
+) *ScalerReconciler {
+	if logger == nil {
+		nopLogger := zerolog.Nop()
+		logger = &nopLogger
+	}
+
+	// Create services
+	periodValidator := scalerService.NewPeriodValidatorService()
+	resourceProcessor := scalerService.NewResourceProcessorService(logger)
+	scalerProcessor := service.NewScalerProcessorService(periodValidator, resourceProcessor, logger)
+
+	return &ScalerReconciler{
+		Client:          k8sClient,
+		Scheme:          scheme,
+		Logger:          logger,
+		scalerProcessor: scalerProcessor,
+	}
 }
 
 // +kubebuilder:rbac:groups=kubecloudscaler.cloud,resources=k8s,verbs=get;list;watch;create;update;patch;delete
@@ -71,248 +84,94 @@ type ScalerReconciler struct {
 //
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.18.4/pkg/reconcile
-//
-//nolint:gocognit,gocyclo,funlen // Reconcile function complexity is acceptable for controller logic
 func (r *ScalerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	currentStatus := common.ScalerStatus{}
-
-	// Fetch the Scaler object from the Kubernetes API
 	scaler := &kubecloudscalerv1alpha3.K8s{}
 	if err := r.Get(ctx, req.NamespacedName, scaler); err != nil {
 		r.Logger.Error().Err(err).Msg("unable to fetch Scaler")
-
-		return ctrl.Result{RequeueAfter: 0 * time.Second}, client.IgnoreNotFound(err)
+		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	r.Logger.Info().Str("name", scaler.Name).Str("kind", scaler.Kind).Str("apiVersion", scaler.APIVersion).Msg("reconciling scaler")
+	r.Logger.Info().
+		Str("name", scaler.Name).
+		Str("kind", scaler.Kind).
+		Str("apiVersion", scaler.APIVersion).
+		Msg("reconciling scaler")
 
-	// Finalizer management for proper cleanup
-	scalerFinalizer := "kubecloudscaler.cloud/finalizer"
-	scalerFinalize := false
-
-	// Check if the object is being deleted by examining the DeletionTimestamp
-	if scaler.DeletionTimestamp.IsZero() {
-		// Object is not being deleted - ensure finalizer is present
-		// The finalizer ensures we can perform cleanup operations before deletion
-		if !controllerutil.ContainsFinalizer(scaler, scalerFinalizer) {
-			r.Logger.Info().Msg("adding finalizer")
-			controllerutil.AddFinalizer(scaler, scalerFinalizer)
-			if err := r.Update(ctx, scaler); err != nil {
-				return ctrl.Result{RequeueAfter: 0 * time.Second}, client.IgnoreNotFound(err)
-			}
-		}
-	} else {
-		// Object is being deleted - handle finalizer cleanup
-		if controllerutil.ContainsFinalizer(scaler, scalerFinalizer) {
-			r.Logger.Info().Msg("deleting scaler with finalizer")
-			scalerFinalize = true
-		} else {
-			// Finalizer already removed, stop reconciliation
-			return ctrl.Result{RequeueAfter: 0 * time.Second}, nil
-		}
-	}
-
-	// Handle authentication secret for remote cluster access
-	secret := &corev1.Secret{}
-	if scaler.Spec.Config.AuthSecret != nil {
-		r.Logger.Info().Msg("auth secret found, currently not able to handle it")
-		// Construct the namespaced name for the secret
-		namespacedSecret := types.NamespacedName{
-			Namespace: req.Namespace,
-			Name:      *scaler.Spec.Config.AuthSecret,
-		}
-
-		// Fetch the secret from the cluster
-		if err := r.Get(ctx, namespacedSecret, secret); err != nil {
-			r.Logger.Error().Err(err).Msg("unable to fetch secret")
-		}
-
-		// TODO: Implement proper secret handling for remote cluster authentication
-		return ctrl.Result{Requeue: false}, nil
-	}
-	// No authentication secret specified, use default cluster access
-	secret = nil
-
-	// Initialize Kubernetes client for resource operations
-	// This client is used to interact with the target cluster (local or remote)
-	kubeClient, dynamicClient, err := k8sClient.GetClient(secret)
-	if err != nil {
-		r.Logger.Error().Err(err).Msg("unable to get k8s client")
-
-		return ctrl.Result{RequeueAfter: utils.ReconcileErrorDuration}, nil
-	}
-
-	// Configure resource management settings
-	resourceConfig := resources.Config{
-		K8s: &k8sUtils.Config{
-			Client:                       kubeClient,
-			DynamicClient:                dynamicClient,
-			Names:                        scaler.Spec.Resources.Names,                     // Target resources for scaling
-			Namespaces:                   scaler.Spec.Config.Namespaces,                   // Target namespaces for scaling
-			ExcludeNamespaces:            scaler.Spec.Config.ExcludeNamespaces,            // Namespaces to exclude from scaling
-			LabelSelector:                scaler.Spec.Resources.LabelSelector,             // Label selector for resource filtering
-			ForceExcludeSystemNamespaces: scaler.Spec.Config.ForceExcludeSystemNamespaces, // Always exclude system namespaces
-		},
-	}
-
-	// Convert []common.ScalerPeriod to []*common.ScalerPeriod for utils.ValidatePeriod
-	periods := make([]*common.ScalerPeriod, len(scaler.Spec.Periods))
-	for i := range scaler.Spec.Periods {
-		periods[i] = &scaler.Spec.Periods[i]
-	}
-
-	currentStatus = scaler.Status
-
-	// Validate and determine the current time period for scaling operations
-	// This determines whether resources should be scaled up or down based on the current time
-	resourceConfig.K8s.Period, err = utils.ValidatePeriod(
-		periods,        // Configured time periods
-		&scaler.Status, // Current status for tracking
-		scaler.Spec.Config.RestoreOnDelete && scalerFinalize, // Restore original state on deletion
-	)
-	if err != nil {
-		// Handle run-once period - requeue until the period ends
-		if errors.Is(err, utils.ErrRunOncePeriod) {
-			return ctrl.Result{RequeueAfter: time.Until(resourceConfig.K8s.Period.GetEndTime.Add(RequeueDelaySeconds * time.Second))}, nil
-		}
-
-		// Update status with error information
-		scaler.Status.Comments = ptr.To(err.Error())
-
-		if err := r.Status().Update(ctx, scaler); err != nil {
-			r.Logger.Error().Err(err).Msg("unable to update scaler status")
-		}
-
-		return ctrl.Result{Requeue: false}, nil
-	}
-
-	if currentStatus != (common.ScalerStatus{}) {
-		if resourceConfig.K8s.Period.Name == "noaction" &&
-			currentStatus.CurrentPeriod.Name == resourceConfig.K8s.Period.Name {
-			r.Logger.Debug().Msg("no action period, skipping reconciliation")
-			return ctrl.Result{RequeueAfter: utils.ReconcileSuccessDuration}, nil
-		}
-	}
-
-	// Track results of scaling operations
-	var (
-		recSuccess []common.ScalerStatusSuccess // Successfully scaled resources
-		recFailed  []common.ScalerStatusFailed  // Failed scaling operations
-	)
-
-	// Validate and filter the list of resources to be scaled
-	// This ensures only valid resource types are processed
-	resourceList, err := r.validResourceList(scaler)
-	if err != nil {
-		r.Logger.Error().Err(err).Msg("unable to get valid resources")
-		scaler.Status.Comments = ptr.To(err.Error())
-
-		if err := r.Status().Update(ctx, scaler); err != nil {
-			r.Logger.Error().Err(err).Msg("unable to update scaler status")
-		}
-
+	// Handle finalizer management
+	if shouldStop, err := r.handleFinalizers(ctx, scaler); err != nil {
+		return ctrl.Result{}, client.IgnoreNotFound(err)
+	} else if shouldStop {
 		return ctrl.Result{}, nil
 	}
 
-	// Process each resource type and perform scaling operations
-	for _, resource := range resourceList {
-		// Create a resource handler for the specific resource type
-		curResource, err := resources.NewResource(resource, resourceConfig, r.Logger)
-		if err != nil {
-			r.Logger.Error().Err(err).Msg("unable to get resource")
-
-			continue
-		}
-
-		// Execute the scaling operation for this resource type
-		// This will scale all matching resources up or down based on the current period
-		success, failed, err := curResource.SetState(ctx)
-		if err != nil {
-			r.Logger.Error().Err(err).Msg("unable to set resource state")
-
-			continue
-		}
-
-		// Collect results for status reporting
-		recSuccess = append(recSuccess, success...)
-		recFailed = append(recFailed, failed...)
+	// Handle authentication secret
+	secret, err := r.handleSecret(ctx, req, scaler)
+	if err != nil {
+		return ctrl.Result{RequeueAfter: utils.ReconcileErrorDuration}, nil
+	}
+	if secret != nil {
+		// TODO: Implement proper secret handling for remote cluster authentication
+		return ctrl.Result{Requeue: false}, nil
 	}
 
-	// Handle finalizer cleanup if the object is being deleted
-	if scalerFinalize {
-		r.Logger.Info().Msg("removing finalizer")
-		controllerutil.RemoveFinalizer(scaler, scalerFinalizer)
-		if err := r.Update(ctx, scaler); err != nil {
-			return ctrl.Result{RequeueAfter: 0 * time.Second}, client.IgnoreNotFound(err)
-		}
-
-		return ctrl.Result{RequeueAfter: 0 * time.Second}, nil
+	// Process scaler
+	result, recSuccess, recFailed, err := r.scalerProcessor.ProcessScaler(ctx, scaler, secret, r.isDeleting(scaler))
+	if err != nil {
+		return r.handleProcessingError(ctx, scaler, err)
 	}
 
-	// Update the scaler status with operation results
-	scaler.Status.CurrentPeriod.Successful = recSuccess
-	scaler.Status.CurrentPeriod.Failed = recFailed
-	scaler.Status.Comments = ptr.To("time period processed")
-
-	// Persist status updates to the cluster
-	if err := r.Status().Update(ctx, scaler); err != nil {
+	// Update status with results
+	if err := utils.UpdateScalerStatus(ctx, r.Status(), scaler, recSuccess, recFailed, "time period processed", r.Logger); err != nil {
 		r.Logger.Error().Err(err).Msg("unable to update scaler status")
-	} else {
-		r.Logger.Info().Str("name", scaler.Name).Str("kind", scaler.Kind).Str("apiVersion", scaler.APIVersion).Msg("scaler status updated")
 	}
 
-	// Requeue for the next reconciliation cycle
-	return ctrl.Result{RequeueAfter: utils.ReconcileSuccessDuration}, nil
+	return result, nil
+}
+
+// handleFinalizers handles finalizer management for proper cleanup.
+// Returns true if reconciliation should stop, false otherwise.
+func (r *ScalerReconciler) handleFinalizers(ctx context.Context, scaler *kubecloudscalerv1alpha3.K8s) (bool, error) {
+	result := utils.HandleFinalizerReconcile(ctx, r.Client, scaler, utils.DefaultFinalizerName(), r.Logger)
+	if result.Error != nil {
+		return true, result.Error
+	}
+	if result.ShouldStop {
+		return true, nil
+	}
+	return false, nil
+}
+
+// handleSecret handles authentication secret fetching.
+func (r *ScalerReconciler) handleSecret(ctx context.Context, req ctrl.Request, scaler *kubecloudscalerv1alpha3.K8s) (interface{}, error) {
+	secret, err := utils.FetchSecret(ctx, r.Client, scaler.Spec.Config.AuthSecret, req.Namespace, r.Logger)
+	if err != nil {
+		return nil, err
+	}
+	if secret != nil {
+		r.Logger.Info().Msg("auth secret found, currently not able to handle it")
+	}
+	return secret, nil
+}
+
+// isDeleting checks if the scaler is being deleted.
+func (r *ScalerReconciler) isDeleting(scaler *kubecloudscalerv1alpha3.K8s) bool {
+	return !scaler.DeletionTimestamp.IsZero()
+}
+
+// handleProcessingError handles processing errors and updates status.
+func (r *ScalerReconciler) handleProcessingError(ctx context.Context, scaler *kubecloudscalerv1alpha3.K8s, err error) (ctrl.Result, error) {
+	r.Logger.Error().Err(err).Str("scaler", scaler.Name).Msg("scaler processing failed")
+	if updateErr := utils.UpdateScalerStatusWithError(ctx, r.Status(), scaler, err, r.Logger); updateErr != nil {
+		r.Logger.Error().Err(updateErr).Msg("unable to update scaler status")
+	}
+	return ctrl.Result{Requeue: false}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
-// This method configures the controller to watch for K8s Scaler resources
-// and defines the reconciliation behavior.
 func (r *ScalerReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&kubecloudscalerv1alpha3.K8s{}).              // Watch for K8s Scaler resources
-		WithEventFilter(utils.IgnoreDeletionPredicate()). // Filter out deletion events
-		Named("k8sScaler").                               // Set controller name
-		Complete(r)                                       // Complete the controller setup
-}
-
-// validResourceList validates and filters the list of resources to be scaled.
-// It ensures that only valid resource types are included and prevents mixing
-// of application resources (deployments, statefulsets) with HPA resources.
-func (r *ScalerReconciler) validResourceList(scaler *kubecloudscalerv1alpha3.K8s) ([]string, error) {
-	output := make([]string, 0, len(scaler.Spec.Resources.Types))
-	var (
-		isApp bool // Flag indicating if app resources are present
-		isHpa bool // Flag indicating if HPA resources are present
-	)
-
-	// Default to deployments if no resources are specified
-	if len(scaler.Spec.Resources.Types) == 0 {
-		scaler.Spec.Resources.Types = []string{resources.DefaultK8SResourceType}
-	}
-
-	// Process each resource type and validate it
-	for _, resource := range scaler.Spec.Resources.Types {
-		// Check if this is an application resource (deployment, statefulset, etc.)
-		if slices.Contains(utils.AppsResources, resource) {
-			isApp = true
-		}
-
-		// Check if this is an HPA resource
-		if slices.Contains(utils.HpaResources, resource) {
-			isHpa = true
-		}
-
-		// Prevent mixing of app and HPA resources as they have different scaling behaviors
-		if isHpa && isApp {
-			r.Logger.Info().Msg(utils.ErrMixedAppsHPA.Error())
-
-			return []string{}, utils.ErrMixedAppsHPA
-		}
-
-		// Add valid resource to the output list
-		output = append(output, resource)
-	}
-
-	return output, nil
+		For(&kubecloudscalerv1alpha3.K8s{}).
+		WithEventFilter(utils.IgnoreDeletionPredicate()).
+		Named("k8sScaler").
+		Complete(r)
 }

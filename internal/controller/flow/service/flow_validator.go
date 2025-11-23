@@ -20,7 +20,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/kubecloudscaler/kubecloudscaler/api/common"
 	kubecloudscalerv1alpha3 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha3"
 	"github.com/rs/zerolog"
 )
@@ -40,9 +39,9 @@ func NewFlowValidatorService(timeCalculator TimeCalculator, logger *zerolog.Logg
 }
 
 // ExtractFlowData extracts all resource names and period names from flows
-func (v *FlowValidatorService) ExtractFlowData(flow *kubecloudscalerv1alpha3.Flow) (map[string]bool, map[string]bool, error) {
-	resourceNames := make(map[string]bool)
-	periodNames := make(map[string]bool)
+func (v *FlowValidatorService) ExtractFlowData(flow *kubecloudscalerv1alpha3.Flow) (resourceNames, periodNames map[string]bool, err error) {
+	resourceNames = make(map[string]bool)
+	periodNames = make(map[string]bool)
 
 	for _, flowItem := range flow.Spec.Flows {
 		periodNames[flowItem.PeriodName] = true
@@ -57,7 +56,7 @@ func (v *FlowValidatorService) ExtractFlowData(flow *kubecloudscalerv1alpha3.Flo
 
 // ValidatePeriodTimings validates that the sum of delays for each period doesn't exceed the period duration
 func (v *FlowValidatorService) ValidatePeriodTimings(flow *kubecloudscalerv1alpha3.Flow, periodNames map[string]bool) error {
-	periodsMap := v.createPeriodsMap(flow)
+	periodsMap := CreatePeriodsMap(flow)
 
 	for periodName := range periodNames {
 		period, exists := periodsMap[periodName]
@@ -82,16 +81,6 @@ func (v *FlowValidatorService) ValidatePeriodTimings(flow *kubecloudscalerv1alph
 	}
 
 	return nil
-}
-
-// createPeriodsMap creates a map of period names to periods
-func (v *FlowValidatorService) createPeriodsMap(flow *kubecloudscalerv1alpha3.Flow) map[string]common.ScalerPeriod {
-	periodsMap := make(map[string]common.ScalerPeriod)
-	for i := range flow.Spec.Periods {
-		period := flow.Spec.Periods[i]
-		periodsMap[period.Name] = period
-	}
-	return periodsMap
 }
 
 // calculateTotalDelay calculates the total delay for a specific period

@@ -64,7 +64,7 @@ var _ = Describe("Scaler Controller", func() {
 
 		BeforeEach(func() {
 			By("creating the custom resource for the Kind Scaler")
-			err := k8sClientTest.Get(ctx, typeNamespacedName, scaler)
+			err := testEnv.Client.Get(ctx, typeNamespacedName, scaler)
 			if err != nil && errors.IsNotFound(err) {
 				resource := &kubecloudscalerv1alpha3.K8s{
 					ObjectMeta: metav1.ObjectMeta{
@@ -89,7 +89,7 @@ var _ = Describe("Scaler Controller", func() {
 						},
 					},
 				}
-				Expect(k8sClientTest.Create(ctx, resource)).To(Succeed())
+				Expect(testEnv.Client.Create(ctx, resource)).To(Succeed())
 			}
 		})
 
@@ -114,26 +114,41 @@ var _ = Describe("Scaler Controller", func() {
 					},
 				},
 			}
-			err := k8sClientTest.Get(ctx, typeNamespacedName, resource)
+			err := testEnv.Client.Get(ctx, typeNamespacedName, resource)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Cleanup the specific resource instance Scaler")
-			Expect(k8sClientTest.Delete(ctx, resource)).To(Succeed())
+			Expect(testEnv.Client.Delete(ctx, resource)).To(Succeed())
 		})
 		It("should successfully reconcile the resource", func() {
 			By("Reconciling the created resource")
-			controllerReconciler := &ScalerReconciler{
-				Client: k8sClientTest,
-				Scheme: k8sClientTest.Scheme(),
-				Logger: &log.Logger,
-			}
+			controllerReconciler := NewScalerReconciler(
+				testEnv.Client,
+				testEnv.Client.Scheme(),
+				&log.Logger,
+			)
 
 			_, err := controllerReconciler.Reconcile(ctx, reconcile.Request{
 				NamespacedName: typeNamespacedName,
 			})
 			Expect(err).NotTo(HaveOccurred())
-			// TODO(user): Add more specific assertions depending on your controller's reconciliation logic.
-			// Example: If you expect a certain status condition after reconciliation, verify it here.
+		})
+
+		It("should handle non-existent resource gracefully", func() {
+			By("Reconciling a non-existent resource")
+			controllerReconciler := NewScalerReconciler(
+				testEnv.Client,
+				testEnv.Client.Scheme(),
+				&log.Logger,
+			)
+
+			_, err := controllerReconciler.Reconcile(ctx, reconcile.Request{
+				NamespacedName: types.NamespacedName{
+					Name:      "non-existent",
+					Namespace: "default",
+				},
+			})
+			Expect(err).NotTo(HaveOccurred())
 		})
 	})
 })

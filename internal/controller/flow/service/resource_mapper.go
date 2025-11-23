@@ -46,7 +46,7 @@ func (m *ResourceMapperService) CreateResourceMappings(
 	resourceNames map[string]bool,
 ) (map[string]types.ResourceInfo, error) {
 	resourceMappings := make(map[string]types.ResourceInfo)
-	periodsMap := m.createPeriodsMap(flow)
+	periodsMap := CreatePeriodsMap(flow)
 
 	for resourceName := range resourceNames {
 		resourceInfo, err := m.mapResource(flow, resourceName, periodsMap)
@@ -57,16 +57,6 @@ func (m *ResourceMapperService) CreateResourceMappings(
 	}
 
 	return resourceMappings, nil
-}
-
-// createPeriodsMap creates a map of period names to periods
-func (m *ResourceMapperService) createPeriodsMap(flow *kubecloudscalerv1alpha3.Flow) map[string]common.ScalerPeriod {
-	periodsMap := make(map[string]common.ScalerPeriod)
-	for i := range flow.Spec.Periods {
-		period := flow.Spec.Periods[i]
-		periodsMap[period.Name] = period
-	}
-	return periodsMap
 }
 
 // mapResource maps a single resource with its associated periods

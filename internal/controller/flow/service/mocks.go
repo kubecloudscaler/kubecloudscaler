@@ -33,7 +33,7 @@ type MockFlowValidator struct {
 	ValidatePeriodTimingsFunc func(flow *kubecloudscalerv1alpha3.Flow, periodNames map[string]bool) error
 }
 
-func (m *MockFlowValidator) ExtractFlowData(flow *kubecloudscalerv1alpha3.Flow) (map[string]bool, map[string]bool, error) {
+func (m *MockFlowValidator) ExtractFlowData(flow *kubecloudscalerv1alpha3.Flow) (resourceNames, periodNames map[string]bool, err error) {
 	if m.ExtractFlowDataFunc != nil {
 		return m.ExtractFlowDataFunc(flow)
 	}
@@ -72,6 +72,7 @@ func (m *MockResourceCreator) CreateK8sResource(ctx context.Context, flow *kubec
 	return nil
 }
 
+//nolint:gocritic // hugeParam: Must match interface signature
 func (m *MockResourceCreator) CreateGcpResource(ctx context.Context, flow *kubecloudscalerv1alpha3.Flow, resourceName string, gcpResource kubecloudscalerv1alpha3.GcpResource, periodsWithDelay []types.PeriodWithDelay) error {
 	if m.CreateGcpResourceFunc != nil {
 		return m.CreateGcpResourceFunc(ctx, flow, resourceName, gcpResource, periodsWithDelay)
@@ -112,6 +113,7 @@ type MockStatusUpdater struct {
 	UpdateFlowStatusFunc func(ctx context.Context, flow *kubecloudscalerv1alpha3.Flow, condition metav1.Condition) (ctrl.Result, error)
 }
 
+//nolint:gocritic // hugeParam: Must match interface signature
 func (m *MockStatusUpdater) UpdateFlowStatus(ctx context.Context, flow *kubecloudscalerv1alpha3.Flow, condition metav1.Condition) (ctrl.Result, error) {
 	if m.UpdateFlowStatusFunc != nil {
 		return m.UpdateFlowStatusFunc(ctx, flow, condition)

@@ -28,7 +28,8 @@ builds:
     main: ./cmd
 
 archives:
-  - format: tar.gz
+  - formats:
+      - tar.gz
     # this name template makes the OS and Arch compatible with the results of `uname`.
     name_template: >-
       {{ .ProjectName }}_
@@ -38,7 +39,8 @@ archives:
     # use zip for windows archives
     format_overrides:
       - goos: windows
-        format: zip
+        formats:
+          - zip
 
 changelog:
   sort: asc
@@ -58,7 +60,7 @@ dockers_v2:
       - "v{{ .Major }}.{{ .Minor }}"
       - "{{ .Major }}"
       - "{{ .Major }}.{{ .Minor }}"
-      - "{{ .RawVersion }}"
+      - "{{ .Version }}"
       - "{{ if .IsNightly }}nightly{{ end }}"
       - "{{ if not .IsNightly }}latest{{ end }}"
     labels:
