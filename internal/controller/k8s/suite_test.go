@@ -23,7 +23,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/kubecloudscaler/kubecloudscaler/internal/utils"
+	"github.com/kubecloudscaler/kubecloudscaler/test/utils"
 	// +kubebuilder:scaffold:imports
 )
 
