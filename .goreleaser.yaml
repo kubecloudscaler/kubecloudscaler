@@ -49,58 +49,28 @@ changelog:
       - "^Merge pull request"
   use: github
 
-# .goreleaser.yaml
-dockers:
-  - id: linux-arm64
-    goos: linux
-    goarch: arm64
-    use: buildx
-    image_templates:
-      - "ghcr.io/kubecloudscaler/{{ .ProjectName }}:{{ .Tag }}-arm64v8"
-    build_flag_templates:
-      - --platform=linux/arm64/v8
-
-  - id: linux-amd64
-    goos: linux
-    goarch: amd64
-    goamd64: "v2"
-    use: buildx
-
-    image_templates:
-      - "ghcr.io/kubecloudscaler/{{ .ProjectName }}:{{ .Tag }}-amd64"
-    build_flag_templates:
-      - --platform=linux/amd64
-
-docker_manifests:
-  - name_template: ghcr.io/kubecloudscaler/{{ .ProjectName }}:{{ .Tag }}
-    image_templates:
-      - ghcr.io/kubecloudscaler/{{ .ProjectName }}:{{ .Tag }}-amd64
-      - ghcr.io/kubecloudscaler/{{ .ProjectName }}:{{ .Tag }}-arm64v8
-  - name_template: ghcr.io/kubecloudscaler/{{ .ProjectName }}:v{{ .Major }}
-    image_templates:
-      - ghcr.io/kubecloudscaler/{{ .ProjectName }}:{{ .Tag }}-amd64
-      - ghcr.io/kubecloudscaler/{{ .ProjectName }}:{{ .Tag }}-arm64v8
-  - name_template: ghcr.io/kubecloudscaler/{{ .ProjectName }}:v{{ .Major }}.{{ .Minor }}
-    image_templates:
-      - ghcr.io/kubecloudscaler/{{ .ProjectName }}:{{ .Tag }}-amd64
-      - ghcr.io/kubecloudscaler/{{ .ProjectName }}:{{ .Tag }}-arm64v8
-  - name_template: ghcr.io/kubecloudscaler/{{ .ProjectName }}:{{ .Major }}
-    image_templates:
-      - ghcr.io/kubecloudscaler/{{ .ProjectName }}:{{ .Tag }}-amd64
-      - ghcr.io/kubecloudscaler/{{ .ProjectName }}:{{ .Tag }}-arm64v8
-  - name_template: ghcr.io/kubecloudscaler/{{ .ProjectName }}:{{ .Major }}.{{ .Minor }}
-    image_templates:
-      - ghcr.io/kubecloudscaler/{{ .ProjectName }}:{{ .Tag }}-amd64
-      - ghcr.io/kubecloudscaler/{{ .ProjectName }}:{{ .Tag }}-arm64v8
-  - name_template: ghcr.io/kubecloudscaler/{{ .ProjectName }}:{{ .RawVersion }}
-    image_templates:
-      - ghcr.io/kubecloudscaler/{{ .ProjectName }}:{{ .Tag }}-amd64
-      - ghcr.io/kubecloudscaler/{{ .ProjectName }}:{{ .Tag }}-arm64v8
-  - name_template: ghcr.io/kubecloudscaler/{{ .ProjectName }}:latest
-    image_templates:
-      - ghcr.io/kubecloudscaler/{{ .ProjectName }}:{{ .Tag }}-amd64
-      - ghcr.io/kubecloudscaler/{{ .ProjectName }}:{{ .Tag }}-arm64v8
+dockers_v2:
+  - images:
+      - "ghcr.io/kubecloudscaler/{{ .ProjectName }}"
+    tags:
+      - "{{ .Tag }}"
+      - "v{{ .Major }}"
+      - "v{{ .Major }}.{{ .Minor }}"
+      - "{{ .Major }}"
+      - "{{ .Major }}.{{ .Minor }}"
+      - "{{ .RawVersion }}"
+      - "{{ if .IsNightly }}nightly{{ end }}"
+      - "{{ if not .IsNightly }}latest{{ end }}"
+    labels:
+      "org.opencontainers.image.created": "{{.Date}}"
+      "org.opencontainers.image.name": "{{.ProjectName}}"
+      "org.opencontainers.image.revision": "{{.FullCommit}}"
+      "org.opencontainers.image.version": "{{.Version}}"
+      "org.opencontainers.image.source": "{{.GitURL}}"
 
 release:
   mode: replace
   replace_existing_artifacts: true
+
+snapshot:
+  version_template: "v0.0.0-snapshot"
