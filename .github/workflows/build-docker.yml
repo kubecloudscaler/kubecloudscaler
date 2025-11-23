@@ -13,11 +13,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6
-        with:
-          fetch-depth: 0
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -38,30 +33,19 @@ jobs:
         with:
           go-version-file: "go.mod"
 
-      - name: Run GoReleaser snapshot
-        uses: goreleaser/goreleaser-action@e435ccd777264be153ace6237001ef4d979d3a7a # v6
-        with:
-          args: release --snapshot --clean
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Retag images with commit SHA
+      - name: Build Go binary
         run: |
-          COMMIT_SHA="${{ steps.commit.outputs.sha }}"
-          SNAPSHOT_TAG="v0.0.0-snapshot"
+          mkdir -p linux/amd64
+          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o linux/amd64/kubecloudscaler ./cmd
 
-          # Retag amd64 image
-          docker pull ghcr.io/kubecloudscaler/kubecloudscaler:${SNAPSHOT_TAG}-amd64
-          docker tag ghcr.io/kubecloudscaler/kubecloudscaler:${SNAPSHOT_TAG}-amd64 ghcr.io/kubecloudscaler/kubecloudscaler:${COMMIT_SHA}-amd64
-          docker push ghcr.io/kubecloudscaler/kubecloudscaler:${COMMIT_SHA}-amd64
-
-          # Retag arm64 image
-          docker pull ghcr.io/kubecloudscaler/kubecloudscaler:${SNAPSHOT_TAG}-arm64v8
-          docker tag ghcr.io/kubecloudscaler/kubecloudscaler:${SNAPSHOT_TAG}-arm64v8 ghcr.io/kubecloudscaler/kubecloudscaler:${COMMIT_SHA}-arm64v8
-          docker push ghcr.io/kubecloudscaler/kubecloudscaler:${COMMIT_SHA}-arm64v8
-
-          # Create and push multi-arch manifest
-          docker manifest create ghcr.io/kubecloudscaler/kubecloudscaler:${COMMIT_SHA} \
-            --amend ghcr.io/kubecloudscaler/kubecloudscaler:${COMMIT_SHA}-amd64 \
-            --amend ghcr.io/kubecloudscaler/kubecloudscaler:${COMMIT_SHA}-arm64v8
-          docker manifest push ghcr.io/kubecloudscaler/kubecloudscaler:${COMMIT_SHA}
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64
+          file: ./Dockerfile
+          push: true
+          tags: |
+            ghcr.io/kubecloudscaler/kubecloudscaler:${{ steps.commit.outputs.sha }}
+          build-args: |
+            TARGETPLATFORM=linux/amd64
