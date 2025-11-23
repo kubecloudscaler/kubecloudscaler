@@ -91,6 +91,11 @@ type K8sList struct {
 	Items           []K8s `json:"items"`
 }
 
+// GetStatus returns a pointer to the status field for use with status update utilities.
+func (k *K8s) GetStatus() *common.ScalerStatus {
+	return &k.Status
+}
+
 func init() {
 	SchemeBuilder.Register(&K8s{}, &K8sList{})
 }

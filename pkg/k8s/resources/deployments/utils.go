@@ -12,14 +12,18 @@ import (
 
 // New creates a new Deployments resource manager.
 func New(ctx context.Context, config *utils.Config) (*Deployments, error) {
-	k8sResource, err := utils.InitConfig(ctx, config)
+	logger := zerolog.Ctx(ctx)
+	clientAdapter := utils.NewKubernetesClientAdapter(config.Client)
+	namespaceMgr := utils.NewNamespaceManager(clientAdapter, *logger)
+
+	k8sResource, err := namespaceMgr.InitConfig(ctx, config)
 	if err != nil {
 		return nil, fmt.Errorf("error initializing k8s config: %w", err)
 	}
 
 	resource := &Deployments{
 		Resource: k8sResource,
-		Logger:   zerolog.Ctx(ctx),
+		Logger:   logger,
 	}
 
 	resource.init(config.Client)
