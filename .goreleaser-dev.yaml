@@ -53,14 +53,7 @@ dockers_v2:
   - images:
       - "ghcr.io/kubecloudscaler/{{ .ProjectName }}"
     tags:
-      - "{{ .Tag }}"
-      - "v{{ .Major }}"
-      - "v{{ .Major }}.{{ .Minor }}"
-      - "{{ .Major }}"
-      - "{{ .Major }}.{{ .Minor }}"
-      - "{{ .RawVersion }}"
-      - "{{ if .IsNightly }}nightly{{ end }}"
-      - "{{ if not .IsNightly }}latest{{ end }}"
+      - "{{.ShortCommit}}"
     labels:
       "org.opencontainers.image.created": "{{.Date}}"
       "org.opencontainers.image.name": "{{.ProjectName}}"
@@ -69,6 +62,7 @@ dockers_v2:
       "org.opencontainers.image.source": "{{.GitURL}}"
 
 release:
+  disable: true
   mode: replace
   replace_existing_artifacts: true
 
