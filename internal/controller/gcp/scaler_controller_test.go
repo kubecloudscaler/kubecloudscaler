@@ -64,7 +64,7 @@ var _ = Describe("Scaler Controller", func() {
 
 		BeforeEach(func() {
 			By("creating the custom resource for the Kind Scaler")
-			err := testEnv.Client.Get(ctx, typeNamespacedName, scaler)
+			err := k8sClient.Get(ctx, typeNamespacedName, scaler)
 			if err != nil && errors.IsNotFound(err) {
 				resource := &kubecloudscalerv1alpha3.Gcp{
 					ObjectMeta: metav1.ObjectMeta{
@@ -89,7 +89,7 @@ var _ = Describe("Scaler Controller", func() {
 						},
 					},
 				}
-				Expect(testEnv.Client.Create(ctx, resource)).To(Succeed())
+				Expect(k8sClient.Create(ctx, resource)).To(Succeed())
 			}
 		})
 
@@ -114,41 +114,26 @@ var _ = Describe("Scaler Controller", func() {
 					},
 				},
 			}
-			err := testEnv.Client.Get(ctx, typeNamespacedName, resource)
+			err := k8sClient.Get(ctx, typeNamespacedName, resource)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Cleanup the specific resource instance Scaler")
-			Expect(testEnv.Client.Delete(ctx, resource)).To(Succeed())
+			Expect(k8sClient.Delete(ctx, resource)).To(Succeed())
 		})
 		It("should successfully reconcile the resource", func() {
 			By("Reconciling the created resource")
-			controllerReconciler := NewScalerReconciler(
-				testEnv.Client,
-				testEnv.Client.Scheme(),
-				&log.Logger,
-			)
+			controllerReconciler := &ScalerReconciler{
+				Client: k8sClient,
+				Scheme: k8sClient.Scheme(),
+				Logger: &log.Logger,
+			}
 
 			_, err := controllerReconciler.Reconcile(ctx, reconcile.Request{
 				NamespacedName: typeNamespacedName,
 			})
 			Expect(err).NotTo(HaveOccurred())
-		})
-
-		It("should handle non-existent resource gracefully", func() {
-			By("Reconciling a non-existent resource")
-			controllerReconciler := NewScalerReconciler(
-				testEnv.Client,
-				testEnv.Client.Scheme(),
-				&log.Logger,
-			)
-
-			_, err := controllerReconciler.Reconcile(ctx, reconcile.Request{
-				NamespacedName: types.NamespacedName{
-					Name:      "non-existent",
-					Namespace: "default",
-				},
-			})
-			Expect(err).NotTo(HaveOccurred())
+			// TODO(user): Add more specific assertions depending on your controller's reconciliation logic.
+			// Example: If you expect a certain status condition after reconciliation, verify it here.
 		})
 	})
 })

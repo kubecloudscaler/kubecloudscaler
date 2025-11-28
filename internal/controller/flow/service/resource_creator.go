@@ -40,20 +40,18 @@ type ResourceCreatorService struct {
 
 // NewResourceCreatorService creates a new ResourceCreatorService
 func NewResourceCreatorService(
-	k8sClient client.Client,
+	client client.Client,
 	scheme *runtime.Scheme,
 	logger *zerolog.Logger,
 ) *ResourceCreatorService {
 	return &ResourceCreatorService{
-		client: k8sClient,
+		client: client,
 		scheme: scheme,
 		logger: logger,
 	}
 }
 
 // CreateK8sResource creates a K8s resource CR with all associated periods
-//
-//nolint:gocritic // hugeParam: Must match interface signature
 func (c *ResourceCreatorService) CreateK8sResource(
 	ctx context.Context,
 	flow *kubecloudscalerv1alpha3.Flow,
@@ -63,34 +61,7 @@ func (c *ResourceCreatorService) CreateK8sResource(
 ) error {
 	allPeriods := c.buildPeriods(periodsWithDelay)
 
-	k8sObj := c.createK8sObject(flow, resourceName, k8sResource, allPeriods)
-	return c.createResource(ctx, flow, k8sObj, len(allPeriods), "K8s")
-}
-
-// CreateGcpResource creates a GCP resource CR with all associated periods
-//
-//nolint:gocritic // hugeParam: Must match interface signature
-func (c *ResourceCreatorService) CreateGcpResource(
-	ctx context.Context,
-	flow *kubecloudscalerv1alpha3.Flow,
-	resourceName string,
-	gcpResource kubecloudscalerv1alpha3.GcpResource,
-	periodsWithDelay []types.PeriodWithDelay,
-) error {
-	allPeriods := c.buildPeriods(periodsWithDelay)
-
-	gcpObj := c.createGcpObject(flow, resourceName, gcpResource, allPeriods)
-	return c.createResource(ctx, flow, gcpObj, len(allPeriods), "GCP")
-}
-
-// createK8sObject creates a K8s object with the given parameters
-func (c *ResourceCreatorService) createK8sObject(
-	flow *kubecloudscalerv1alpha3.Flow,
-	resourceName string,
-	k8sResource kubecloudscalerv1alpha3.K8sResource,
-	allPeriods []common.ScalerPeriod,
-) *kubecloudscalerv1alpha3.K8s {
-	return &kubecloudscalerv1alpha3.K8s{
+	k8sObj := &kubecloudscalerv1alpha3.K8s{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: fmt.Sprintf("flow-%s-%s", flow.Name, resourceName),
 			Labels: map[string]string{
@@ -105,18 +76,34 @@ func (c *ResourceCreatorService) createK8sObject(
 			Config:    k8sResource.Config,
 		},
 	}
+
+	if err := controllerutil.SetControllerReference(flow, k8sObj, c.scheme); err != nil {
+		return fmt.Errorf("failed to set owner reference: %w", err)
+	}
+
+	if err := c.createOrUpdateResource(ctx, k8sObj); err != nil {
+		return fmt.Errorf("failed to create/update K8s object: %w", err)
+	}
+
+	c.logger.Info().
+		Str("name", k8sObj.Name).
+		Int("periods", len(allPeriods)).
+		Msg("created/updated K8s resource")
+
+	return nil
 }
 
-// createGcpObject creates a GCP object with the given parameters
-//
-//nolint:gocritic // hugeParam: Internal helper function, acceptable
-func (c *ResourceCreatorService) createGcpObject(
+// CreateGcpResource creates a GCP resource CR with all associated periods
+func (c *ResourceCreatorService) CreateGcpResource(
+	ctx context.Context,
 	flow *kubecloudscalerv1alpha3.Flow,
 	resourceName string,
 	gcpResource kubecloudscalerv1alpha3.GcpResource,
-	allPeriods []common.ScalerPeriod,
-) *kubecloudscalerv1alpha3.Gcp {
-	return &kubecloudscalerv1alpha3.Gcp{
+	periodsWithDelay []types.PeriodWithDelay,
+) error {
+	allPeriods := c.buildPeriods(periodsWithDelay)
+
+	gcpObj := &kubecloudscalerv1alpha3.Gcp{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: fmt.Sprintf("flow-%s-%s", flow.Name, resourceName),
 			Labels: map[string]string{
@@ -131,28 +118,19 @@ func (c *ResourceCreatorService) createGcpObject(
 			Config:    gcpResource.Config,
 		},
 	}
-}
 
-// createResource is a helper function that handles common resource creation logic
-func (c *ResourceCreatorService) createResource(
-	ctx context.Context,
-	flow *kubecloudscalerv1alpha3.Flow,
-	obj client.Object,
-	periodCount int,
-	resourceType string,
-) error {
-	if err := controllerutil.SetControllerReference(flow, obj, c.scheme); err != nil {
+	if err := controllerutil.SetControllerReference(flow, gcpObj, c.scheme); err != nil {
 		return fmt.Errorf("failed to set owner reference: %w", err)
 	}
 
-	if err := c.createOrUpdateResource(ctx, obj); err != nil {
-		return fmt.Errorf("failed to create/update %s object: %w", resourceType, err)
+	if err := c.createOrUpdateResource(ctx, gcpObj); err != nil {
+		return fmt.Errorf("failed to create/update GCP object: %w", err)
 	}
 
 	c.logger.Info().
-		Str("name", obj.GetName()).
-		Int("periods", periodCount).
-		Msgf("created/updated %s resource", resourceType)
+		Str("name", gcpObj.Name).
+		Int("periods", len(allPeriods)).
+		Msg("created/updated GCP resource")
 
 	return nil
 }
@@ -182,11 +160,7 @@ func (c *ResourceCreatorService) createOrUpdateResource(ctx context.Context, obj
 			return err
 		}
 		// Object already exists, get it first to preserve existing fields
-		copiedObj := obj.DeepCopyObject()
-		existingObj, ok := copiedObj.(client.Object)
-		if !ok {
-			return fmt.Errorf("failed to deep copy object: type assertion to client.Object failed")
-		}
+		existingObj := obj.DeepCopyObject().(client.Object)
 		if err := c.client.Get(ctx, client.ObjectKeyFromObject(obj), existingObj); err != nil {
 			return fmt.Errorf("failed to get existing resource: %w", err)
 		}

@@ -27,14 +27,11 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	kubecloudscalerv1alpha3 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha3"
 	"github.com/kubecloudscaler/kubecloudscaler/internal/controller/flow/service"
 	"github.com/kubecloudscaler/kubecloudscaler/internal/utils"
-)
-
-const (
-	flowFinalizerName = "kubecloudscaler.cloud/flow-finalizer"
 )
 
 // FlowReconciler reconciles a Flow object
@@ -52,7 +49,7 @@ type FlowReconciler struct {
 
 // NewFlowReconciler creates a new FlowReconciler with all required services
 func NewFlowReconciler(
-	k8sClient client.Client,
+	client client.Client,
 	scheme *runtime.Scheme,
 	logger *zerolog.Logger,
 ) *FlowReconciler {
@@ -64,12 +61,12 @@ func NewFlowReconciler(
 	timeCalculator := service.NewTimeCalculatorService(logger)
 	flowValidator := service.NewFlowValidatorService(timeCalculator, logger)
 	resourceMapper := service.NewResourceMapperService(timeCalculator, logger)
-	resourceCreator := service.NewResourceCreatorService(k8sClient, scheme, logger)
+	resourceCreator := service.NewResourceCreatorService(client, scheme, logger)
 	flowProcessor := service.NewFlowProcessorService(flowValidator, resourceMapper, resourceCreator, logger)
-	statusUpdater := service.NewStatusUpdaterService(k8sClient, logger)
+	statusUpdater := service.NewStatusUpdaterService(client, logger)
 
 	return &FlowReconciler{
-		Client:        k8sClient,
+		Client:        client,
 		Scheme:        scheme,
 		Logger:        logger,
 		flowProcessor: flowProcessor,
@@ -97,10 +94,9 @@ func NewFlowReconciler(
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.22.1/pkg/reconcile
 func (r *FlowReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	flow := &kubecloudscalerv1alpha3.Flow{}
-	if err := r.Get(ctx, req.NamespacedName, flow); err != nil {
-		r.Logger.Error().Err(err).Msg("unable to fetch Flow")
-		return ctrl.Result{}, client.IgnoreNotFound(err)
+	flow, err := r.fetchFlow(ctx, req)
+	if err != nil {
+		return ctrl.Result{}, err
 	}
 
 	r.Logger.Info().
@@ -110,9 +106,7 @@ func (r *FlowReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		Msg("reconciling flow")
 
 	// Handle finalizer management
-	if shouldStop, err := r.handleFinalizers(ctx, flow); err != nil {
-		return ctrl.Result{}, client.IgnoreNotFound(err)
-	} else if shouldStop {
+	if r.handleFinalizers(ctx, flow) {
 		return ctrl.Result{}, nil
 	}
 
@@ -130,72 +124,72 @@ func (r *FlowReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	})
 }
 
-// handleFinalizers handles finalizer management for proper cleanup.
-// Returns true if reconciliation should stop, false otherwise.
-func (r *FlowReconciler) handleFinalizers(ctx context.Context, flow *kubecloudscalerv1alpha3.Flow) (bool, error) {
-	result, err := utils.HandleFinalizer(ctx, r.Client, flow, flowFinalizerName, r.Logger)
-	if err != nil {
-		return true, err
+// fetchFlow fetches the Flow object from the Kubernetes API
+func (r *FlowReconciler) fetchFlow(ctx context.Context, req ctrl.Request) (*kubecloudscalerv1alpha3.Flow, error) {
+	flow := &kubecloudscalerv1alpha3.Flow{}
+	if err := r.Get(ctx, req.NamespacedName, flow); err != nil {
+		r.Logger.Error().Err(err).Msg("unable to fetch Flow")
+		return nil, client.IgnoreNotFound(err)
 	}
-	if result.ShouldStop {
-		return true, nil
-	}
-
-	// If object is being deleted, remove finalizer and stop reconciliation
-	if result.IsDeleting {
-		return true, utils.RemoveFinalizer(ctx, r.Client, flow, flowFinalizerName, r.Logger)
-	}
-
-	return false, nil
+	return flow, nil
 }
 
-// handleProcessingError handles processing errors and determines if requeue is needed.
-func (r *FlowReconciler) handleProcessingError(ctx context.Context, flow *kubecloudscalerv1alpha3.Flow, err error) (ctrl.Result, error) {
-	// Check if this is a scheduling error (requeue needed)
-	if duration := extractRequeueDuration(err); duration > 0 {
-		r.Logger.Info().
-			Str("flow", flow.Name).
-			Dur("requeueAfter", duration).
-			Msg("flow scheduled for later processing")
-		return ctrl.Result{RequeueAfter: duration}, nil
+// handleFinalizers handles finalizer management for proper cleanup
+func (r *FlowReconciler) handleFinalizers(ctx context.Context, flow *kubecloudscalerv1alpha3.Flow) bool {
+	flowFinalizer := "kubecloudscaler.cloud/flow-finalizer"
+
+	if flow.DeletionTimestamp.IsZero() {
+		// Object is not being deleted - ensure finalizer is present
+		if !controllerutil.ContainsFinalizer(flow, flowFinalizer) {
+			r.Logger.Info().Msg("adding finalizer")
+			controllerutil.AddFinalizer(flow, flowFinalizer)
+			if err := r.Update(ctx, flow); err != nil {
+				return true
+			}
+		}
+		return false
 	}
 
-	// Handle regular processing errors
-	r.Logger.Error().Err(err).Str("flow", flow.Name).Msg("flow processing failed")
+	// Object is being deleted - handle finalizer cleanup
+	if controllerutil.ContainsFinalizer(flow, flowFinalizer) {
+		r.Logger.Info().Msg("deleting flow with finalizer")
+		r.Logger.Info().Msg("removing finalizer")
+		controllerutil.RemoveFinalizer(flow, flowFinalizer)
+		if err := r.Update(ctx, flow); err != nil {
+			return true
+		}
+		return true
+	}
+
+	// Finalizer already removed, stop reconciliation
+	return true
+}
+
+// handleProcessingError handles processing errors and determines if requeue is needed
+func (r *FlowReconciler) handleProcessingError(ctx context.Context, flow *kubecloudscalerv1alpha3.Flow, err error) (ctrl.Result, error) {
+	// Check if this is a scheduling error (requeue needed)
+	if strings.Contains(err.Error(), "scheduled for") && strings.Contains(err.Error(), "requeue after") {
+		// Extract requeue duration from error message
+		parts := strings.Split(err.Error(), "requeue after ")
+		if len(parts) > 1 {
+			requeueStr := strings.TrimSpace(parts[1])
+			if requeueDuration, parseErr := time.ParseDuration(requeueStr); parseErr == nil {
+				r.Logger.Info().
+					Str("flow", flow.Name).
+					Dur("requeueAfter", requeueDuration).
+					Msg("flow scheduled for later processing")
+				return ctrl.Result{RequeueAfter: requeueDuration}, nil
+			}
+		}
+	}
+
+	r.Logger.Error().Err(err).Msg("flow processing failed")
 	return r.statusUpdater.UpdateFlowStatus(ctx, flow, metav1.Condition{
 		Type:    "Processed",
 		Status:  metav1.ConditionFalse,
 		Reason:  "ProcessingFailed",
 		Message: err.Error(),
 	})
-}
-
-// extractRequeueDuration extracts requeue duration from error message.
-// Returns 0 if no valid duration is found.
-func extractRequeueDuration(err error) time.Duration {
-	errMsg := err.Error()
-	if !strings.Contains(errMsg, "scheduled for") || !strings.Contains(errMsg, "requeue after") {
-		return 0
-	}
-
-	parts := strings.Split(errMsg, "requeue after ")
-	const minPartsForRequeue = 2
-	if len(parts) < minPartsForRequeue {
-		return 0
-	}
-
-	requeueStr := strings.TrimSpace(parts[1])
-	// Extract duration string (may be followed by other text)
-	if idx := strings.IndexAny(requeueStr, " )"); idx > 0 {
-		requeueStr = requeueStr[:idx]
-	}
-
-	duration, parseErr := time.ParseDuration(requeueStr)
-	if parseErr != nil {
-		return 0
-	}
-
-	return duration
 }
 
 // SetupWithManager sets up the controller with the Manager.

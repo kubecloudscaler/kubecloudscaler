@@ -36,9 +36,9 @@ type StatusUpdaterService struct {
 }
 
 // NewStatusUpdaterService creates a new StatusUpdaterService
-func NewStatusUpdaterService(k8sClient client.Client, logger *zerolog.Logger) *StatusUpdaterService {
+func NewStatusUpdaterService(client client.Client, logger *zerolog.Logger) *StatusUpdaterService {
 	return &StatusUpdaterService{
-		client: k8sClient,
+		client: client,
 		logger: logger,
 	}
 }
