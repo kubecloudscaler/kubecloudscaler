@@ -208,7 +208,7 @@ var _ = Describe("GithubAutoscalingRunnersets", func() {
 			success, failed, err := manager.SetState(ctx)
 
 			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("error listing autoscaling runner sets"))
+			Expect(err.Error()).To(ContainSubstring("error listing autoscalingrunnersets"))
 			Expect(success).To(BeEmpty())
 			Expect(failed).To(BeEmpty())
 		})
