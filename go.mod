@@ -4,7 +4,7 @@ go 1.25.1
 
 require (
 	cloud.google.com/go/compute v1.49.1
-	github.com/actions/actions-runner-controller v0.27.7-0.20251121182319-a9e371e083c0
+	github.com/actions/actions-runner-controller v0.27.7-0.20251209165509-82d5579696fa
 	github.com/onsi/ginkgo/v2 v2.27.2
 	github.com/onsi/gomega v1.38.2
 	github.com/rs/zerolog v1.34.0
