@@ -1,0 +1,85 @@
+name: Test Coverage
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  coverage:
+    name: Test Coverage Analysis
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.25.1"
+          cache: true
+
+      - name: Install dependencies
+        run: |
+          go mod download
+          go mod verify
+
+      - name: Run tests with coverage
+        run: |
+          make test-coverage
+
+      - name: Parse coverage percentage
+        id: coverage
+        run: |
+          COVERAGE=$(go tool cover -func=coverage.out | tail -1 | awk '{print $NF}' | sed 's/%//')
+          echo "percentage=$COVERAGE" >> $GITHUB_OUTPUT
+          echo "Coverage: $COVERAGE%"
+
+      - name: Check coverage threshold
+        run: |
+          COVERAGE=${{ steps.coverage.outputs.percentage }}
+          THRESHOLD=80.0
+
+          if (( $(echo "$COVERAGE < $THRESHOLD" | bc -l) )); then
+            echo "❌ Coverage check failed!"
+            echo "Current coverage: $COVERAGE%"
+            echo "Required coverage: $THRESHOLD%"
+            echo "Gap: $(echo "$THRESHOLD - $COVERAGE" | bc)%"
+            echo ""
+            echo "Please add tests to increase coverage above $THRESHOLD%"
+            exit 1
+          else
+            echo "✅ Coverage check passed!"
+            echo "Current coverage: $COVERAGE%"
+            echo "Required coverage: $THRESHOLD%"
+          fi
+
+      - name: Generate coverage report
+        if: always()
+        run: |
+          echo "## Test Coverage Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          COVERAGE=${{ steps.coverage.outputs.percentage }}
+          echo "**Overall Coverage:** $COVERAGE%" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Per-Package Coverage" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Package | Coverage |" >> $GITHUB_STEP_SUMMARY
+          echo "|---------|----------|" >> $GITHUB_STEP_SUMMARY
+          go tool cover -func=coverage.out | grep -v "total:" | awk '{print "| " $1 " | " $3 " |"}' >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if (( $(echo "$COVERAGE < 80.0" | bc -l) )); then
+            echo "⚠️ **Coverage below 80% threshold**" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "✅ **Coverage meets 80% threshold**" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Upload coverage artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: |
+            coverage.out
+            coverage.html
+          retention-days: 30

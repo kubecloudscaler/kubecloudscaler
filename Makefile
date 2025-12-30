@@ -61,6 +61,27 @@ vet: ## Run go vet against code.
 test: manifests generate fmt vet setup-envtest ## Run tests.
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" go test $$(go list ./... | grep -v /e2e) -coverprofile cover.out
 
+.PHONY: test-coverage
+test-coverage: setup-envtest ## Run tests with coverage analysis and generate reports.
+	@echo "Running tests with coverage analysis..."
+	@KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" go test $$(go list ./... | grep -v /e2e) -coverprofile=coverage.out -covermode=atomic
+	@echo ""
+	@echo "=== Coverage Report ==="
+	@go tool cover -func=coverage.out | tail -n 1
+	@echo ""
+	@echo "=== Per-Package Coverage ==="
+	@go tool cover -func=coverage.out | grep -v "total:" | awk '{print $$1 " " $$3}' | column -t
+	@echo ""
+	@echo "Generating HTML coverage report..."
+	@go tool cover -html=coverage.out -o coverage.html
+	@echo "✓ HTML report generated: coverage.html"
+
+.PHONY: test-bench
+test-bench: setup-envtest ## Run benchmark tests.
+	@echo "Running benchmark tests..."
+	@KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" go test ./... -bench=. -benchmem -run=^$$ | tee bench.out
+	@echo "✓ Benchmark results saved to bench.out"
+
 # TODO(user): To use a different vendor for e2e tests, modify the setup under 'tests/e2e'.
 # The default setup assumes Kind is pre-installed and builds/loads the Manager Docker image locally.
 # CertManager is installed by default; skip with:
