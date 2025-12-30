@@ -1,5 +1,23 @@
 # Changelog
 
+## [1.7.0](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.6.3...v1.7.0) (2025-12-30)
+
+
+### Features
+
+* refactor resources ([#191](https://github.com/kubecloudscaler/kubecloudscaler/issues/191)) ([47de8f3](https://github.com/kubecloudscaler/kubecloudscaler/commit/47de8f35d3ebdea4d7f568b04b76e3db6eb467b4))
+
+
+### Bug Fixes
+
+* **deps:** update github.com/actions/actions-runner-controller digest to 6d07b8d ([#186](https://github.com/kubecloudscaler/kubecloudscaler/issues/186)) ([e415878](https://github.com/kubecloudscaler/kubecloudscaler/commit/e41587856f15f56549dd17b0cd1b9788763d3142))
+* **deps:** update github.com/actions/actions-runner-controller digest to 82d5579 ([#192](https://github.com/kubecloudscaler/kubecloudscaler/issues/192)) ([9990ea0](https://github.com/kubecloudscaler/kubecloudscaler/commit/9990ea0aeece597fbdbdc8fbd4e3a36a9afbcac9))
+* **deps:** update github.com/actions/actions-runner-controller digest to a505fb5 ([#196](https://github.com/kubecloudscaler/kubecloudscaler/issues/196)) ([cae308a](https://github.com/kubecloudscaler/kubecloudscaler/commit/cae308af22c52194d042e42358f68fd793acf3ee))
+* **deps:** update github.com/actions/actions-runner-controller digest to a9e371e ([#190](https://github.com/kubecloudscaler/kubecloudscaler/issues/190)) ([7ad67c2](https://github.com/kubecloudscaler/kubecloudscaler/commit/7ad67c2983258727c8a601403cc561ed2e113dbe))
+* dev workflow ([54a28c5](https://github.com/kubecloudscaler/kubecloudscaler/commit/54a28c5f4fcda30c18290015cbfb61a24e777428))
+* revert controler ([47de8f3](https://github.com/kubecloudscaler/kubecloudscaler/commit/47de8f35d3ebdea4d7f568b04b76e3db6eb467b4))
+* update API version dependencies and refactor import statements ([47de8f3](https://github.com/kubecloudscaler/kubecloudscaler/commit/47de8f35d3ebdea4d7f568b04b76e3db6eb467b4))
+
 ## [1.6.3](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.6.2...v1.6.3) (2025-11-19)
 
 
