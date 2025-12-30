@@ -53,15 +53,15 @@ Developers need to quickly locate and understand test files. Currently, tests ar
 
 ### User Story 3 - Ensure Business Logic Has Comprehensive Test Coverage (Priority: P2)
 
-Developers need confidence that business logic in the service layer is thoroughly tested. The constitution mandates TDD for all business logic in `internal/service/`, but coverage may be incomplete.
+Developers need confidence that business logic in the service layer is thoroughly tested. The constitution mandates TDD for all business logic in `internal/controller/*/service/`, but coverage may be incomplete.
 
 **Why this priority**: Business logic contains critical decision-making code. Incomplete coverage risks bugs in production and makes refactoring dangerous. This ensures the most important code is protected.
 
-**Independent Test**: Can be fully tested by analyzing coverage specifically for `internal/service/` layer and verifying all exported functions have behavioral test coverage. This delivers confidence that business logic is protected against regressions.
+**Independent Test**: Can be fully tested by analyzing coverage specifically for `internal/controller/*/service/` layer and verifying all exported functions have behavioral test coverage. This delivers confidence that business logic is protected against regressions.
 
 **Acceptance Scenarios**:
 
-1. **Given** a function exists in `internal/service/`, **When** coverage analysis runs, **Then** the function shows 100% coverage or a clear gap is identified
+1. **Given** a function exists in `internal/controller/*/service/`, **When** coverage analysis runs, **Then** the function shows 100% coverage or a clear gap is identified
 2. **Given** a new business logic function is added, **When** tests are written, **Then** the tests verify both success and error paths
 3. **Given** a business logic function has multiple branches, **When** tests run, **Then** all branches are exercised
 
@@ -113,11 +113,11 @@ Developers need to track performance regressions over time. Without benchmarks, 
 ### Functional Requirements
 
 - **FR-001**: The system MUST report overall test coverage percentage for the entire codebase, with per-package breakdown for visibility, both in CI output (PR comments/logs) and via local command for developers
-- **FR-002**: The system MUST report test coverage percentage for the `internal/service/` layer specifically
+- **FR-002**: The system MUST report test coverage percentage for the `internal/controller/*/service/` layer specifically
 - **FR-003**: The system MUST enforce minimum 80% test coverage for the overall codebase via CI/CD pipeline blocking merges below threshold. Coverage checks run on PR open and every update (enforcement is overall, reporting includes per-package breakdown)
 - **FR-004**: The system MUST organize all unit tests under `test/unit/` directory structure (all existing tests moved in a single migration)
 - **FR-005**: The system MUST organize all integration tests under `test/integration/` directory structure (all existing tests moved in a single migration)
-- **FR-006**: The system MUST ensure all exported functions in `internal/service/` have behavioral test coverage
+- **FR-006**: The system MUST ensure all exported functions in `internal/controller/*/service/` have behavioral test coverage
 - **FR-007**: The system MUST use table-driven test patterns for functions with multiple input variants (3+ variants)
 - **FR-008**: The system MUST provide performance benchmarks for critical functions (Kubernetes API calls, GCP API calls, heavy computation). Benchmark results are reported in CI output for visibility but do not block merges (advisory only)
 - **FR-009**: The system MUST mock external services (Kubernetes API, GCP APIs) in unit tests using interfaces
@@ -130,7 +130,7 @@ Developers need to track performance regressions over time. Without benchmarks, 
 ### Measurable Outcomes
 
 - **SC-001**: Overall test coverage reaches and maintains 80% or higher across the entire codebase
-- **SC-002**: Test coverage for `internal/service/` layer reaches 100% for all exported functions
+- **SC-002**: Test coverage for `internal/controller/*/service/` layer reaches 100% for all exported functions
 - **SC-003**: All unit tests are located in `test/unit/` and all integration tests are in `test/integration/` after the big-bang migration PR is merged
 - **SC-004**: CI pipeline blocks 100% of pull requests that would reduce coverage below 80%
 - **SC-005**: At least 90% of functions with 3+ input variants use table-driven test patterns

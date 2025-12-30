@@ -18,7 +18,7 @@ Follow-up TODOs: None
 
 ### Session 2025-12-30
 
-- Q: What defines "core business logic" for TDD requirements? → A: All business logic in `internal/service/` layer
+- Q: What defines "core business logic" for TDD requirements? → A: All business logic in `internal/controller/*/service/` layer (the service layer within the flow controller)
 - Q: What is the minimum test coverage threshold and how is it enforced? → A: 80% minimum with CI enforcement
 - Q: What is the amendment approval process for constitution changes? → A: Maintainer approval via PR review
 - Q: What complexity threshold requires justification in code reviews? → A: Cyclomatic complexity >10 or new architectural patterns
@@ -30,7 +30,7 @@ Follow-up TODOs: None
 All code MUST follow Clean Architecture principles with clear layer separation:
 - `cmd/` - Application entrypoints
 - `internal/controller/` - Controllers (reconciliation logic)
-- `internal/service/` - Business logic and use cases
+- `internal/controller/*/service/` - Business logic and use cases (service layer within controllers)
 - `internal/repository/` - Data access layer
 - `internal/model/` - Domain models
 - `internal/config/` - Configuration management
@@ -47,7 +47,7 @@ All dependencies MUST be defined as interfaces. Dependency injection MUST be per
 **Rationale**: Interface-driven development enables testing through mocking, improves modularity, and allows for easier refactoring. Dependency injection via constructors makes dependencies explicit and testable.
 
 ### III. Test-Driven Development (TDD)
-TDD is mandatory for all business logic in the `internal/service/` layer: Tests written → User approved → Tests fail → Then implement. The Red-Green-Refactor cycle MUST be strictly enforced. All exported functions MUST have test coverage with behavioral checks. Minimum test coverage of 80% MUST be maintained and enforced via CI/CD.
+TDD is mandatory for all business logic in the `internal/controller/*/service/` layer: Tests written → User approved → Tests fail → Then implement. The Red-Green-Refactor cycle MUST be strictly enforced. All exported functions MUST have test coverage with behavioral checks. Minimum test coverage of 80% MUST be maintained and enforced via CI/CD.
 
 **Rationale**: TDD ensures code correctness, improves design, and provides documentation through tests. It catches regressions early and enforces good design practices. The 80% coverage threshold balances thoroughness with practicality while ensuring core functionality is tested.
 
