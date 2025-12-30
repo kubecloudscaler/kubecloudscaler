@@ -93,6 +93,11 @@ type GcpList struct {
 	Items           []Gcp `json:"items"`
 }
 
+// GetStatus returns a pointer to the status field for use with status update utilities.
+func (g *Gcp) GetStatus() *common.ScalerStatus {
+	return &g.Status
+}
+
 func init() {
 	SchemeBuilder.Register(&Gcp{}, &GcpList{})
 }

@@ -21,8 +21,6 @@ spec:
     spec:
       containers:
       - args: {{- toYaml .Values.controllerManager.manager.args | nindent 8 }}
-        command:
-        - /kubecloudscaler
         env:
         - name: POD_NAME
           valueFrom:

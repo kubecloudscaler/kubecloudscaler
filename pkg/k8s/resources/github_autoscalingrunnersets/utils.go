@@ -1,4 +1,4 @@
-// Package deployments provides utility functions for Deployment resource management.
+// Package ars provides utility functions for Autoscaling Runner Set resource management.
 package ars
 
 import (
@@ -12,14 +12,18 @@ import (
 
 // New creates a new Github Autoscaling Runnersets resource manager.
 func New(ctx context.Context, config *utils.Config) (*GithubAutoscalingRunnersets, error) {
-	k8sResource, err := utils.InitConfig(ctx, config)
+	logger := zerolog.Ctx(ctx)
+	clientAdapter := utils.NewKubernetesClientAdapter(config.Client)
+	namespaceMgr := utils.NewNamespaceManager(clientAdapter, *logger)
+
+	k8sResource, err := namespaceMgr.InitConfig(ctx, config)
 	if err != nil {
 		return nil, fmt.Errorf("error initializing k8s config: %w", err)
 	}
 
 	resource := &GithubAutoscalingRunnersets{
 		Resource: k8sResource,
-		Logger:   zerolog.Ctx(ctx),
+		Logger:   logger,
 	}
 
 	resource.init(config.DynamicClient)

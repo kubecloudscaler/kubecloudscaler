@@ -31,6 +31,13 @@ jobs:
         with:
           go-version-file: "go.mod"
 
+      - name: Create a git tag locally
+        run: |
+          git config --global user.name "${{ github.actor }}"
+          git config --global user.email "${{ github.actor }}@users.noreply.github.com"
+          TAG_NAME="v0.0.0-${{ github.sha }}"
+          git tag $TAG_NAME
+
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@e435ccd777264be153ace6237001ef4d979d3a7a # v6
         with:
