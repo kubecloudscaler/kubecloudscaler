@@ -15,7 +15,7 @@ controllerManager:
       enableWebhooks: 'true'
     image:
       repository: ghcr.io/kubecloudscaler/kubecloudscaler
-      tag: 1.7.0
+      tag: 1.7.0@sha256:89a147206c026f9bab8e38a41a2c49777526289e78715d040b00f1b6e32370d3
     imagePullPolicy: IfNotPresent
     resources:
       limits:
