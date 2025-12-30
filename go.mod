@@ -3,10 +3,10 @@ module github.com/kubecloudscaler/kubecloudscaler
 go 1.25.1
 
 require (
-	cloud.google.com/go/compute v1.49.1
+	cloud.google.com/go/compute v1.52.0
 	github.com/actions/actions-runner-controller v0.27.7-0.20251209165509-82d5579696fa
-	github.com/onsi/ginkgo/v2 v2.27.2
-	github.com/onsi/gomega v1.38.2
+	github.com/onsi/ginkgo/v2 v2.27.3
+	github.com/onsi/gomega v1.38.3
 	github.com/rs/zerolog v1.34.0
 	github.com/stretchr/testify v1.11.1
 	google.golang.org/api v0.258.0
@@ -58,7 +58,6 @@ require (
 	github.com/go-openapi/swag/typeutils v0.25.4 // indirect
 	github.com/go-openapi/swag/yamlutils v0.25.4 // indirect
 	github.com/go-task/slim-sprig/v3 v3.0.0 // indirect
-	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang-jwt/jwt/v5 v5.3.0 // indirect
 	github.com/google/btree v1.1.3 // indirect
 	github.com/google/cel-go v0.26.1 // indirect
