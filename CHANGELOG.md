@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.8.0](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.7.0...v1.8.0) (2025-12-31)
+
+
+### Features
+
+* add chain pattern handlers for Kubernetes scaler reconciliation ([9e89399](https://github.com/kubecloudscaler/kubecloudscaler/commit/9e893999904773be261084a9f2d43182862a486d))
+* **gcp:** add chain-of-responsibility pattern to controller ([9e89399](https://github.com/kubecloudscaler/kubecloudscaler/commit/9e893999904773be261084a9f2d43182862a486d))
+* **gcp:** add chain-of-responsibility pattern to controller ([44ad4d8](https://github.com/kubecloudscaler/kubecloudscaler/commit/44ad4d8e5a32d768a07d2348dc2090cccfb9d063))
+
 ## [1.7.0](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.6.3...v1.7.0) (2025-12-30)
 
 
