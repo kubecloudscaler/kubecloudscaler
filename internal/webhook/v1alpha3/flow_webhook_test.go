@@ -445,36 +445,6 @@ var _ = Describe("Flow Webhook Validation", func() {
 		})
 	})
 
-	Context("When validating invalid object types", func() {
-		It("should reject non-Flow objects in ValidateCreate", func() {
-			// Create a mock object that implements runtime.Object but is not a Flow
-			invalidObj := &kubecloudscalerv1alpha3.K8s{}
-
-			warnings, err := validator.ValidateCreate(ctx, invalidObj)
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("expected a Flow object"))
-			Expect(warnings).To(BeNil())
-		})
-
-		It("should reject non-Flow objects in ValidateUpdate", func() {
-			// Create mock objects that implement runtime.Object but are not Flow
-			oldObj := &kubecloudscalerv1alpha3.K8s{}
-			newObj := &kubecloudscalerv1alpha3.K8s{}
-
-			warnings, err := validator.ValidateUpdate(ctx, oldObj, newObj)
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("expected a Flow object"))
-			Expect(warnings).To(BeNil())
-		})
-
-		It("should reject non-Flow objects in ValidateDelete", func() {
-			// Create a mock object that implements runtime.Object but is not a Flow
-			invalidObj := &kubecloudscalerv1alpha3.K8s{}
-
-			warnings, err := validator.ValidateDelete(ctx, invalidObj)
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("expected a Flow object"))
-			Expect(warnings).To(BeNil())
-		})
-	})
+	// Note: "invalid object type" tests were removed as the typed interface
+	// in controller-runtime v0.23.0+ enforces type safety at compile time.
 })

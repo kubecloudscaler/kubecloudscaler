@@ -21,10 +21,8 @@ import (
 	"fmt"
 	"time"
 
-	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	"github.com/kubecloudscaler/kubecloudscaler/api/common"
@@ -36,7 +34,7 @@ var flowlog = logf.Log.WithName("flow-resource")
 
 // SetupFlowWebhookWithManager registers the webhook for Flow in the manager.
 func SetupFlowWebhookWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewWebhookManagedBy(mgr).For(&kubecloudscalercloudv1alpha3.Flow{}).
+	return ctrl.NewWebhookManagedBy(mgr, &kubecloudscalercloudv1alpha3.Flow{}).
 		WithValidator(&FlowCustomValidator{}).
 		Complete()
 }
@@ -59,14 +57,8 @@ type FlowCustomValidator struct {
 	// TODO(user): Add more fields as needed for validation
 }
 
-var _ webhook.CustomValidator = &FlowCustomValidator{}
-
-// ValidateCreate implements webhook.CustomValidator so a webhook will be registered for the type Flow.
-func (v *FlowCustomValidator) ValidateCreate(_ context.Context, obj runtime.Object) (admission.Warnings, error) {
-	flow, ok := obj.(*kubecloudscalercloudv1alpha3.Flow)
-	if !ok {
-		return nil, fmt.Errorf("expected a Flow object but got %T", obj)
-	}
+// ValidateCreate implements admission.CustomValidator so a webhook will be registered for the type Flow.
+func (v *FlowCustomValidator) ValidateCreate(_ context.Context, flow *kubecloudscalercloudv1alpha3.Flow) (admission.Warnings, error) {
 	flowlog.Info("Validation for Flow upon creation", "name", flow.GetName())
 
 	// Perform comprehensive validation
@@ -78,12 +70,8 @@ func (v *FlowCustomValidator) ValidateCreate(_ context.Context, obj runtime.Obje
 	return nil, nil
 }
 
-// ValidateUpdate implements webhook.CustomValidator so a webhook will be registered for the type Flow.
-func (v *FlowCustomValidator) ValidateUpdate(_ context.Context, _, newObj runtime.Object) (admission.Warnings, error) {
-	flow, ok := newObj.(*kubecloudscalercloudv1alpha3.Flow)
-	if !ok {
-		return nil, fmt.Errorf("expected a Flow object for the newObj but got %T", newObj)
-	}
+// ValidateUpdate implements admission.CustomValidator so a webhook will be registered for the type Flow.
+func (v *FlowCustomValidator) ValidateUpdate(_ context.Context, _, flow *kubecloudscalercloudv1alpha3.Flow) (admission.Warnings, error) {
 	flowlog.Info("Validation for Flow upon update", "name", flow.GetName())
 
 	// Perform comprehensive validation
@@ -95,12 +83,8 @@ func (v *FlowCustomValidator) ValidateUpdate(_ context.Context, _, newObj runtim
 	return nil, nil
 }
 
-// ValidateDelete implements webhook.CustomValidator so a webhook will be registered for the type Flow.
-func (v *FlowCustomValidator) ValidateDelete(_ context.Context, obj runtime.Object) (admission.Warnings, error) {
-	flow, ok := obj.(*kubecloudscalercloudv1alpha3.Flow)
-	if !ok {
-		return nil, fmt.Errorf("expected a Flow object but got %T", obj)
-	}
+// ValidateDelete implements admission.CustomValidator so a webhook will be registered for the type Flow.
+func (v *FlowCustomValidator) ValidateDelete(_ context.Context, flow *kubecloudscalercloudv1alpha3.Flow) (admission.Warnings, error) {
 	flowlog.Info("Validation for Flow upon deletion", "name", flow.GetName())
 
 	// No validation needed for deletion

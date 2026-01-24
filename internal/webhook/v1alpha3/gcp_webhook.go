@@ -31,6 +31,6 @@ var gcplog = logf.Log.WithName("gcp-resource")
 
 // SetupGcpWebhookWithManager registers the webhook for Gcp in the manager.
 func SetupGcpWebhookWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewWebhookManagedBy(mgr).For(&kubecloudscalerv1alpha3.Gcp{}).
+	return ctrl.NewWebhookManagedBy(mgr, &kubecloudscalerv1alpha3.Gcp{}).
 		Complete()
 }

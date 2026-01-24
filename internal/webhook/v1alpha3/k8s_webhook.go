@@ -31,6 +31,6 @@ var k8slog = logf.Log.WithName("k8s-resource")
 
 // SetupK8sWebhookWithManager registers the webhook for K8s in the manager.
 func SetupK8sWebhookWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewWebhookManagedBy(mgr).For(&kubecloudscalerv1alpha3.K8s{}).
+	return ctrl.NewWebhookManagedBy(mgr, &kubecloudscalerv1alpha3.K8s{}).
 		Complete()
 }
