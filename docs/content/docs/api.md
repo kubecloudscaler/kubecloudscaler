@@ -265,6 +265,23 @@ _Appears in:_
 | `endTimeDelay` _string_ | EndTimeDelay is the duration to delay the end of the period<br />It is a duration in minutes<br />It is optional and if not provided, the period will end at the end time of the period | 0m | Pattern: `^\d*m$` <br /> |
 
 
+#### FlowResources
+
+
+
+FlowResources defines the configuration for managed resources in a flow.
+
+
+
+_Appears in:_
+- [FlowSpec](#flowspec)
+
+| Field | Description | Default | Validation |
+| --- | --- | --- | --- |
+| `k8s` _[K8sResource](#k8sresource) array_ |  |  |  |
+| `gcp` _[GcpResource](#gcpresource) array_ |  |  |  |
+
+
 #### FlowSpec
 
 
@@ -279,7 +296,7 @@ _Appears in:_
 | Field | Description | Default | Validation |
 | --- | --- | --- | --- |
 | `periods` _[ScalerPeriod](#scalerperiod) array_ | Time period to scale |  |  |
-| `resources` _[Resources](#resources)_ | Resources |  |  |
+| `resources` _[FlowResources](#flowresources)_ | Resources |  |  |
 | `flows` _[Flows](#flows) array_ |  |  |  |
 
 
@@ -366,7 +383,7 @@ GcpResource defines a GCP resource configuration in a flow.
 
 
 _Appears in:_
-- [Resources](#resources)
+- [FlowResources](#flowresources)
 
 | Field | Description | Default | Validation |
 | --- | --- | --- | --- |
@@ -445,7 +462,7 @@ K8sResource defines a Kubernetes resource configuration in a flow.
 
 
 _Appears in:_
-- [Resources](#resources)
+- [FlowResources](#flowresources)
 
 | Field | Description | Default | Validation |
 | --- | --- | --- | --- |
@@ -471,22 +488,5 @@ _Appears in:_
 | `periods` _[ScalerPeriod](#scalerperiod) array_ | Time period to scale |  |  |
 | `resources` _[Resources](#resources)_ | Resources |  |  |
 | `config` _[K8sConfig](#k8sconfig)_ |  |  |  |
-
-
-#### Resources
-
-
-
-Resources defines the configuration for managed resources in a flow.
-
-
-
-_Appears in:_
-- [FlowSpec](#flowspec)
-
-| Field | Description | Default | Validation |
-| --- | --- | --- | --- |
-| `k8s` _[K8sResource](#k8sresource) array_ |  |  |  |
-| `gcp` _[GcpResource](#gcpresource) array_ |  |  |  |
 
 

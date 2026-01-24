@@ -30,12 +30,12 @@ type FlowSpec struct {
 	// Time period to scale
 	Periods []common.ScalerPeriod `json:"periods"`
 	// Resources
-	Resources Resources `json:"resources"`
-	Flows     []Flows   `json:"flows,omitempty"`
+	Resources FlowResources `json:"resources"`
+	Flows     []Flows       `json:"flows,omitempty"`
 }
 
-// Resources defines the configuration for managed resources in a flow.
-type Resources struct {
+// FlowResources defines the configuration for managed resources in a flow.
+type FlowResources struct {
 	K8s []K8sResource `json:"k8s,omitempty"`
 	Gcp []GcpResource `json:"gcp,omitempty"`
 }
