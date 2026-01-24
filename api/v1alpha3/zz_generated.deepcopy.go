@@ -139,7 +139,7 @@ func (in *FlowSpec) DeepCopyInto(out *FlowSpec) {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
-	in.Resources.DeepCopyInto(&out.Resources)
+	in.Objects.DeepCopyInto(&out.Objects)
 	if in.Flows != nil {
 		in, out := &in.Flows, &out.Flows
 		*out = make([]Flows, len(*in))

@@ -54,7 +54,7 @@ var _ = Describe("Flow Webhook Validation", func() {
 							},
 						},
 					},
-					Resources: kubecloudscalerv1alpha3.FlowResources{
+					Objects: kubecloudscalerv1alpha3.FlowResources{
 						K8s: []kubecloudscalerv1alpha3.K8sResource{
 							{
 								Name: "test-k8s-resource",
@@ -160,7 +160,7 @@ var _ = Describe("Flow Webhook Validation", func() {
 							},
 						},
 					},
-					Resources: kubecloudscalerv1alpha3.FlowResources{
+					Objects: kubecloudscalerv1alpha3.FlowResources{
 						K8s: []kubecloudscalerv1alpha3.K8sResource{
 							{
 								Name: "duplicate-name",
@@ -201,7 +201,7 @@ var _ = Describe("Flow Webhook Validation", func() {
 							},
 						},
 					},
-					Resources: kubecloudscalerv1alpha3.FlowResources{
+					Objects: kubecloudscalerv1alpha3.FlowResources{
 						K8s: []kubecloudscalerv1alpha3.K8sResource{
 							{
 								Name: "conflict-name",
@@ -244,7 +244,7 @@ var _ = Describe("Flow Webhook Validation", func() {
 							},
 						},
 					},
-					Resources: kubecloudscalerv1alpha3.FlowResources{
+					Objects: kubecloudscalerv1alpha3.FlowResources{
 						K8s: []kubecloudscalerv1alpha3.K8sResource{
 							{
 								Name: "test-k8s-resource",
@@ -290,7 +290,7 @@ var _ = Describe("Flow Webhook Validation", func() {
 							},
 						},
 					},
-					Resources: kubecloudscalerv1alpha3.FlowResources{
+					Objects: kubecloudscalerv1alpha3.FlowResources{
 						K8s: []kubecloudscalerv1alpha3.K8sResource{
 							{
 								Name: "test-k8s-resource",

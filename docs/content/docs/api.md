@@ -296,7 +296,7 @@ _Appears in:_
 | Field | Description | Default | Validation |
 | --- | --- | --- | --- |
 | `periods` _[ScalerPeriod](#scalerperiod) array_ | Time period to scale |  |  |
-| `resources` _[FlowResources](#flowresources)_ | Resources |  |  |
+| `objects` _[FlowResources](#flowresources)_ | Resources |  |  |
 | `flows` _[Flows](#flows) array_ |  |  |  |
 
 
