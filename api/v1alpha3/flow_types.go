@@ -30,8 +30,8 @@ type FlowSpec struct {
 	// Time period to scale
 	Periods []common.ScalerPeriod `json:"periods"`
 	// Resources
-	Objects FlowResources `json:"objects"`
-	Flows   []Flows       `json:"flows,omitempty"`
+	FlowResources FlowResources `json:"flowResources"`
+	Flows         []Flows       `json:"flows,omitempty"`
 }
 
 // FlowResources defines the configuration for managed resources in a flow.
@@ -56,12 +56,12 @@ type GcpResource struct {
 
 // Flows defines a flow configuration with period and resources.
 type Flows struct {
-	PeriodName string         `json:"periodName"`
-	Resources  []FlowResource `json:"resources"`
+	PeriodName string            `json:"periodName"`
+	Resources  []FlowResourceRef `json:"resources"`
 }
 
 // FlowResource defines a resource within a flow.
-type FlowResource struct {
+type FlowResourceRef struct {
 	Name string `json:"name"`
 
 	// StartTimeDelay is the duration to delay the start of the period

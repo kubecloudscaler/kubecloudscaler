@@ -100,7 +100,7 @@ func (m *ResourceMapperService) mapResource(
 
 // findK8sResource finds a K8s resource by name
 func (m *ResourceMapperService) findK8sResource(flow *kubecloudscalerv1alpha3.Flow, resourceName string) *kubecloudscalerv1alpha3.K8sResource {
-	for _, resource := range flow.Spec.Objects.K8s {
+	for _, resource := range flow.Spec.FlowResources.K8s {
 		if resource.Name == resourceName {
 			return &resource
 		}
@@ -110,7 +110,7 @@ func (m *ResourceMapperService) findK8sResource(flow *kubecloudscalerv1alpha3.Fl
 
 // findGcpResource finds a GCP resource by name
 func (m *ResourceMapperService) findGcpResource(flow *kubecloudscalerv1alpha3.Flow, resourceName string) *kubecloudscalerv1alpha3.GcpResource {
-	for _, resource := range flow.Spec.Objects.Gcp {
+	for _, resource := range flow.Spec.FlowResources.Gcp {
 		if resource.Name == resourceName {
 			return &resource
 		}
@@ -173,7 +173,7 @@ func (m *ResourceMapperService) findAssociatedPeriods(
 // createPeriodWithDelay creates a PeriodWithDelay from a period and resource
 func (m *ResourceMapperService) createPeriodWithDelay(
 	period *common.ScalerPeriod,
-	resource *kubecloudscalerv1alpha3.FlowResource,
+	resource *kubecloudscalerv1alpha3.FlowResourceRef,
 ) (types.PeriodWithDelay, error) {
 	startTimeDelay, err := m.parseDelay(resource.StartTimeDelay)
 	if err != nil {

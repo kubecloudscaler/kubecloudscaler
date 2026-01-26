@@ -46,7 +46,7 @@ func TestFlowProcessorService_ProcessFlow_Simple(t *testing.T) {
 				Flows: []kubecloudscalerv1alpha3.Flows{
 					{
 						PeriodName: "test-period",
-						Resources: []kubecloudscalerv1alpha3.FlowResource{
+						Resources: []kubecloudscalerv1alpha3.FlowResourceRef{
 							{Name: "test-resource"},
 						},
 					},

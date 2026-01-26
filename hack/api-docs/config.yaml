@@ -1,5 +1,6 @@
 processor:
   ignoreGroupVersions:
+    - "GVK"
     - "kubecloudscaler.cloud/v1alpha1"
     - "kubecloudscaler.cloud/v1alpha2"
   ignoreTypes:

@@ -224,9 +224,9 @@ _Appears in:_
 | --- | --- | --- | --- |
 | `apiVersion` _string_ | `kubecloudscaler.cloud/v1alpha3` | | |
 | `kind` _string_ | `Flow` | | |
-| `metadata` _[ObjectMeta](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.33/#objectmeta-v1-meta)_ | Refer to Kubernetes API documentation for fields of `metadata`. |  |  |
-| `spec` _[FlowSpec](#flowspec)_ | spec defines the desired state of Flow |  |  |
-| `status` _[FlowStatus](#flowstatus)_ | status defines the observed state of Flow |  |  |
+| `metadata` _[ObjectMeta](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.33/#objectmeta-v1-meta)_ | Refer to Kubernetes API documentation for fields of `metadata`. |  | Optional: \{\} <br /> |
+| `spec` _[FlowSpec](#flowspec)_ | spec defines the desired state of Flow |  | Required: \{\} <br /> |
+| `status` _[FlowStatus](#flowstatus)_ | status defines the observed state of Flow |  | Optional: \{\} <br /> |
 
 
 #### FlowList
@@ -247,7 +247,7 @@ FlowList contains a list of Flow
 | `items` _[Flow](#flow) array_ |  |  |  |
 
 
-#### FlowResource
+#### FlowResourceRef
 
 
 
@@ -296,7 +296,7 @@ _Appears in:_
 | Field | Description | Default | Validation |
 | --- | --- | --- | --- |
 | `periods` _[ScalerPeriod](#scalerperiod) array_ | Time period to scale |  |  |
-| `objects` _[FlowResources](#flowresources)_ | Resources |  |  |
+| `flowResources` _[FlowResources](#flowresources)_ | Resources |  |  |
 | `flows` _[Flows](#flows) array_ |  |  |  |
 
 
@@ -313,7 +313,7 @@ _Appears in:_
 
 | Field | Description | Default | Validation |
 | --- | --- | --- | --- |
-| `conditions` _[Condition](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.33/#condition-v1-meta) array_ | conditions represent the current state of the Flow resource.<br />Each condition has a unique type and reflects the status of a specific aspect of the resource.<br />Standard condition types include:<br />- "Available": the resource is fully functional<br />- "Progressing": the resource is being created or updated<br />- "Degraded": the resource failed to reach or maintain its desired state<br />The status of each condition is one of True, False, or Unknown. |  |  |
+| `conditions` _[Condition](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.33/#condition-v1-meta) array_ | conditions represent the current state of the Flow resource.<br />Each condition has a unique type and reflects the status of a specific aspect of the resource.<br />Standard condition types include:<br />- "Available": the resource is fully functional<br />- "Progressing": the resource is being created or updated<br />- "Degraded": the resource failed to reach or maintain its desired state<br />The status of each condition is one of True, False, or Unknown. |  | Optional: \{\} <br /> |
 
 
 #### Flows
@@ -330,7 +330,7 @@ _Appears in:_
 | Field | Description | Default | Validation |
 | --- | --- | --- | --- |
 | `periodName` _string_ |  |  |  |
-| `resources` _[FlowResource](#flowresource) array_ |  |  |  |
+| `resources` _[FlowResourceRef](#flowresourceref) array_ |  |  |  |
 
 
 #### Gcp
@@ -347,9 +347,9 @@ Gcp is the Schema for the gcps API
 | --- | --- | --- | --- |
 | `apiVersion` _string_ | `kubecloudscaler.cloud/v1alpha3` | | |
 | `kind` _string_ | `Gcp` | | |
-| `metadata` _[ObjectMeta](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.33/#objectmeta-v1-meta)_ | Refer to Kubernetes API documentation for fields of `metadata`. |  |  |
-| `spec` _[GcpSpec](#gcpspec)_ | spec defines the desired state of Gcp |  |  |
-| `status` _[ScalerStatus](#scalerstatus)_ | status defines the observed state of Gcp |  |  |
+| `metadata` _[ObjectMeta](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.33/#objectmeta-v1-meta)_ | Refer to Kubernetes API documentation for fields of `metadata`. |  | Optional: \{\} <br /> |
+| `spec` _[GcpSpec](#gcpspec)_ | spec defines the desired state of Gcp |  | Required: \{\} <br /> |
+| `status` _[ScalerStatus](#scalerstatus)_ | status defines the observed state of Gcp |  | Optional: \{\} <br /> |
 
 
 #### GcpConfig
@@ -425,9 +425,9 @@ K8s is the Schema for the k8s API
 | --- | --- | --- | --- |
 | `apiVersion` _string_ | `kubecloudscaler.cloud/v1alpha3` | | |
 | `kind` _string_ | `K8s` | | |
-| `metadata` _[ObjectMeta](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.33/#objectmeta-v1-meta)_ | Refer to Kubernetes API documentation for fields of `metadata`. |  |  |
-| `spec` _[K8sSpec](#k8sspec)_ | spec defines the desired state of K8s |  |  |
-| `status` _[ScalerStatus](#scalerstatus)_ | status defines the observed state of K8s |  |  |
+| `metadata` _[ObjectMeta](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.33/#objectmeta-v1-meta)_ | Refer to Kubernetes API documentation for fields of `metadata`. |  | Optional: \{\} <br /> |
+| `spec` _[K8sSpec](#k8sspec)_ | spec defines the desired state of K8s |  | Required: \{\} <br /> |
+| `status` _[ScalerStatus](#scalerstatus)_ | status defines the observed state of K8s |  | Optional: \{\} <br /> |
 
 
 #### K8sConfig
