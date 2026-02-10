@@ -54,7 +54,7 @@ var _ = Describe("Flow Webhook Validation", func() {
 							},
 						},
 					},
-					FlowResources: kubecloudscalerv1alpha3.FlowResources{
+					Resources: kubecloudscalerv1alpha3.Resources{
 						K8s: []kubecloudscalerv1alpha3.K8sResource{
 							{
 								Name: "test-k8s-resource",
@@ -67,7 +67,7 @@ var _ = Describe("Flow Webhook Validation", func() {
 					Flows: []kubecloudscalerv1alpha3.Flows{
 						{
 							PeriodName: "test-period",
-							Resources: []kubecloudscalerv1alpha3.FlowResourceRef{
+							Resources: []kubecloudscalerv1alpha3.FlowResource{
 								{
 									Name:           "test-k8s-resource",
 									StartTimeDelay: "5m",
@@ -160,7 +160,7 @@ var _ = Describe("Flow Webhook Validation", func() {
 							},
 						},
 					},
-					FlowResources: kubecloudscalerv1alpha3.FlowResources{
+					Resources: kubecloudscalerv1alpha3.Resources{
 						K8s: []kubecloudscalerv1alpha3.K8sResource{
 							{
 								Name: "duplicate-name",
@@ -201,7 +201,7 @@ var _ = Describe("Flow Webhook Validation", func() {
 							},
 						},
 					},
-					FlowResources: kubecloudscalerv1alpha3.FlowResources{
+					Resources: kubecloudscalerv1alpha3.Resources{
 						K8s: []kubecloudscalerv1alpha3.K8sResource{
 							{
 								Name: "conflict-name",
@@ -244,7 +244,7 @@ var _ = Describe("Flow Webhook Validation", func() {
 							},
 						},
 					},
-					FlowResources: kubecloudscalerv1alpha3.FlowResources{
+					Resources: kubecloudscalerv1alpha3.Resources{
 						K8s: []kubecloudscalerv1alpha3.K8sResource{
 							{
 								Name: "test-k8s-resource",
@@ -257,7 +257,7 @@ var _ = Describe("Flow Webhook Validation", func() {
 					Flows: []kubecloudscalerv1alpha3.Flows{
 						{
 							PeriodName: "short-period",
-							Resources: []kubecloudscalerv1alpha3.FlowResourceRef{
+							Resources: []kubecloudscalerv1alpha3.FlowResource{
 								{
 									Name:           "test-k8s-resource",
 									StartTimeDelay: "70m", // Exceeds 1 hour period
@@ -290,7 +290,7 @@ var _ = Describe("Flow Webhook Validation", func() {
 							},
 						},
 					},
-					FlowResources: kubecloudscalerv1alpha3.FlowResources{
+					Resources: kubecloudscalerv1alpha3.Resources{
 						K8s: []kubecloudscalerv1alpha3.K8sResource{
 							{
 								Name: "test-k8s-resource",
@@ -303,7 +303,7 @@ var _ = Describe("Flow Webhook Validation", func() {
 					Flows: []kubecloudscalerv1alpha3.Flows{
 						{
 							PeriodName: "test-period",
-							Resources: []kubecloudscalerv1alpha3.FlowResourceRef{
+							Resources: []kubecloudscalerv1alpha3.FlowResource{
 								{
 									Name:           "test-k8s-resource",
 									StartTimeDelay: "invalid-duration", // Invalid format

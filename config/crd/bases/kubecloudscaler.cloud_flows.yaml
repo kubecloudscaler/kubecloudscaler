@@ -39,7 +39,137 @@ spec:
           spec:
             description: spec defines the desired state of Flow
             properties:
-              flowResources:
+              flows:
+                items:
+                  description: Flows defines a flow configuration with period and
+                    resources.
+                  properties:
+                    periodName:
+                      type: string
+                    resources:
+                      items:
+                        description: FlowResource defines a resource within a flow.
+                        properties:
+                          endTimeDelay:
+                            default: 0m
+                            description: |-
+                              EndTimeDelay is the duration to delay the end of the period
+                              It is a duration in minutes
+                              It is optional and if not provided, the period will end at the end time of the period
+                            pattern: ^\d*m$
+                            type: string
+                          name:
+                            type: string
+                          startTimeDelay:
+                            default: 0m
+                            description: |-
+                              StartTimeDelay is the duration to delay the start of the period
+                              It is a duration in minutes
+                              It is optional and if not provided, the period will start at the start time of the period
+                            pattern: ^\d*m$
+                            type: string
+                        required:
+                        - name
+                        type: object
+                      type: array
+                  required:
+                  - periodName
+                  - resources
+                  type: object
+                type: array
+              periods:
+                description: Time period to scale
+                items:
+                  description: ScalerPeriod defines a scaling period with time constraints
+                    and replica limits.
+                  properties:
+                    maxReplicas:
+                      description: Maximum replicas
+                      format: int32
+                      type: integer
+                    minReplicas:
+                      description: Minimum replicas
+                      format: int32
+                      type: integer
+                    name:
+                      description: Name of the period
+                      pattern: ^(|[a-zA-Z0-9][a-zA-Z0-9_-]*)$
+                      type: string
+                    time:
+                      description: TimePeriod defines the time configuration for a
+                        scaling period.
+                      properties:
+                        fixed:
+                          description: FixedPeriod defines a fixed time period for
+                            scaling operations.
+                          properties:
+                            endTime:
+                              pattern: ^\d{4}-(0?[1-9]|1[0,1,2])-(0?[1-9]|[12][0-9]|3[01])
+                                ([0-1]?[0-9]|2[0-3]):[0-5]?[0-9]:[0-5]?[0-9]$
+                              type: string
+                            gracePeriod:
+                              description: Grace period in seconds for deployments
+                                before scaling down
+                              pattern: ^\d*s$
+                              type: string
+                            once:
+                              description: Run once at StartTime
+                              type: boolean
+                            reverse:
+                              description: Reverse the period
+                              type: boolean
+                            startTime:
+                              pattern: ^\d{4}-(0?[1-9]|1[0,1,2])-(0?[1-9]|[12][0-9]|3[01])
+                                ([0-1]?[0-9]|2[0-3]):[0-5]?[0-9]:[0-5]?[0-9]$
+                              type: string
+                            timezone:
+                              type: string
+                          required:
+                          - endTime
+                          - startTime
+                          type: object
+                        recurring:
+                          description: RecurringPeriod defines a recurring time period
+                            for scaling operations.
+                          properties:
+                            days:
+                              items:
+                                type: string
+                              type: array
+                            endTime:
+                              pattern: ^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$
+                              type: string
+                            gracePeriod:
+                              pattern: ^\d*s$
+                              type: string
+                            once:
+                              description: Run once at StartTime
+                              type: boolean
+                            reverse:
+                              description: Reverse the period
+                              type: boolean
+                            startTime:
+                              pattern: ^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$
+                              type: string
+                            timezone:
+                              type: string
+                          required:
+                          - days
+                          - endTime
+                          - startTime
+                          type: object
+                      type: object
+                    type:
+                      enum:
+                      - down
+                      - up
+                      type: string
+                  required:
+                  - time
+                  - type
+                  type: object
+                type: array
+              resources:
                 description: Resources
                 properties:
                   gcp:
@@ -260,139 +390,9 @@ spec:
                       type: object
                     type: array
                 type: object
-              flows:
-                items:
-                  description: Flows defines a flow configuration with period and
-                    resources.
-                  properties:
-                    periodName:
-                      type: string
-                    resources:
-                      items:
-                        description: FlowResource defines a resource within a flow.
-                        properties:
-                          endTimeDelay:
-                            default: 0m
-                            description: |-
-                              EndTimeDelay is the duration to delay the end of the period
-                              It is a duration in minutes
-                              It is optional and if not provided, the period will end at the end time of the period
-                            pattern: ^\d*m$
-                            type: string
-                          name:
-                            type: string
-                          startTimeDelay:
-                            default: 0m
-                            description: |-
-                              StartTimeDelay is the duration to delay the start of the period
-                              It is a duration in minutes
-                              It is optional and if not provided, the period will start at the start time of the period
-                            pattern: ^\d*m$
-                            type: string
-                        required:
-                        - name
-                        type: object
-                      type: array
-                  required:
-                  - periodName
-                  - resources
-                  type: object
-                type: array
-              periods:
-                description: Time period to scale
-                items:
-                  description: ScalerPeriod defines a scaling period with time constraints
-                    and replica limits.
-                  properties:
-                    maxReplicas:
-                      description: Maximum replicas
-                      format: int32
-                      type: integer
-                    minReplicas:
-                      description: Minimum replicas
-                      format: int32
-                      type: integer
-                    name:
-                      description: Name of the period
-                      pattern: ^(|[a-zA-Z0-9][a-zA-Z0-9_-]*)$
-                      type: string
-                    time:
-                      description: TimePeriod defines the time configuration for a
-                        scaling period.
-                      properties:
-                        fixed:
-                          description: FixedPeriod defines a fixed time period for
-                            scaling operations.
-                          properties:
-                            endTime:
-                              pattern: ^\d{4}-(0?[1-9]|1[0,1,2])-(0?[1-9]|[12][0-9]|3[01])
-                                ([0-1]?[0-9]|2[0-3]):[0-5]?[0-9]:[0-5]?[0-9]$
-                              type: string
-                            gracePeriod:
-                              description: Grace period in seconds for deployments
-                                before scaling down
-                              pattern: ^\d*s$
-                              type: string
-                            once:
-                              description: Run once at StartTime
-                              type: boolean
-                            reverse:
-                              description: Reverse the period
-                              type: boolean
-                            startTime:
-                              pattern: ^\d{4}-(0?[1-9]|1[0,1,2])-(0?[1-9]|[12][0-9]|3[01])
-                                ([0-1]?[0-9]|2[0-3]):[0-5]?[0-9]:[0-5]?[0-9]$
-                              type: string
-                            timezone:
-                              type: string
-                          required:
-                          - endTime
-                          - startTime
-                          type: object
-                        recurring:
-                          description: RecurringPeriod defines a recurring time period
-                            for scaling operations.
-                          properties:
-                            days:
-                              items:
-                                type: string
-                              type: array
-                            endTime:
-                              pattern: ^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$
-                              type: string
-                            gracePeriod:
-                              pattern: ^\d*s$
-                              type: string
-                            once:
-                              description: Run once at StartTime
-                              type: boolean
-                            reverse:
-                              description: Reverse the period
-                              type: boolean
-                            startTime:
-                              pattern: ^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$
-                              type: string
-                            timezone:
-                              type: string
-                          required:
-                          - days
-                          - endTime
-                          - startTime
-                          type: object
-                      type: object
-                    type:
-                      enum:
-                      - down
-                      - up
-                      type: string
-                  required:
-                  - time
-                  - type
-                  type: object
-                type: array
             required:
-            - flowResources
             - periods
+            - resources
             type: object
           status:
             description: status defines the observed state of Flow

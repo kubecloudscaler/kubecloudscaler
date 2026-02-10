@@ -203,8 +203,8 @@ helm: manifests generate kustomize helmify
 	$(KUSTOMIZE) build config/default | $(HELMIFY) -generate-defaults helm
 
 .PHONY: doc
-doc: manifests generate gen-crd-docs
-	$(GEN_CRD_DOCS) --source-path=${GOPATH}/src/github.com/kubecloudscaler/kubecloudscaler/api --config="./hack/api-docs/config.yaml" --renderer=markdown --output-path=./docs/content/docs/api.md
+doc: manifests generate api2md
+	$(API2MD) --source-path=./api --config="./hack/api-docs/config.yaml" --output-path=./docs/content/docs/api.md
 
 ##@ Dependencies
 
@@ -222,6 +222,7 @@ ENVTEST ?= $(LOCALBIN)/setup-envtest
 GOLANGCI_LINT = $(LOCALBIN)/golangci-lint
 HELMIFY = $(LOCALBIN)/helmify
 GEN_CRD_DOCS = $(LOCALBIN)/crd-ref-docs
+API2MD = $(LOCALBIN)/api2md
 
 ## Tool Versions
 KUSTOMIZE_VERSION ?= v5.7.1
@@ -233,6 +234,7 @@ ENVTEST_K8S_VERSION ?= $(shell go list -m -f "{{ .Version }}" k8s.io/api | awk -
 GOLANGCI_LINT_VERSION ?= v2.5.0
 HELMIFY_VERSION ?= v0.4.19
 GEN_CRD_DOCS_VERSION ?= master
+API2MD_VERSION ?= main
 
 .PHONY: kustomize
 kustomize: $(KUSTOMIZE) ## Download kustomize locally if necessary.
@@ -271,6 +273,11 @@ $(HELMIFY): $(LOCALBIN)
 gen-crd-docs: $(GEN_CRD_DOCS) ## Download golangci-lint locally if necessary.
 $(GEN_CRD_DOCS): $(LOCALBIN)
 	$(call go-install-tool,$(GEN_CRD_DOCS),github.com/elastic/crd-ref-docs,$(GEN_CRD_DOCS_VERSION))
+
+.PHONY: api2md
+api2md: $(API2MD) ## Download api2md locally if necessary.
+$(API2MD): $(LOCALBIN)
+	$(call go-install-tool,$(API2MD),github.com/golgoth31/api2md,$(API2MD_VERSION))
 
 # go-install-tool will 'go install' any package with custom target and name of binary, if it doesn't exist
 # $1 - target path with name of binary

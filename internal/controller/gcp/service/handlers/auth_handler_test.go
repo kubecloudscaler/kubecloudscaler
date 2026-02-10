@@ -74,13 +74,17 @@ var _ = Describe("AuthHandler", func() {
 		})
 
 		It("should attempt to create GCP client with default credentials", func() {
-			// This will fail in test environment without GCP credentials
-			// but that's expected - the handler correctly tries to create the client
 			_, err := authHandler.Execute(reconCtx)
 
-			// Without GCP credentials, this should return a critical error
-			Expect(err).To(HaveOccurred())
-			Expect(service.IsCriticalError(err)).To(BeTrue())
+			// Behaviour depends on the environment:
+			// - In environments without ADC, client creation fails with a critical error.
+			// - In environments with ADC, client creation succeeds and GCPClient is populated.
+			if err != nil {
+				Expect(service.IsCriticalError(err)).To(BeTrue())
+				Expect(reconCtx.GCPClient).To(BeNil())
+			} else {
+				Expect(reconCtx.GCPClient).ToNot(BeNil())
+			}
 		})
 
 		It("should complete in under 100ms", func() {

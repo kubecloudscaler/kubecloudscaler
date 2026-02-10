@@ -4,7 +4,7 @@ processor:
     - "kubecloudscaler.cloud/v1alpha1"
     - "kubecloudscaler.cloud/v1alpha2"
   ignoreTypes:
-    - "(K8s|Gcp)List$"
+    - "(K8s|Gcp|Flow)List$"
   ignoreFields:
     # - "status$"
     - "TypeMeta$"
