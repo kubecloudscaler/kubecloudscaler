@@ -59,6 +59,8 @@ spec:
         - args:
             - --leader-elect
             - --health-probe-bind-address=:8081
+          command:
+            - /ko-app/cmd
           image: ghcr.io/kubecloudscaler/kubecloudscaler:latest
           imagePullPolicy: IfNotPresent
           name: manager

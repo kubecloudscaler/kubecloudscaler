@@ -21,6 +21,8 @@ spec:
     spec:
       containers:
       - args: {{- toYaml .Values.controllerManager.manager.args | nindent 8 }}
+        command:
+        - /ko-app/cmd
         env:
         - name: POD_NAME
           valueFrom:
