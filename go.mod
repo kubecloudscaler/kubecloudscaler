@@ -4,15 +4,9 @@ go 1.25.1
 
 require (
 	cloud.google.com/go/compute v1.54.0
-<<<<<<< HEAD
 	github.com/actions/actions-runner-controller v0.27.7-0.20260129154017-9de09f56ebe2
 	github.com/onsi/ginkgo/v2 v2.27.5
 	github.com/onsi/gomega v1.39.0
-=======
-	github.com/actions/actions-runner-controller v0.27.7-0.20260121001426-02aa70a64ab8
-	github.com/onsi/ginkgo/v2 v2.28.1
-	github.com/onsi/gomega v1.39.1
->>>>>>> f9723e4 (fix(deps): keep Go dependencies current)
 	github.com/rs/zerolog v1.34.0
 	github.com/stretchr/testify v1.11.1
 	google.golang.org/api v0.267.0
@@ -93,7 +87,6 @@ require (
 	github.com/prometheus/procfs v0.19.2 // indirect
 	github.com/spf13/cobra v1.10.2 // indirect
 	github.com/spf13/pflag v1.0.10 // indirect
-	github.com/stoewer/go-strcase v1.3.1 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.65.0 // indirect
