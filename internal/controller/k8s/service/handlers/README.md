@@ -18,7 +18,7 @@ The handler chain executes in a fixed, predefined order:
 
 1. **`FetchHandler`**: Fetches the `K8s` Scaler resource from the Kubernetes API
 2. **`FinalizerHandler`**: Manages the `kubecloudscaler.cloud/finalizer` on the `K8s` resource
-3. **`AuthHandler`**: Sets up the K8s client, handling authentication secrets
+3. **`AuthHandler`**: Sets up the K8s client, handling authentication secrets (secret is looked up in the operator namespace via `POD_NAMESPACE` env var, defaulting to `kubecloudscaler-system`)
 4. **`PeriodHandler`**: Validates configured periods and determines the active scaling period
 5. **`ScalingHandler`**: Performs the actual scaling operations on K8s resources
 6. **`StatusHandler`**: Updates the `K8s` resource's status in Kubernetes

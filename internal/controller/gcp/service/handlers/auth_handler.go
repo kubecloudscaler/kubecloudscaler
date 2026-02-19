@@ -17,7 +17,7 @@ limitations under the License.
 package handlers
 
 import (
-	"context"
+	"os"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -52,7 +52,7 @@ func NewAuthHandler() service.Handler {
 func (h *AuthHandler) Execute(req *service.ReconciliationContext) (ctrl.Result, error) {
 	req.Logger.Debug().Msg("setting up GCP authentication")
 
-	ctx := context.Background()
+	ctx := req.Ctx
 	scaler := req.Scaler
 	var secret *corev1.Secret
 
@@ -60,8 +60,13 @@ func (h *AuthHandler) Execute(req *service.ReconciliationContext) (ctrl.Result, 
 	if scaler.Spec.Config.AuthSecret != nil {
 		req.Logger.Info().Msg("fetching authentication secret")
 		secret = &corev1.Secret{}
+		// Use operator namespace since GCP CRD is cluster-scoped (scaler.Namespace is empty)
+		secretNamespace := os.Getenv("POD_NAMESPACE")
+		if secretNamespace == "" {
+			secretNamespace = "kubecloudscaler-system"
+		}
 		namespacedSecret := types.NamespacedName{
-			Namespace: scaler.Namespace,
+			Namespace: secretNamespace,
 			Name:      *scaler.Spec.Config.AuthSecret,
 		}
 

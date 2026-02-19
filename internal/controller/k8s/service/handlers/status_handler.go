@@ -17,8 +17,6 @@ limitations under the License.
 package handlers
 
 import (
-	"context"
-
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
@@ -50,7 +48,7 @@ func (h *StatusHandler) Execute(ctx *service.ReconciliationContext) error {
 	if ctx.ShouldFinalize {
 		ctx.Logger.Info().Msg("removing finalizer")
 		controllerutil.RemoveFinalizer(ctx.Scaler, ScalerFinalizer)
-		if err := ctx.Client.Update(context.Background(), ctx.Scaler); err != nil {
+		if err := ctx.Client.Update(ctx.Ctx, ctx.Scaler); err != nil {
 			ctx.Logger.Error().Err(err).Msg("failed to remove finalizer")
 			ctx.RequeueAfter = utils.ReconcileErrorDuration
 			return service.NewRecoverableError(err)
@@ -71,7 +69,7 @@ func (h *StatusHandler) Execute(ctx *service.ReconciliationContext) error {
 	ctx.Scaler.Status.Comments = ptr.To("time period processed")
 
 	// Persist status updates to the cluster
-	if err := ctx.Client.Status().Update(context.Background(), ctx.Scaler); err != nil {
+	if err := ctx.Client.Status().Update(ctx.Ctx, ctx.Scaler); err != nil {
 		ctx.Logger.Error().Err(err).Msg("unable to update scaler status")
 		ctx.RequeueAfter = utils.ReconcileErrorDuration
 		return service.NewRecoverableError(err)

@@ -357,7 +357,7 @@ var _ = Describe("Period", func() {
 				Expect(result.GracePeriod).To(Equal(time.Duration(0)))
 			})
 
-			It("should handle end time 00:00 (converts to 23:59)", func() {
+			It("should handle end time 00:00 (treats as 23:59 internally without mutating input)", func() {
 				periodWithZeroEnd := &common.ScalerPeriod{
 					Type: "down",
 					Time: common.TimePeriod{
@@ -374,7 +374,8 @@ var _ = Describe("Period", func() {
 				result, err := period.New(periodWithZeroEnd)
 
 				Expect(err).ToNot(HaveOccurred())
-				Expect(result.Period.EndTime).To(Equal("23:59"))
+				// The original period should NOT be mutated (fix for issue #006)
+				Expect(result.Period.EndTime).To(Equal("00:00"))
 			})
 
 			It("should handle single day with short notation", func() {

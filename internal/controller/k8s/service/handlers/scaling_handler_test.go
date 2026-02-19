@@ -17,6 +17,7 @@ limitations under the License.
 package handlers_test
 
 import (
+	"context"
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -68,6 +69,7 @@ var _ = Describe("ScalingHandler", func() {
 		mockK8sClient := fake.NewSimpleClientset()
 
 		reconCtx = &service.ReconciliationContext{
+			Ctx: context.Background(),
 			Request: ctrl.Request{
 				NamespacedName: types.NamespacedName{
 					Name:      "test-scaler",

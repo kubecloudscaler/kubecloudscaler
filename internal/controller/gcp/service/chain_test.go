@@ -17,6 +17,7 @@ limitations under the License.
 package service_test
 
 import (
+	"context"
 	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -55,6 +56,7 @@ var _ = Describe("HandlerChain", func() {
 
 		It("should complete successfully", func() {
 			reconCtx := &service.ReconciliationContext{
+				Ctx: context.Background(),
 				Request: ctrl.Request{
 					NamespacedName: types.NamespacedName{
 						Name:      "test",
@@ -104,6 +106,7 @@ var _ = Describe("HandlerChain", func() {
 			chain = service.NewHandlerChain([]service.Handler{handler1, handler2, handler3}, &logger)
 
 			reconCtx := &service.ReconciliationContext{
+				Ctx:     context.Background(),
 				Request: ctrl.Request{},
 				Logger:  &logger,
 			}
@@ -147,6 +150,7 @@ var _ = Describe("HandlerChain", func() {
 			chain = service.NewHandlerChain([]service.Handler{handler1, handler2, handler3}, &logger)
 
 			reconCtx := &service.ReconciliationContext{
+				Ctx:     context.Background(),
 				Request: ctrl.Request{},
 				Logger:  &logger,
 			}
@@ -185,6 +189,7 @@ var _ = Describe("HandlerChain", func() {
 			chain = service.NewHandlerChain([]service.Handler{handler1, handler2}, &logger)
 
 			reconCtx := &service.ReconciliationContext{
+				Ctx:     context.Background(),
 				Request: ctrl.Request{},
 				Logger:  &logger,
 			}

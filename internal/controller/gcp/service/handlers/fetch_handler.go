@@ -18,7 +18,6 @@ limitations under the License.
 package handlers
 
 import (
-	"context"
 	"fmt"
 
 	kubecloudscalerv1alpha3 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha3"
@@ -53,7 +52,7 @@ func NewFetchHandler() service.Handler {
 func (h *FetchHandler) Execute(req *service.ReconciliationContext) (ctrl.Result, error) {
 	req.Logger.Debug().Msg("fetching scaler resource")
 
-	ctx := context.Background()
+	ctx := req.Ctx
 
 	// Fetch the Scaler object from the Kubernetes API
 	scaler := &kubecloudscalerv1alpha3.Gcp{}

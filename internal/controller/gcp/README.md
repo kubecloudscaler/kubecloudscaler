@@ -96,6 +96,7 @@ Shared state passed between handlers:
 
 ```go
 type ReconciliationContext struct {
+    Ctx            context.Context       // Go context from Reconcile method
     Request        ctrl.Request          // Reconciliation request
     Client         client.Client         // Kubernetes client
     Logger         *zerolog.Logger       // Structured logger

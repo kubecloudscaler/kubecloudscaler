@@ -86,6 +86,7 @@ func (r *ScalerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 
 	// Create reconciliation context
 	reconCtx := &service.ReconciliationContext{
+		Ctx:     ctx,
 		Request: req,
 		Client:  r.Client,
 		Logger:  r.Logger,

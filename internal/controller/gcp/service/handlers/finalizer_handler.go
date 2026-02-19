@@ -17,8 +17,6 @@ limitations under the License.
 package handlers
 
 import (
-	"context"
-
 	"github.com/kubecloudscaler/kubecloudscaler/internal/controller/gcp/service"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -53,7 +51,7 @@ func NewFinalizerHandler() service.Handler {
 func (h *FinalizerHandler) Execute(req *service.ReconciliationContext) (ctrl.Result, error) {
 	req.Logger.Debug().Msg("managing finalizer")
 
-	ctx := context.Background()
+	ctx := req.Ctx
 	scaler := req.Scaler
 
 	// Check if the object is being deleted by examining the DeletionTimestamp

@@ -35,14 +35,14 @@ Create a YAML file (e.g., `my-scaler.yaml`) with your scaling configuration:
 
 ```yaml
 # Example: Scale down all deployments in 'default' namespace during evening hours
-apiVersion: kubecloudscaler.cloud/v1alpha1
+apiVersion: kubecloudscaler.cloud/v1alpha3
 kind: K8s
 metadata:
   name: evening-scaledown
-  namespace: kubecloudscaler-system
 spec:
   periods:
-    - time:
+    - type: "down"
+      time:
         recurring:
           days:
             - all
@@ -51,11 +51,17 @@ spec:
           timezone: "Europe/Paris"
       minReplicas: 0
       maxReplicas: 10
-      type: "down"
-  namespaces:
-    - default
-  forceExcludeSystemNamespaces: true
+  resources:
+    types:
+      - deployments
+  config:
+    namespaces:
+      - default
+    forceExcludeSystemNamespaces: true
 ```
+
+> [!NOTE]
+> K8s, Gcp, and Flow CRDs are **cluster-scoped** resources. Do not set `metadata.namespace`.
 
 ### Apply the Configuration
 
@@ -71,7 +77,7 @@ Check that the operator is running:
 
 ```shell
 kubectl get pods -n kubecloudscaler-system
-kubectl get k8s -A
+kubectl get k8s
 ```
 
 ### Uninstall (Optional)
@@ -80,7 +86,9 @@ To remove KubeCloudScaler completely:
 
 ```shell
 # Remove your scaler configurations first
-kubectl delete k8s --all -A
+kubectl delete k8s --all
+kubectl delete gcp --all
+kubectl delete flow --all
 
 # Uninstall the Helm chart
 helm uninstall kubecloudscaler -n kubecloudscaler-system
@@ -116,6 +124,7 @@ This will:
 - Install the Custom Resource Definitions (CRDs)
 - Deploy the operator in the `kubecloudscaler-system` namespace
 - Set up necessary RBAC permissions
+- Configure admission webhooks
 
 ### Customize Your Deployment (Optional)
 
@@ -130,8 +139,8 @@ resources:
 - https://github.com/kubecloudscaler/kubecloudscaler/config/default
 
 # Add your customizations here
-patchesStrategicMerge:
-- custom-config.yaml
+patches:
+- path: custom-config.yaml
 
 namespace: my-custom-namespace
 ```
@@ -173,7 +182,7 @@ Ensure you have the following tools installed:
 - Docker or Podman
 - kubectl configured for your cluster
 - make
-- Go 1.21+ (for local development)
+- Go 1.25+ (for local development)
 
 ### Clone and Build
 
@@ -220,7 +229,7 @@ Check that everything is working:
 
 ```shell
 kubectl get pods -n kubecloudscaler-system
-kubectl get k8s -A
+kubectl get k8s
 ```
 
 ### Development Workflow
@@ -230,6 +239,8 @@ For active development, you can run the operator locally:
 ```shell
 make run
 ```
+
+This generates self-signed webhook certificates and runs the controller with debug logging.
 
 ### Uninstall
 
@@ -255,9 +266,10 @@ make uninstall
 
 After installation, you can:
 
-1. **Configure your first scaler** - See the [Usage Guide](../usage) for detailed configuration examples
-2. **Monitor scaling operations** - Check the operator logs and resource events
-3. **Set up multiple scalers** - Create different scaling policies for different applications or environments
+1. **Configure your first scaler** -- See the [Usage Guide](../usage) for detailed configuration examples
+2. **Monitor scaling operations** -- Check the operator logs and resource events
+3. **Set up multiple scalers** -- Create different scaling policies for different applications or environments
+4. **Orchestrate with Flows** -- Use the [Flow resource](../usage/resources/flow) to coordinate multi-resource scaling
 
 ## Troubleshooting
 
@@ -265,6 +277,8 @@ After installation, you can:
 
 **Operator not starting**: Check the logs with `kubectl logs -n kubecloudscaler-system deployment/kubecloudscaler-controller-manager`
 
-**Permissions issues**: Ensure your cluster has the necessary RBAC permissions for the operator
+**Permissions issues**: Ensure your cluster has the necessary RBAC permissions for the operator. The Helm chart and kustomize manifests include the required `ClusterRole` and `ClusterRoleBinding`.
 
-**CRD conflicts**: If upgrading, ensure old CRDs are properly updated or removed before installing new versions
+**CRD conflicts**: If upgrading, ensure old CRDs are properly updated. KubeCloudScaler supports multiple API versions (v1alpha1, v1alpha2, v1alpha3) with automatic conversion.
+
+**Webhook errors**: If you see webhook-related errors, ensure cert-manager is installed or that webhook certificates are properly configured.

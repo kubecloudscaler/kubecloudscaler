@@ -17,6 +17,7 @@ limitations under the License.
 package handlers_test
 
 import (
+	"context"
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -48,6 +49,7 @@ var _ = Describe("FetchHandler", func() {
 		Expect(kubecloudscalerv1alpha3.AddToScheme(scheme)).To(Succeed())
 
 		reconCtx = &service.ReconciliationContext{
+			Ctx: context.Background(),
 			Request: ctrl.Request{
 				NamespacedName: types.NamespacedName{
 					Name:      "test-scaler",

@@ -17,6 +17,7 @@ limitations under the License.
 package service
 
 import (
+	"context"
 	"time"
 
 	"github.com/rs/zerolog"
@@ -51,6 +52,11 @@ import (
 //
 // See contracts/reconciliation-context.md for full contract specification.
 type ReconciliationContext struct {
+	// Ctx is the Go context from the Reconcile method.
+	// Set by: Controller (before chain execution)
+	// Used by: All handlers for API calls
+	Ctx context.Context
+
 	// Request is the controller request with NamespacedName.
 	// Set by: Controller (before chain execution)
 	// Used by: All handlers

@@ -17,7 +17,6 @@ limitations under the License.
 package handlers
 
 import (
-	"context"
 	"slices"
 
 	"github.com/kubecloudscaler/kubecloudscaler/api/common"
@@ -84,7 +83,7 @@ func (h *ScalingHandler) Execute(ctx *service.ReconciliationContext) error {
 			continue
 		}
 
-		success, failed, err := curResource.SetState(context.Background())
+		success, failed, err := curResource.SetState(ctx.Ctx)
 		if err != nil {
 			ctx.Logger.Error().Err(err).Str("resource", resource).Msg("unable to set resource state")
 			recFailed = append(recFailed, common.ScalerStatusFailed{
@@ -123,19 +122,19 @@ func (h *ScalingHandler) SetNext(next service.Handler) {
 // It ensures that only valid resource types are included and prevents mixing
 // of application resources (deployments, statefulsets) with HPA resources.
 func (h *ScalingHandler) validResourceList(ctx *service.ReconciliationContext) ([]string, error) {
-	output := make([]string, 0, len(ctx.Scaler.Spec.Resources.Types))
+	resourceTypes := ctx.Scaler.Spec.Resources.Types
+	if len(resourceTypes) == 0 {
+		resourceTypes = []string{resources.DefaultK8SResourceType}
+	}
+
+	output := make([]string, 0, len(resourceTypes))
 	var (
 		isApp bool // Flag indicating if app resources are present
 		isHpa bool // Flag indicating if HPA resources are present
 	)
 
-	// Default to deployments if no resources are specified
-	if len(ctx.Scaler.Spec.Resources.Types) == 0 {
-		ctx.Scaler.Spec.Resources.Types = []string{resources.DefaultK8SResourceType}
-	}
-
 	// Process each resource type and validate it
-	for _, resource := range ctx.Scaler.Spec.Resources.Types {
+	for _, resource := range resourceTypes {
 		// Check if this is an application resource (deployment, statefulset, etc.)
 		if slices.Contains(utils.AppsResources, resource) {
 			isApp = true

@@ -73,6 +73,7 @@ func (h *PeriodHandler) Execute(ctx *service.ReconciliationContext) error {
 
 	// Validate and determine the current time period for scaling operations
 	period, err := utils.ValidatePeriod(
+		ctx.Logger,
 		periods,
 		&ctx.Scaler.Status,
 		ctx.Scaler.Spec.Config.RestoreOnDelete && ctx.ShouldFinalize,
