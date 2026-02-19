@@ -1,5 +1,25 @@
 # Changelog
 
+## [1.8.0](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.7.0...v1.8.0) (2026-02-19)
+
+
+### Features
+
+* add chain pattern handlers for Kubernetes scaler reconciliation ([9e89399](https://github.com/kubecloudscaler/kubecloudscaler/commit/9e893999904773be261084a9f2d43182862a486d))
+* **api:** introduce FlowResources structure for resource configuration ([bbd9be4](https://github.com/kubecloudscaler/kubecloudscaler/commit/bbd9be416a82f49606530766e259931abc23916a))
+* **api:** rename 'resources' to 'objects' in API v1alpha3 ([d85a06d](https://github.com/kubecloudscaler/kubecloudscaler/commit/d85a06daedbe35b460f6e0d717f344f2e896599c))
+* fix bugs ([#214](https://github.com/kubecloudscaler/kubecloudscaler/issues/214)) ([8c483e6](https://github.com/kubecloudscaler/kubecloudscaler/commit/8c483e66b450fe0fae608bb06d6e728c3bea96ad))
+* **gcp:** add chain-of-responsibility pattern to controller ([9e89399](https://github.com/kubecloudscaler/kubecloudscaler/commit/9e893999904773be261084a9f2d43182862a486d))
+* **gcp:** add chain-of-responsibility pattern to controller ([44ad4d8](https://github.com/kubecloudscaler/kubecloudscaler/commit/44ad4d8e5a32d768a07d2348dc2090cccfb9d063))
+* **v1alpha3-api:** clarify flow resource references in API and code ([20ae638](https://github.com/kubecloudscaler/kubecloudscaler/commit/20ae638bbf85c5ffce56050723a087b30d655cd4))
+
+
+### Bug Fixes
+
+* **deps:** update github.com/actions/actions-runner-controller digest to 02aa70a ([#208](https://github.com/kubecloudscaler/kubecloudscaler/issues/208)) ([dcda2bd](https://github.com/kubecloudscaler/kubecloudscaler/commit/dcda2bde53e88a1c4a83fd4a07d84f76bb275082))
+* **deps:** update github.com/actions/actions-runner-controller digest to 9de09f5 ([#211](https://github.com/kubecloudscaler/kubecloudscaler/issues/211)) ([186dc9b](https://github.com/kubecloudscaler/kubecloudscaler/commit/186dc9bd127219da55b40972181a45dd56b84050))
+* tests and doc ([c3ebd0a](https://github.com/kubecloudscaler/kubecloudscaler/commit/c3ebd0ad4872d8df0779b401b6c140f6ab5d48c5))
+
 ## [1.7.0](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.6.3...v1.7.0) (2025-12-30)
 
 
