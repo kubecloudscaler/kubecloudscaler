@@ -14,6 +14,10 @@ Periods define when and how your resources should be scaled. Each scaler (K8s, G
 - **Reverse Mode**: Use the `reverse` field to invert period logic -- making it inactive during the specified time range and active outside of it
 - **One-time Scaling**: Set `once: true` to apply scaling only when entering or leaving a time range, preventing interference with manual scaling
 - **Inclusive End Time**: The `endTime` is inclusive, meaning a period remains active until the last second before the specified end time (e.g., `endTime: "00:00"` stays active until `23:59:59`)
+- **Same-day Periods Only**: For recurring periods, `startTime` and `endTime` must both fall within the same calendar day. Midnight-crossing ranges (e.g. `startTime: "22:00"`, `endTime: "07:00"`) are **not supported** and will return a configuration error. Use `reverse: true` on the equivalent daytime window to achieve the same result (see example below).
+
+> [!WARNING]
+> Recurring periods **cannot cross midnight**. A period with `startTime: "22:00"` and `endTime: "07:00"` is invalid because the end time is before the start time within the same day. Use `reverse: true` instead.
 
 > [!NOTE]
 > When `once` is enabled, KubeCloudScaler will only scale resources when transitioning into or out of the specified time range. Manual scaling operations will not be overridden.
@@ -70,7 +74,7 @@ Fixed periods occur at specific dates and times, useful for one-time events or m
 
 ## Configuration Examples
 
-{{< tabs items="Basic Scaling,Multiple Periods,Scheduled Maintenance,Reverse Mode" >}}
+{{< tabs items="Basic Scaling,Multiple Periods,Scheduled Maintenance,Reverse Mode,Overnight Scaling" >}}
 
   {{< tab >}}
 **Scenario**: Scale down resources during off-hours
@@ -172,6 +176,29 @@ periods:
 ```
 > [!NOTE]
 > With `reverse: true`, the period is **active outside** the specified time range. Resources are scaled down outside 8:00 AM - 6:00 PM on weekdays, and all day on weekends (since weekends are not listed in `days`).
+
+  {{< /tab >}}
+  {{< tab >}}
+**Scenario**: Scale down resources overnight (e.g. 22:00 to 07:00)
+
+Midnight-crossing periods are not supported directly. Use `reverse: true` on the equivalent daytime window:
+
+```yaml
+periods:
+  - type: "down"
+    name: "overnight"
+    minReplicas: 0
+    time:
+      recurring:
+        days:
+          - all
+        startTime: "07:00"   # daytime window start
+        endTime: "22:00"     # daytime window end
+        timezone: "Europe/Paris"
+        reverse: true        # active OUTSIDE 07:00-22:00, i.e. from 22:00 to 07:00
+```
+> [!NOTE]
+> With `reverse: true`, the period is active **outside** the `07:00`–`22:00` window, which is equivalent to a `22:00`→`07:00` overnight period. This is the recommended pattern for any time range that would cross midnight.
 
   {{< /tab >}}
 {{< /tabs >}}

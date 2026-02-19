@@ -1,0 +1,84 @@
+# Flow de test : scale-down la nuit en semaine
+# Ordre de séquencement :
+#   1. StatefulSets (database, cache) → scale down immédiatement
+#   2. Deployments (api, backend) → scale down après 5m de délai
+#   3. Deployments (frontend, worker) → scale down après 10m de délai
+#
+# Inverse lors du scale-up (matin) :
+#   1. frontend/worker reprennent en premier
+#   2. api/backend reprennent 5m plus tard
+#   3. statefulsets reprennent 10m plus tard
+apiVersion: kubecloudscaler.cloud/v1alpha3
+kind: Flow
+metadata:
+  name: test-flow
+spec:
+  periods:
+    - name: scale-down-night
+      type: down
+      minReplicas: 0
+      time:
+        recurring:
+          days:
+            - Monday
+            - Tuesday
+            - Wednesday
+            - Thursday
+            - Friday
+          startTime: "22:00"
+          endTime: "23:37"
+          timezone: Europe/Paris
+
+  resources:
+    k8s:
+      - name: statefulsets-group
+        resources:
+          types:
+            - statefulsets
+          names:
+            - database
+            - cache
+        config:
+          namespaces:
+            - test-scaler
+          forceExcludeSystemNamespaces: true
+          restoreOnDelete: true
+
+      - name: api-backend-group
+        resources:
+          types:
+            - deployments
+          names:
+            - api
+            - backend
+        config:
+          namespaces:
+            - test-scaler
+          forceExcludeSystemNamespaces: true
+          restoreOnDelete: true
+
+      - name: frontend-worker-group
+        resources:
+          types:
+            - deployments
+          names:
+            - frontend
+            - worker
+        config:
+          namespaces:
+            - test-scaler
+          forceExcludeSystemNamespaces: true
+          restoreOnDelete: true
+
+  flows:
+    - periodName: scale-down-night
+      resources:
+        - name: statefulsets-group
+          startTimeDelay: "0m"
+          endTimeDelay: "10m"
+        - name: api-backend-group
+          startTimeDelay: "5m"
+          endTimeDelay: "5m"
+        - name: frontend-worker-group
+          startTimeDelay: "10m"
+          endTimeDelay: "0m"

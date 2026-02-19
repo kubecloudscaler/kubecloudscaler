@@ -191,6 +191,11 @@ func isPeriodActive(
 
 	endTime = endTime.Add(time.Second * EndTimeInclusiveSeconds) // end time is inclusive, so we add 59 seconds
 
+	// Midnight-crossing periods (e.g. startTime="22:00", endTime="07:00") are intentionally
+	// NOT supported for recurring periods: both times are anchored to the current calendar day,
+	// so an endTime earlier than startTime is treated as an invalid configuration.
+	// To achieve a similar effect, use reverse: true on a daytime period instead.
+	// Example: startTime="07:00" endTime="22:00" reverse=true is equivalent to 22:00→07:00.
 	if startTime.After(endTime) {
 		return false, time.Time{}, time.Time{}, nil, ErrStartAfterEnd
 	}

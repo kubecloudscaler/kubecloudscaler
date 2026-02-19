@@ -80,6 +80,15 @@ func (h *PeriodHandler) Execute(req *service.ReconciliationContext) (ctrl.Result
 		periods[i] = &scaler.Spec.Periods[i]
 	}
 
+	// Capture previous period name before ValidatePeriod mutates the status in-place.
+	// Same fix as the K8s controller: ValidatePeriod overwrites status.CurrentPeriod
+	// immediately, so comparing scaler.Status.CurrentPeriod.Name after the call always
+	// sees the new value, causing the noaction skip to fire on every transition.
+	prevPeriodName := ""
+	if scaler.Status.CurrentPeriod != nil {
+		prevPeriodName = scaler.Status.CurrentPeriod.Name
+	}
+
 	// Validate and determine the current time period
 	period, err := utils.ValidatePeriod(
 		req.Logger,
@@ -104,8 +113,10 @@ func (h *PeriodHandler) Execute(req *service.ReconciliationContext) (ctrl.Result
 	req.Period = period
 	req.ResourceConfig = resourceConfig
 
-	// Handle "no action" period - skip remaining handlers
-	if period.Name == "noaction" && scaler.Status.CurrentPeriod.Name == period.Name {
+	// Skip reconciliation only when the controller was already in "noaction" on the previous
+	// cycle. If we just transitioned from an active period the scaling handler must still run
+	// to restore resource state.
+	if prevPeriodName == "noaction" && period.Name == "noaction" {
 		req.Logger.Info().Msg("no action period detected, skipping reconciliation")
 		req.SkipRemaining = true
 		return ctrl.Result{RequeueAfter: utils.ReconcileSuccessDuration}, nil

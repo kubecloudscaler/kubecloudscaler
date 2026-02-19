@@ -71,6 +71,15 @@ func (h *PeriodHandler) Execute(ctx *service.ReconciliationContext) error {
 		periods[i] = &ctx.Scaler.Spec.Periods[i]
 	}
 
+	// Capture previous period name before ValidatePeriod mutates the status in-place.
+	// This is required to correctly detect a transition from an active period (e.g. "down")
+	// to "noaction": ValidatePeriod overwrites status.CurrentPeriod immediately, so comparing
+	// ctx.Scaler.Status.CurrentPeriod.Name after the call always sees the new value.
+	prevPeriodName := ""
+	if ctx.Scaler.Status.CurrentPeriod != nil {
+		prevPeriodName = ctx.Scaler.Status.CurrentPeriod.Name
+	}
+
 	// Validate and determine the current time period for scaling operations
 	period, err := utils.ValidatePeriod(
 		ctx.Logger,
@@ -95,10 +104,10 @@ func (h *PeriodHandler) Execute(ctx *service.ReconciliationContext) error {
 	ctx.Period = period
 	ctx.ResourceConfig.K8s.Period = period
 
-	// Check for "noaction" period
-	if ctx.Scaler.Status.CurrentPeriod != nil &&
-		ctx.Period.Name == "noaction" &&
-		ctx.Scaler.Status.CurrentPeriod.Name == ctx.Period.Name {
+	// Skip reconciliation only when the controller was already in "noaction" on the previous
+	// cycle (prevPeriodName). If we just transitioned from an active period the scaling handler
+	// must still run to restore replica counts.
+	if prevPeriodName == "noaction" && ctx.Period.Name == "noaction" {
 		ctx.Logger.Debug().Msg("no action period, skipping reconciliation")
 		ctx.SkipRemaining = true
 		if ctx.RequeueAfter == 0 {

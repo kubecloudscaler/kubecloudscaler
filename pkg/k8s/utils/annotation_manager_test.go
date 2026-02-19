@@ -323,7 +323,9 @@ var _ = Describe("AnnotationManager", func() {
 			isRestored, value, _, err := annotationMgr.RestoreIntAnnotations(annotations)
 
 			Expect(err).To(HaveOccurred())
-			Expect(isRestored).To(BeTrue())
+			// The annotation exists but is corrupted: restoration has NOT happened, so
+			// isRestored must be false (the old code incorrectly returned true here).
+			Expect(isRestored).To(BeFalse())
 			Expect(value).To(BeNil())
 		})
 	})

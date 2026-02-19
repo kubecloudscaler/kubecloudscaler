@@ -196,7 +196,8 @@ func (am *annotationManager) RestoreIntAnnotations(annot map[string]string) (boo
 	if isExists {
 		repAsInt, err = strconv.Atoi(rep)
 		if err != nil {
-			return true, nil, annot, fmt.Errorf("error parsing int value: %w", err)
+			// Return false: the annotation exists but is corrupted, restoration has not happened.
+			return false, nil, annot, fmt.Errorf("error parsing int value: %w", err)
 		}
 	} else {
 		isRestored = true
