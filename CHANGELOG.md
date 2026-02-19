@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.8.1](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.8.0...v1.8.1) (2026-02-19)
+
+
+### Bug Fixes
+
+* **helm:** ensure manager uses ko-app entrypoint ([e583945](https://github.com/kubecloudscaler/kubecloudscaler/commit/e583945291b8c30d0bc014db2cb59ff79236a6f0))
+
 ## [1.8.0](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.7.0...v1.8.0) (2026-02-19)
 
 
