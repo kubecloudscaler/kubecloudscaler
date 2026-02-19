@@ -17,8 +17,6 @@ limitations under the License.
 package handlers
 
 import (
-	"context"
-
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
@@ -56,7 +54,7 @@ func (h *StatusHandler) Execute(req *service.ReconciliationContext) (ctrl.Result
 
 	scaler := req.Scaler
 
-	ctx := context.Background()
+	ctx := req.Ctx
 
 	// Handle finalizer cleanup if deletion is in progress
 	if req.ShouldFinalize {

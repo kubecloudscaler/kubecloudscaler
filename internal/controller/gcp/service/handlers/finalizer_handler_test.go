@@ -17,6 +17,8 @@ limitations under the License.
 package handlers_test
 
 import (
+	"context"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/rs/zerolog"
@@ -59,6 +61,7 @@ var _ = Describe("FinalizerHandler", func() {
 				Build()
 
 			reconCtx = &service.ReconciliationContext{
+				Ctx:     context.Background(),
 				Request: ctrl.Request{},
 				Client:  k8sClient,
 				Logger:  &logger,
@@ -87,6 +90,7 @@ var _ = Describe("FinalizerHandler", func() {
 				Build()
 
 			reconCtx = &service.ReconciliationContext{
+				Ctx:     context.Background(),
 				Request: ctrl.Request{},
 				Client:  k8sClient,
 				Logger:  &logger,
@@ -116,6 +120,7 @@ var _ = Describe("FinalizerHandler", func() {
 			scaler.SetDeletionTimestamp(&now)
 
 			reconCtx = &service.ReconciliationContext{
+				Ctx:     context.Background(),
 				Request: ctrl.Request{},
 				Client:  k8sClient,
 				Logger:  &logger,

@@ -17,6 +17,8 @@ limitations under the License.
 package handlers_test
 
 import (
+	"context"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/rs/zerolog"
@@ -66,6 +68,7 @@ var _ = Describe("AuthHandler", func() {
 				Build()
 
 			reconCtx = &service.ReconciliationContext{
+				Ctx:     context.Background(),
 				Request: ctrl.Request{},
 				Client:  k8sClient,
 				Logger:  &logger,
@@ -98,11 +101,11 @@ var _ = Describe("AuthHandler", func() {
 			secretName := "gcp-secret"
 			scaler.Spec.Config.AuthSecret = &secretName
 
-			// Create a mock secret
+			// Create a mock secret in the operator namespace (where the handler looks)
 			secret := &corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      secretName,
-					Namespace: "default",
+					Namespace: "kubecloudscaler-system",
 				},
 				Data: map[string][]byte{
 					"credentials.json": []byte(`{"type": "service_account"}`),
@@ -115,6 +118,7 @@ var _ = Describe("AuthHandler", func() {
 				Build()
 
 			reconCtx = &service.ReconciliationContext{
+				Ctx:     context.Background(),
 				Request: ctrl.Request{},
 				Client:  k8sClient,
 				Logger:  &logger,
@@ -146,6 +150,7 @@ var _ = Describe("AuthHandler", func() {
 				Build()
 
 			reconCtx = &service.ReconciliationContext{
+				Ctx:     context.Background(),
 				Request: ctrl.Request{},
 				Client:  k8sClient,
 				Logger:  &logger,
@@ -170,7 +175,7 @@ var _ = Describe("AuthHandler", func() {
 			secret := &corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-secret",
-					Namespace: "default",
+					Namespace: "kubecloudscaler-system",
 				},
 			}
 
@@ -180,6 +185,7 @@ var _ = Describe("AuthHandler", func() {
 				Build()
 
 			reconCtx = &service.ReconciliationContext{
+				Ctx:     context.Background(),
 				Request: ctrl.Request{},
 				Client:  k8sClient,
 				Logger:  &logger,

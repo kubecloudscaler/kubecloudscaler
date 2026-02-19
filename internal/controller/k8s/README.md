@@ -92,6 +92,7 @@ The shared context passed through the chain:
 
 ```go
 type ReconciliationContext struct {
+    Ctx            context.Context        // Go context from Reconcile method
     Request        ctrl.Request           // Controller request
     Client         client.Client          // K8s API client
     K8sClient      kubernetes.Interface   // Typed K8s client

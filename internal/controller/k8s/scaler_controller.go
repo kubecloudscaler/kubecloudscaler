@@ -41,6 +41,7 @@ type ScalerReconciler struct {
 	client.Client                 // Kubernetes client for API operations
 	Scheme        *runtime.Scheme // Scheme for type conversion and serialization
 	Logger        *zerolog.Logger
+	chain         service.Handler // handler chain, initialized once
 }
 
 // +kubebuilder:rbac:groups=kubecloudscaler.cloud,resources=k8s,verbs=get;list;watch;create;update;patch;delete
@@ -69,14 +70,19 @@ func (r *ScalerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 
 	// Create reconciliation context with initial values
 	reconCtx := &service.ReconciliationContext{
+		Ctx:     ctx,
 		Request: req,
 		Client:  r.Client,
 		Logger:  r.Logger,
 	}
 
-	// Initialize and execute the handler chain
-	chain := r.initializeChain()
-	err := chain.Execute(reconCtx)
+	// Initialize chain lazily if not set (e.g., in tests without SetupWithManager)
+	if r.chain == nil {
+		r.chain = r.initializeChain()
+	}
+
+	// Execute the handler chain
+	err := r.chain.Execute(reconCtx)
 
 	// Handle chain execution result
 	if err != nil {
@@ -136,6 +142,8 @@ func (r *ScalerReconciler) initializeChain() service.Handler {
 // This method configures the controller to watch for K8s Scaler resources
 // and defines the reconciliation behavior.
 func (r *ScalerReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	r.chain = r.initializeChain()
+
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&kubecloudscalerv1alpha3.K8s{}).              // Watch for K8s Scaler resources
 		WithEventFilter(utils.IgnoreDeletionPredicate()). // Filter out deletion events

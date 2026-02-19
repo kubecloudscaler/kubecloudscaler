@@ -17,8 +17,6 @@ limitations under the License.
 package handlers
 
 import (
-	"context"
-
 	"github.com/kubecloudscaler/kubecloudscaler/api/common"
 	kubecloudscalerv1alpha3 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha3"
 	"github.com/kubecloudscaler/kubecloudscaler/internal/controller/gcp/service"
@@ -61,7 +59,7 @@ func (h *ScalingHandler) Execute(req *service.ReconciliationContext) (ctrl.Resul
 	req.Logger.Debug().Strs("resources", resourceList).Msg("processing resource list")
 
 	// Process each resource type and perform scaling operations
-	ctx := context.Background()
+	ctx := req.Ctx
 	for _, resource := range resourceList {
 		// Create a resource handler for the specific resource type
 		curResource, err := resources.NewResource(resource, req.ResourceConfig, req.Logger)

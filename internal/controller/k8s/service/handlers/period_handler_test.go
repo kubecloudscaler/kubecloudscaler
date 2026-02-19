@@ -17,6 +17,7 @@ limitations under the License.
 package handlers_test
 
 import (
+	"context"
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -75,6 +76,7 @@ var _ = Describe("PeriodHandler", func() {
 		}
 
 		reconCtx = &service.ReconciliationContext{
+			Ctx: context.Background(),
 			Request: ctrl.Request{
 				NamespacedName: types.NamespacedName{
 					Name:      "test-scaler",

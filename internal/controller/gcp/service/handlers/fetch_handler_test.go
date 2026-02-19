@@ -17,6 +17,8 @@ limitations under the License.
 package handlers_test
 
 import (
+	"context"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/rs/zerolog"
@@ -53,6 +55,7 @@ var _ = Describe("FetchHandler", func() {
 
 		// Create reconciliation context
 		reconCtx = &service.ReconciliationContext{
+			Ctx: context.Background(),
 			Request: ctrl.Request{
 				NamespacedName: types.NamespacedName{
 					Name:      scalerName,

@@ -22,15 +22,20 @@ import (
 	"fmt"
 	"os"
 	"slices"
+	"time"
 
 	"github.com/rs/zerolog"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const namespaceCacheTTL = 5 * time.Minute
+
 // namespaceManager implements NamespaceManager interface
 type namespaceManager struct {
-	client KubernetesClient
-	logger zerolog.Logger
+	client       KubernetesClient
+	logger       zerolog.Logger
+	cachedNsList []string
+	cacheExpiry  time.Time
 }
 
 // NewNamespaceManager creates a new namespace manager
@@ -50,6 +55,15 @@ func (nm *namespaceManager) SetNamespaceList(ctx context.Context, config *Config
 	// get the list of namespaces
 	if len(config.Namespaces) > 0 {
 		nsList = config.Namespaces
+	} else if time.Now().Before(nm.cacheExpiry) && nm.cachedNsList != nil {
+		// use cached namespace list (copy to avoid mutation)
+		nsList = make([]string, 0, len(nm.cachedNsList))
+		for _, ns := range nm.cachedNsList {
+			if slices.Contains(config.ExcludeNamespaces, ns) {
+				continue
+			}
+			nsList = append(nsList, ns)
+		}
 	} else {
 		// get all namespaces from the cluster
 		nsListItems, err := nm.client.CoreV1().Namespaces().List(ctx, metaV1.ListOptions{})
@@ -58,12 +72,20 @@ func (nm *namespaceManager) SetNamespaceList(ctx context.Context, config *Config
 			return []string{}, fmt.Errorf("error listing namespaces: %w", err)
 		}
 
+		// cache all namespace names before filtering
+		allNames := make([]string, 0, len(nsListItems.Items))
 		//nolint:gocritic // Range iteration of struct is acceptable, using index would reduce readability
 		for _, ns := range nsListItems.Items {
-			if slices.Contains(config.ExcludeNamespaces, ns.Name) {
+			allNames = append(allNames, ns.Name)
+		}
+		nm.cachedNsList = allNames
+		nm.cacheExpiry = time.Now().Add(namespaceCacheTTL)
+
+		for _, ns := range allNames {
+			if slices.Contains(config.ExcludeNamespaces, ns) {
 				continue
 			}
-			nsList = append(nsList, ns.Name)
+			nsList = append(nsList, ns)
 		}
 	}
 
@@ -128,14 +150,9 @@ func (nm *namespaceManager) InitConfig(ctx context.Context, config *Config) (*K8
 
 // excludeSystemNamespaces removes system namespaces from the list
 func (nm *namespaceManager) excludeSystemNamespaces(nsList []string) []string {
-	for _, ns := range DefaultExcludeNamespaces {
-		for i, n := range nsList {
-			if n == ns {
-				nsList = append(nsList[:i], nsList[i+1:]...)
-			}
-		}
-	}
-	return nsList
+	return slices.DeleteFunc(nsList, func(ns string) bool {
+		return slices.Contains(DefaultExcludeNamespaces, ns)
+	})
 }
 
 // excludeOwnNamespace removes the own namespace from the list
@@ -145,12 +162,9 @@ func (nm *namespaceManager) excludeOwnNamespace(nsList []string) []string {
 		return nsList
 	}
 
-	for i, n := range nsList {
-		if n == ownNamespace {
-			nsList = append(nsList[:i], nsList[i+1:]...)
-		}
-	}
-	return nsList
+	return slices.DeleteFunc(nsList, func(ns string) bool {
+		return ns == ownNamespace
+	})
 }
 
 // mergeLabelSelectors merges two label selectors

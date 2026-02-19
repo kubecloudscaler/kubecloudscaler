@@ -17,8 +17,6 @@ limitations under the License.
 package handlers
 
 import (
-	"context"
-
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	"github.com/kubecloudscaler/kubecloudscaler/internal/controller/k8s/service"
@@ -53,7 +51,7 @@ func (h *FinalizerHandler) Execute(ctx *service.ReconciliationContext) error {
 		if !controllerutil.ContainsFinalizer(ctx.Scaler, ScalerFinalizer) {
 			ctx.Logger.Info().Msg("adding finalizer")
 			controllerutil.AddFinalizer(ctx.Scaler, ScalerFinalizer)
-			if err := ctx.Client.Update(context.Background(), ctx.Scaler); err != nil {
+			if err := ctx.Client.Update(ctx.Ctx, ctx.Scaler); err != nil {
 				ctx.Logger.Error().Err(err).Msg("failed to add finalizer")
 				ctx.RequeueAfter = utils.ReconcileErrorDuration
 				return service.NewRecoverableError(err)

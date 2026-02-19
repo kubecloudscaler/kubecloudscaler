@@ -178,12 +178,13 @@ func isPeriodActive(
 		return false, time.Time{}, time.Time{}, nil, err
 	}
 
-	if period.EndTime == "00:00" {
+	endTimeStr := period.EndTime
+	if endTimeStr == "00:00" {
 		// if the end time is 00:00, it means the period ends at the end of the day
-		period.EndTime = "23:59"
+		endTimeStr = "23:59"
 	}
 
-	endTime, err := getTime(period.EndTime, periodType, timeLocation)
+	endTime, err := getTime(endTimeStr, periodType, timeLocation)
 	if err != nil {
 		return false, time.Time{}, time.Time{}, nil, err
 	}

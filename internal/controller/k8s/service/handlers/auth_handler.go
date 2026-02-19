@@ -17,19 +17,29 @@ limitations under the License.
 package handlers
 
 import (
-	"context"
-	"errors"
+	"fmt"
+	"os"
+	"sync"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/kubernetes"
 
 	"github.com/kubecloudscaler/kubecloudscaler/internal/controller/k8s/service"
 	k8sClient "github.com/kubecloudscaler/kubecloudscaler/pkg/k8s/utils/client"
 )
 
+// cachedClient holds a cached K8s client pair.
+type cachedClient struct {
+	k8sClient     kubernetes.Interface
+	dynamicClient dynamic.Interface
+}
+
 // AuthHandler is a handler that sets up the K8s client with authentication.
 type AuthHandler struct {
-	next service.Handler
+	next        service.Handler
+	clientCache sync.Map // map[string]*cachedClient (keyed by secret name, "" for default)
 }
 
 // NewAuthHandler creates a new AuthHandler.
@@ -48,35 +58,52 @@ func (h *AuthHandler) Execute(ctx *service.ReconciliationContext) error {
 
 	// Handle authentication secret for K8s access
 	var secret *corev1.Secret
+	cacheKey := "" // default client
 	if ctx.Scaler.Spec.Config.AuthSecret != nil {
 		ctx.Logger.Info().Msg("auth secret found for K8s authentication")
-		// Construct the namespaced name for the secret
+		// Use operator namespace since K8s CRD is cluster-scoped (ctx.Request.Namespace is empty)
+		secretNamespace := os.Getenv("POD_NAMESPACE")
+		if secretNamespace == "" {
+			secretNamespace = "kubecloudscaler-system"
+		}
 		namespacedSecret := types.NamespacedName{
-			Namespace: ctx.Request.Namespace,
+			Namespace: secretNamespace,
 			Name:      *ctx.Scaler.Spec.Config.AuthSecret,
 		}
 
 		// Fetch the secret from the cluster
 		secret = &corev1.Secret{}
-		if err := ctx.Client.Get(context.Background(), namespacedSecret, secret); err != nil {
+		if err := ctx.Client.Get(ctx.Ctx, namespacedSecret, secret); err != nil {
 			ctx.Logger.Error().Err(err).Msg("unable to fetch secret")
-			return service.NewCriticalError(errors.New("unable to fetch auth secret"))
+			return service.NewCriticalError(fmt.Errorf("unable to fetch auth secret: %w", err))
 		}
 		ctx.Secret = secret
+		cacheKey = *ctx.Scaler.Spec.Config.AuthSecret
 	} else {
 		// No authentication secret specified, use default K8s access
 		ctx.Secret = nil
 		secret = nil
 	}
 
-	// Initialize K8s client for resource operations
-	kubeClient, dynamicClient, err := k8sClient.GetClient(secret)
-	if err != nil {
-		ctx.Logger.Error().Err(err).Msg("unable to create K8s client")
-		return service.NewCriticalError(errors.New("failed to create K8s client"))
+	// Check cache for existing client
+	if cached, ok := h.clientCache.Load(cacheKey); ok {
+		cc, _ := cached.(*cachedClient)
+		ctx.K8sClient = cc.k8sClient
+		ctx.DynamicClient = cc.dynamicClient
+	} else {
+		// Initialize K8s client for resource operations
+		kubeClient, dynamicClient, err := k8sClient.GetClient(secret)
+		if err != nil {
+			ctx.Logger.Error().Err(err).Msg("unable to create K8s client")
+			return service.NewCriticalError(fmt.Errorf("failed to create K8s client: %w", err))
+		}
+		h.clientCache.Store(cacheKey, &cachedClient{
+			k8sClient:     kubeClient,
+			dynamicClient: dynamicClient,
+		})
+		ctx.K8sClient = kubeClient
+		ctx.DynamicClient = dynamicClient
 	}
-	ctx.K8sClient = kubeClient
-	ctx.DynamicClient = dynamicClient
 
 	ctx.Logger.Debug().Msg("K8s client initialized successfully")
 

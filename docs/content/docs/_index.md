@@ -3,25 +3,30 @@ title: 'Documentation'
 breadcrumbs: false
 ---
 
-# 👋 Welcome to KubeCloudScaler Docs!
+# Welcome to KubeCloudScaler Docs
 
-Ready to make your Kubernetes clusters smarter and more efficient? You're in the right place!
+KubeCloudScaler helps you automatically scale your Kubernetes and cloud workloads based on time periods. Save money by powering down unused resources outside business hours, and scale back up when you need them.
 
-KubeCloudScaler helps you automatically scale your workloads up ⬆️ or down ⬇️ based on time, events, or your own rules. Save money, boost performance, and simplify your operations. All with a few lines of configuration.
+## Why KubeCloudScaler?
 
-## 🚀 Why KubeCloudScaler?
+- **Time-based scaling**: Schedule scaling for nights, weekends, or maintenance windows
+- **Cost optimization**: Cut cloud costs by stopping unused resources automatically
+- **Multi-resource support**: Manage Kubernetes workloads (Deployments, StatefulSets, CronJobs, HPAs) and GCP resources (Compute Engine VMs)
+- **Flow orchestration**: Coordinate scaling across multiple resources with timing delays
+- **Declarative configuration**: Define scaling policies as Kubernetes Custom Resources
 
-- ⏰ Schedule scaling for nights, weekends, or maintenance windows
-- 💸 Cut cloud costs by powering down unused resources
-- ⚡ Instantly scale up for busy hours or special events
-- 🔒 Keep full control with flexible, declarative configs
+## Custom Resources
 
-## 📚 What’s Next?
+KubeCloudScaler provides three cluster-scoped CRDs:
 
-- 👉 [Installation Guide](install) – Get up and running in minutes
-- 👉 [Usage Examples](usage) – See real-world scenarios and YAML samples
-- 👉 [FAQ & Troubleshooting](faq) – Find answers fast
+| CRD | API Version | Purpose |
+|-----|-------------|---------|
+| **K8s** | `kubecloudscaler.cloud/v1alpha3` | Scale Kubernetes workloads |
+| **Gcp** | `kubecloudscaler.cloud/v1alpha3` | Scale GCP Compute Engine VMs |
+| **Flow** | `kubecloudscaler.cloud/v1alpha3` | Orchestrate multi-resource scaling workflows |
 
----
+## What's Next?
 
-Need help? Check the docs or open an issue on GitHub. Happy scaling! 🎉
+- [Installation Guide](install) -- Get up and running in minutes
+- [Usage Guide](usage) -- Understand periods, resources, and flows
+- [API Reference](api) -- Full CRD API documentation

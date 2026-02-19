@@ -17,7 +17,6 @@ limitations under the License.
 package handlers
 
 import (
-	"context"
 	"errors"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -45,7 +44,7 @@ func (h *FetchHandler) Execute(ctx *service.ReconciliationContext) error {
 	ctx.Logger.Debug().Msg("fetching scaler resource")
 
 	scaler := &kubecloudscalerv1alpha3.K8s{}
-	if err := ctx.Client.Get(context.Background(), ctx.Request.NamespacedName, scaler); err != nil {
+	if err := ctx.Client.Get(ctx.Ctx, ctx.Request.NamespacedName, scaler); err != nil {
 		if client.IgnoreNotFound(err) != nil {
 			ctx.Logger.Error().Err(err).Msg("unable to fetch Scaler")
 			return service.NewRecoverableError(err)

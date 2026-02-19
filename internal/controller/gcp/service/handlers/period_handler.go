@@ -82,6 +82,7 @@ func (h *PeriodHandler) Execute(req *service.ReconciliationContext) (ctrl.Result
 
 	// Validate and determine the current time period
 	period, err := utils.ValidatePeriod(
+		req.Logger,
 		periods,
 		&scaler.Status,
 		scaler.Spec.Config.RestoreOnDelete && req.ShouldFinalize,
