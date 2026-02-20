@@ -96,28 +96,34 @@ func (v *FlowValidatorService) validateResourceDelays(flow *kubecloudscalerv1alp
 		}
 
 		for _, resource := range flowItem.Resources {
-			var resourceDelay time.Duration
+			var startDelay, endDelay time.Duration
 
 			if resource.StartTimeDelay != "" {
-				delay, err := time.ParseDuration(resource.StartTimeDelay)
+				d, err := time.ParseDuration(resource.StartTimeDelay)
 				if err != nil {
 					return fmt.Errorf("invalid start time delay format for resource %s: %w", resource.Name, err)
 				}
-				resourceDelay += delay
+				startDelay = d
 			}
 
 			if resource.EndTimeDelay != "" {
-				delay, err := time.ParseDuration(resource.EndTimeDelay)
+				d, err := time.ParseDuration(resource.EndTimeDelay)
 				if err != nil {
 					return fmt.Errorf("invalid end time delay format for resource %s: %w", resource.Name, err)
 				}
-				resourceDelay += delay
+				endDelay = d
 			}
 
-			if resourceDelay >= periodDuration {
+			// Adjusted window: [start + startDelay, end + endDelay]
+			// Adjusted duration = periodDuration - startDelay + endDelay
+			// Must be > 0 for the window to remain valid
+			adjustedDuration := periodDuration - startDelay + endDelay
+			if adjustedDuration <= 0 {
 				return fmt.Errorf(
-					"resource %s: startTimeDelay + endTimeDelay (%v) must be less than period duration (%v) for period %s",
-					resource.Name, resourceDelay, periodDuration, periodName,
+					"resource %s: adjusted window is invalid (duration %v) for period %s — "+
+						"startTimeDelay (%v) and endTimeDelay (%v) invert the period window (duration %v)",
+					resource.Name, adjustedDuration, periodName,
+					startDelay, endDelay, periodDuration,
 				)
 			}
 		}
