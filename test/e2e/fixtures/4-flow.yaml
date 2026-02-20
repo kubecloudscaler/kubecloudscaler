@@ -25,8 +25,8 @@ spec:
             - Wednesday
             - Thursday
             - Friday
-          startTime: "22:00"
-          endTime: "23:37"
+          startTime: "19:40"
+          endTime: "20:00"
           timezone: Europe/Paris
 
   resources:
@@ -74,11 +74,11 @@ spec:
     - periodName: scale-down-night
       resources:
         - name: statefulsets-group
-          startTimeDelay: "0m"
-          endTimeDelay: "10m"
-        - name: api-backend-group
-          startTimeDelay: "5m"
-          endTimeDelay: "5m"
-        - name: frontend-worker-group
-          startTimeDelay: "10m"
+          startTimeDelay: "2m"
           endTimeDelay: "0m"
+        - name: api-backend-group
+          startTimeDelay: "1m"
+          endTimeDelay: "1m"
+        - name: frontend-worker-group
+          startTimeDelay: "0m"
+          endTimeDelay: "2m"

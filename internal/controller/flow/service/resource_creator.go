@@ -141,10 +141,14 @@ func (c *ResourceCreatorService) buildPeriods(periodsWithDelay []types.PeriodWit
 	for _, periodWithDelay := range periodsWithDelay {
 		curPeriod := periodWithDelay.Period
 		if curPeriod.Time.Recurring != nil {
+			copied := *curPeriod.Time.Recurring
+			curPeriod.Time.Recurring = &copied
 			curPeriod.Time.Recurring.StartTime = periodWithDelay.StartTime.Format("15:04")
 			curPeriod.Time.Recurring.EndTime = periodWithDelay.EndTime.Format("15:04")
 		}
 		if curPeriod.Time.Fixed != nil {
+			copied := *curPeriod.Time.Fixed
+			curPeriod.Time.Fixed = &copied
 			curPeriod.Time.Fixed.StartTime = periodWithDelay.StartTime.Format("2006-01-02 15:04:05")
 			curPeriod.Time.Fixed.EndTime = periodWithDelay.EndTime.Format("2006-01-02 15:04:05")
 		}

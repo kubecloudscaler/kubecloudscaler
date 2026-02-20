@@ -19,6 +19,7 @@ package base
 import (
 	"context"
 	"fmt"
+	"slices"
 
 	"github.com/rs/zerolog"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -129,6 +130,13 @@ func (p *Processor) listResources(ctx context.Context) ([]ResourceItem, error) {
 		}
 
 		allItems = append(allItems, items...)
+	}
+
+	// Filter by resource names if specified
+	if len(p.resource.Names) > 0 {
+		allItems = slices.DeleteFunc(allItems, func(item ResourceItem) bool {
+			return !slices.Contains(p.resource.Names, item.GetName())
+		})
 	}
 
 	return allItems, nil

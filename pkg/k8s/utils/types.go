@@ -15,6 +15,7 @@ type K8sResource struct {
 	NsList      []string
 	ListOptions metaV1.ListOptions
 	Period      *periodPkg.Period `json:"period,omitempty"`
+	Names       []string
 }
 
 // Config defines the configuration for Kubernetes resource management.

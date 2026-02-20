@@ -135,6 +135,7 @@ func (nm *namespaceManager) PrepareSearch(ctx context.Context, config *Config) (
 func (nm *namespaceManager) InitConfig(ctx context.Context, config *Config) (*K8sResource, error) {
 	resource := &K8sResource{
 		Period: config.Period,
+		Names:  config.Names,
 	}
 
 	nsList, listOptions, err := nm.PrepareSearch(ctx, config)

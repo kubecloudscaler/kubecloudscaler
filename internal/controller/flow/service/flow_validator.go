@@ -65,19 +65,13 @@ func (v *FlowValidatorService) ValidatePeriodTimings(flow *kubecloudscalerv1alph
 			return fmt.Errorf("period %s referenced in flows but not defined", periodName)
 		}
 
-		totalDelay, err := v.calculateTotalDelay(flow, periodName)
-		if err != nil {
-			return fmt.Errorf("failed to calculate total delay for period %s: %w", periodName, err)
-		}
-
 		periodDuration, err := v.timeCalculator.GetPeriodDuration(&period)
 		if err != nil {
 			return fmt.Errorf("failed to get period duration for %s: %w", periodName, err)
 		}
 
-		if totalDelay > periodDuration {
-			return fmt.Errorf("total delay %v for period %s exceeds period duration %v",
-				totalDelay, periodName, periodDuration)
+		if err := v.validateResourceDelays(flow, periodName, periodDuration); err != nil {
+			return err
 		}
 	}
 
@@ -94,33 +88,46 @@ func (v *FlowValidatorService) createPeriodsMap(flow *kubecloudscalerv1alpha3.Fl
 	return periodsMap
 }
 
-// calculateTotalDelay calculates the total delay for a specific period
-func (v *FlowValidatorService) calculateTotalDelay(flow *kubecloudscalerv1alpha3.Flow, periodName string) (time.Duration, error) {
-	var totalDelay time.Duration
-
+// validateResourceDelays validates that each resource's combined delay doesn't exceed the period duration
+func (v *FlowValidatorService) validateResourceDelays(flow *kubecloudscalerv1alpha3.Flow, periodName string, periodDuration time.Duration) error {
 	for _, flowItem := range flow.Spec.Flows {
 		if flowItem.PeriodName != periodName {
 			continue
 		}
 
 		for _, resource := range flowItem.Resources {
+			var startDelay, endDelay time.Duration
+
 			if resource.StartTimeDelay != "" {
-				delay, err := time.ParseDuration(resource.StartTimeDelay)
+				d, err := time.ParseDuration(resource.StartTimeDelay)
 				if err != nil {
-					return 0, fmt.Errorf("invalid start time delay format for resource %s: %w", resource.Name, err)
+					return fmt.Errorf("invalid start time delay format for resource %s: %w", resource.Name, err)
 				}
-				totalDelay += delay
+				startDelay = d
 			}
 
 			if resource.EndTimeDelay != "" {
-				delay, err := time.ParseDuration(resource.EndTimeDelay)
+				d, err := time.ParseDuration(resource.EndTimeDelay)
 				if err != nil {
-					return 0, fmt.Errorf("invalid end time delay format for resource %s: %w", resource.Name, err)
+					return fmt.Errorf("invalid end time delay format for resource %s: %w", resource.Name, err)
 				}
-				totalDelay += delay
+				endDelay = d
+			}
+
+			// Adjusted window: [start + startDelay, end + endDelay]
+			// Adjusted duration = periodDuration - startDelay + endDelay
+			// Must be > 0 for the window to remain valid
+			adjustedDuration := periodDuration - startDelay + endDelay
+			if adjustedDuration <= 0 {
+				return fmt.Errorf(
+					"resource %s: adjusted window is invalid (duration %v) for period %s — "+
+						"startTimeDelay (%v) and endTimeDelay (%v) invert the period window (duration %v)",
+					resource.Name, adjustedDuration, periodName,
+					startDelay, endDelay, periodDuration,
+				)
 			}
 		}
 	}
 
-	return totalDelay, nil
+	return nil
 }

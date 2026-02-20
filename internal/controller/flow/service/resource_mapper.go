@@ -146,12 +146,22 @@ func (m *ResourceMapperService) findAssociatedPeriods(
 	periodsMap map[string]common.ScalerPeriod,
 ) ([]types.PeriodWithDelay, error) {
 	var periodsWithDelay []types.PeriodWithDelay
+	seen := make(map[string]bool)
 
 	for _, flowItem := range flow.Spec.Flows {
 		for _, resource := range flowItem.Resources {
 			if resource.Name != resourceName {
 				continue
 			}
+
+			key := flowItem.PeriodName + "/" + resource.Name
+			if seen[key] {
+				return nil, fmt.Errorf(
+					"resource %s appears more than once for period %s in flows",
+					resource.Name, flowItem.PeriodName,
+				)
+			}
+			seen[key] = true
 
 			period, exists := periodsMap[flowItem.PeriodName]
 			if !exists {

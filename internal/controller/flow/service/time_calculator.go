@@ -53,7 +53,7 @@ func (t *TimeCalculatorService) CalculatePeriodEndTime(period *common.ScalerPeri
 		return time.Time{}, fmt.Errorf("failed to parse period end time: %w", err)
 	}
 
-	return baseEndTime.Add(-delay), nil
+	return baseEndTime.Add(delay), nil
 }
 
 // GetPeriodDuration calculates the duration of a period
