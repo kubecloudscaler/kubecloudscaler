@@ -21,8 +21,11 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	"k8s.io/utils/ptr"
+
+	periodPkg "github.com/kubecloudscaler/kubecloudscaler/pkg/period"
 )
 
 // annotationManager implements AnnotationManager interface
@@ -39,22 +42,26 @@ func (am *annotationManager) AddAnnotations(annotations map[string]string, perio
 		annotations = make(map[string]string)
 	}
 
-	// Type assertion to get period data
-	p, ok := period.(interface {
+	switch p := period.(type) {
+	case *periodPkg.Period:
+		annotations[AnnotationsPrefix+"/"+PeriodType] = p.Type
+		annotations[AnnotationsPrefix+"/"+PeriodStartTime] = p.GetStartTime.Format(time.RFC3339)
+		annotations[AnnotationsPrefix+"/"+PeriodEndTime] = p.GetEndTime.Format(time.RFC3339)
+		if p.Period != nil && p.Period.Timezone != nil {
+			annotations[AnnotationsPrefix+"/"+PeriodTimezone] = *p.Period.Timezone
+		}
+	case interface {
 		GetType() string
 		GetStartTime() interface{ String() string }
 		GetEndTime() interface{ String() string }
 		GetTimezone() *string
-	})
-	if !ok {
-		return annotations
-	}
-
-	annotations[AnnotationsPrefix+"/"+PeriodType] = p.GetType()
-	annotations[AnnotationsPrefix+"/"+PeriodStartTime] = p.GetStartTime().String()
-	annotations[AnnotationsPrefix+"/"+PeriodEndTime] = p.GetEndTime().String()
-	if timezone := p.GetTimezone(); timezone != nil {
-		annotations[AnnotationsPrefix+"/"+PeriodTimezone] = *timezone
+	}:
+		annotations[AnnotationsPrefix+"/"+PeriodType] = p.GetType()
+		annotations[AnnotationsPrefix+"/"+PeriodStartTime] = p.GetStartTime().String()
+		annotations[AnnotationsPrefix+"/"+PeriodEndTime] = p.GetEndTime().String()
+		if timezone := p.GetTimezone(); timezone != nil {
+			annotations[AnnotationsPrefix+"/"+PeriodTimezone] = *timezone
+		}
 	}
 
 	return annotations
