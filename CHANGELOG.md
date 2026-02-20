@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.8.3](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.8.2...v1.8.3) (2026-02-20)
+
+
+### Bug Fixes
+
+* resolve 4 bugs preventing statefulset restoration after Flow period ends ([#217](https://github.com/kubecloudscaler/kubecloudscaler/issues/217)) ([1272d39](https://github.com/kubecloudscaler/kubecloudscaler/commit/1272d394f5e263c48657e16c7f07a6ce53af7a32))
+
 ## [1.8.2](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.8.1...v1.8.2) (2026-02-19)
 
 
