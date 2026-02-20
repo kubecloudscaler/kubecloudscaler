@@ -117,7 +117,7 @@ func (am *annotationManager) RestoreMinMaxAnnotations(annot map[string]string) (
 	if isExists {
 		minAsInt, err = strconv.Atoi(rep)
 		if err != nil {
-			return true, nil, 0, annot, fmt.Errorf("error parsing min value: %w", err)
+			return false, nil, 0, annot, fmt.Errorf("error parsing min value: %w", err)
 		}
 	} else {
 		isMinRestored = true
@@ -127,7 +127,7 @@ func (am *annotationManager) RestoreMinMaxAnnotations(annot map[string]string) (
 	if isExists {
 		maxAsInt, err = strconv.Atoi(rep)
 		if err != nil {
-			return true, nil, 0, annot, fmt.Errorf("error parsing max value: %w", err)
+			return false, nil, 0, annot, fmt.Errorf("error parsing max value: %w", err)
 		}
 	} else {
 		isMaxRestored = true

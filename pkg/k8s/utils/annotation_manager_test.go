@@ -191,7 +191,7 @@ var _ = Describe("AnnotationManager", func() {
 			isRestored, min, max, _, err := annotationMgr.RestoreMinMaxAnnotations(annotations)
 
 			Expect(err).To(HaveOccurred())
-			Expect(isRestored).To(BeTrue())
+			Expect(isRestored).To(BeFalse())
 			Expect(min).To(BeNil())
 			Expect(max).To(Equal(int32(0)))
 		})
@@ -204,7 +204,7 @@ var _ = Describe("AnnotationManager", func() {
 			isRestored, min, max, _, err := annotationMgr.RestoreMinMaxAnnotations(annotations)
 
 			Expect(err).To(HaveOccurred())
-			Expect(isRestored).To(BeTrue())
+			Expect(isRestored).To(BeFalse())
 			Expect(min).To(BeNil())
 			Expect(max).To(Equal(int32(0)))
 		})
