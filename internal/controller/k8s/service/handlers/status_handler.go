@@ -17,6 +17,7 @@ limitations under the License.
 package handlers
 
 import (
+	"k8s.io/client-go/util/retry"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
@@ -58,18 +59,19 @@ func (h *StatusHandler) Execute(ctx *service.ReconciliationContext) error {
 		return nil
 	}
 
-	// Initialize CurrentPeriod if it's nil to prevent panics
-	if ctx.Scaler.Status.CurrentPeriod == nil {
-		ctx.Scaler.Status.CurrentPeriod = &common.ScalerStatusPeriod{}
-	}
-
-	// Update scaler status with operation results
-	ctx.Scaler.Status.CurrentPeriod.Successful = ctx.SuccessResults
-	ctx.Scaler.Status.CurrentPeriod.Failed = ctx.FailedResults
-	ctx.Scaler.Status.Comments = ptr.To("time period processed")
-
-	// Persist status updates to the cluster
-	if err := ctx.Client.Status().Update(ctx.Ctx, ctx.Scaler); err != nil {
+	// Persist status updates to the cluster, retrying on conflict by re-fetching the latest version
+	if err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		if err := ctx.Client.Get(ctx.Ctx, ctx.Request.NamespacedName, ctx.Scaler); err != nil {
+			return err
+		}
+		if ctx.Scaler.Status.CurrentPeriod == nil {
+			ctx.Scaler.Status.CurrentPeriod = &common.ScalerStatusPeriod{}
+		}
+		ctx.Scaler.Status.CurrentPeriod.Successful = ctx.SuccessResults
+		ctx.Scaler.Status.CurrentPeriod.Failed = ctx.FailedResults
+		ctx.Scaler.Status.Comments = ptr.To("time period processed")
+		return ctx.Client.Status().Update(ctx.Ctx, ctx.Scaler)
+	}); err != nil {
 		ctx.Logger.Error().Err(err).Msg("unable to update scaler status")
 		ctx.RequeueAfter = utils.ReconcileErrorDuration
 		return service.NewRecoverableError(err)

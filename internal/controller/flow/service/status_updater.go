@@ -22,6 +22,7 @@ import (
 
 	"github.com/rs/zerolog"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/util/retry"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -50,11 +51,16 @@ func (s *StatusUpdaterService) UpdateFlowStatus(
 	condition metav1.Condition,
 ) (ctrl.Result, error) {
 	condition.LastTransitionTime = metav1.NewTime(time.Now())
-	condition.ObservedGeneration = flow.Generation
+	flowKey := client.ObjectKeyFromObject(flow)
 
-	s.updateConditionInFlow(flow, condition)
-
-	if err := s.client.Status().Update(ctx, flow); err != nil {
+	if err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		if err := s.client.Get(ctx, flowKey, flow); err != nil {
+			return err
+		}
+		condition.ObservedGeneration = flow.Generation
+		s.updateConditionInFlow(flow, condition)
+		return s.client.Status().Update(ctx, flow)
+	}); err != nil {
 		s.logger.Error().Err(err).Msg("unable to update flow status")
 		return ctrl.Result{RequeueAfter: utils.ReconcileErrorDuration}, err
 	}
