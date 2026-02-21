@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.8.6](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.8.5...v1.8.6) (2026-02-21)
+
+
+### Bug Fixes
+
+* return nil from FetchHandler when K8s CR is not found after Flow deletion ([ba8dcbf](https://github.com/kubecloudscaler/kubecloudscaler/commit/ba8dcbf3654fb861effb75463cb76d33a37d107a))
+
 ## [1.8.5](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.8.4...v1.8.5) (2026-02-21)
 
 
