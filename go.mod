@@ -1,6 +1,6 @@
 module github.com/kubecloudscaler/kubecloudscaler
 
-go 1.25.1
+go 1.26
 
 require (
 	cloud.google.com/go/compute v1.54.0

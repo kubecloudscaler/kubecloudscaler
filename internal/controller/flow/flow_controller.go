@@ -19,8 +19,6 @@ package controller
 
 import (
 	"context"
-	"strings"
-	"time"
 
 	"github.com/rs/zerolog"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -33,6 +31,8 @@ import (
 	"github.com/kubecloudscaler/kubecloudscaler/internal/controller/flow/service"
 	"github.com/kubecloudscaler/kubecloudscaler/internal/utils"
 )
+
+const flowFinalizer = "kubecloudscaler.cloud/flow-finalizer"
 
 // FlowReconciler reconciles a Flow object
 // It manages the lifecycle of K8s and GCP resources by creating and deploying them
@@ -106,8 +106,8 @@ func (r *FlowReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		Msg("reconciling flow")
 
 	// Handle finalizer management
-	if r.handleFinalizers(ctx, flow) {
-		return ctrl.Result{}, nil
+	if stop, result, err := r.handleFinalizers(ctx, flow); stop {
+		return result, err
 	}
 
 	// Process flow and create resources
@@ -134,20 +134,21 @@ func (r *FlowReconciler) fetchFlow(ctx context.Context, req ctrl.Request) (*kube
 	return flow, nil
 }
 
-// handleFinalizers handles finalizer management for proper cleanup
-func (r *FlowReconciler) handleFinalizers(ctx context.Context, flow *kubecloudscalerv1alpha3.Flow) bool {
-	flowFinalizer := "kubecloudscaler.cloud/flow-finalizer"
-
+// handleFinalizers handles finalizer management for proper cleanup.
+// Returns (stop bool, result ctrl.Result, err error).
+// stop=true means the caller should return immediately with the given result and error.
+func (r *FlowReconciler) handleFinalizers(ctx context.Context, flow *kubecloudscalerv1alpha3.Flow) (bool, ctrl.Result, error) {
 	if flow.DeletionTimestamp.IsZero() {
 		// Object is not being deleted - ensure finalizer is present
 		if !controllerutil.ContainsFinalizer(flow, flowFinalizer) {
 			r.Logger.Info().Msg("adding finalizer")
 			controllerutil.AddFinalizer(flow, flowFinalizer)
 			if err := r.Update(ctx, flow); err != nil {
-				return true
+				r.Logger.Error().Err(err).Msg("failed to add finalizer")
+				return true, ctrl.Result{RequeueAfter: utils.ReconcileErrorDuration}, err
 			}
 		}
-		return false
+		return false, ctrl.Result{}, nil
 	}
 
 	// Object is being deleted - handle finalizer cleanup
@@ -156,33 +157,18 @@ func (r *FlowReconciler) handleFinalizers(ctx context.Context, flow *kubecloudsc
 		r.Logger.Info().Msg("removing finalizer")
 		controllerutil.RemoveFinalizer(flow, flowFinalizer)
 		if err := r.Update(ctx, flow); err != nil {
-			return true
+			r.Logger.Error().Err(err).Msg("failed to remove finalizer")
+			return true, ctrl.Result{RequeueAfter: utils.ReconcileErrorDuration}, err
 		}
-		return true
+		return true, ctrl.Result{}, nil
 	}
 
 	// Finalizer already removed, stop reconciliation
-	return true
+	return true, ctrl.Result{}, nil
 }
 
-// handleProcessingError handles processing errors and determines if requeue is needed
+// handleProcessingError handles processing errors and updates flow status accordingly.
 func (r *FlowReconciler) handleProcessingError(ctx context.Context, flow *kubecloudscalerv1alpha3.Flow, err error) (ctrl.Result, error) {
-	// Check if this is a scheduling error (requeue needed)
-	if strings.Contains(err.Error(), "scheduled for") && strings.Contains(err.Error(), "requeue after") {
-		// Extract requeue duration from error message
-		parts := strings.Split(err.Error(), "requeue after ")
-		if len(parts) > 1 {
-			requeueStr := strings.TrimSpace(parts[1])
-			if requeueDuration, parseErr := time.ParseDuration(requeueStr); parseErr == nil {
-				r.Logger.Info().
-					Str("flow", flow.Name).
-					Dur("requeueAfter", requeueDuration).
-					Msg("flow scheduled for later processing")
-				return ctrl.Result{RequeueAfter: requeueDuration}, nil
-			}
-		}
-	}
-
 	r.Logger.Error().Err(err).Msg("flow processing failed")
 	return r.statusUpdater.UpdateFlowStatus(ctx, flow, metav1.Condition{
 		Type:    "Processed",

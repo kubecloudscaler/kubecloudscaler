@@ -62,14 +62,7 @@ func (h *FinalizerHandler) Execute(req *service.ReconciliationContext) (ctrl.Res
 			controllerutil.AddFinalizer(scaler, ScalerFinalizer)
 			if err := req.Client.Update(ctx, scaler); err != nil {
 				req.Logger.Error().Err(err).Msg("failed to add finalizer")
-				if h.next != nil {
-					result, err := h.next.Execute(req)
-					if err != nil {
-						return result, err
-					}
-					return ctrl.Result{RequeueAfter: 5 * 1000000000}, nil
-				}
-				return ctrl.Result{RequeueAfter: 5 * 1000000000}, nil
+				return ctrl.Result{RequeueAfter: transientRequeueAfter}, nil
 			}
 		}
 		// Finalizer present or added successfully, continue chain

@@ -17,6 +17,7 @@ limitations under the License.
 package handlers
 
 import (
+	"k8s.io/client-go/util/retry"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
@@ -62,14 +63,15 @@ func (h *StatusHandler) Execute(req *service.ReconciliationContext) (ctrl.Result
 		controllerutil.RemoveFinalizer(scaler, ScalerFinalizer)
 		if err := req.Client.Update(ctx, scaler); err != nil {
 			req.Logger.Error().Err(err).Msg("failed to remove finalizer")
-			return ctrl.Result{RequeueAfter: 5 * 1000000000}, nil
+			return ctrl.Result{RequeueAfter: transientRequeueAfter}, nil
 		}
 		// Finalizer removed successfully, stop chain
 		return ctrl.Result{}, nil
 	}
 
-	// Update scaler status with operation results
-	// Initialize CurrentPeriod if nil
+	// Build the desired status from the in-memory state set by PeriodHandler and ScalingHandler.
+	// This must be snapshotted before the retry loop because re-fetching the object from the
+	// cluster would overwrite fields like Spec/SpecSHA/Type/Name that PeriodHandler wrote.
 	if scaler.Status.CurrentPeriod == nil {
 		scaler.Status.CurrentPeriod = &common.ScalerStatusPeriod{}
 	}
@@ -77,10 +79,22 @@ func (h *StatusHandler) Execute(req *service.ReconciliationContext) (ctrl.Result
 	scaler.Status.CurrentPeriod.Failed = req.FailedResults
 	scaler.Status.Comments = ptr.To("time period processed")
 
-	// Persist status updates to the cluster
-	if err := req.Client.Status().Update(ctx, scaler); err != nil {
+	desiredPeriod := *scaler.Status.CurrentPeriod
+	desiredComments := scaler.Status.Comments
+
+	// Persist status updates to the cluster, retrying on conflict by re-fetching the latest version
+	if err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		if err := req.Client.Get(ctx, req.Request.NamespacedName, scaler); err != nil {
+			return err
+		}
+		// Restore desired status onto the freshly-fetched object (preserves resourceVersion)
+		periodCopy := desiredPeriod
+		scaler.Status.CurrentPeriod = &periodCopy
+		scaler.Status.Comments = desiredComments
+		return req.Client.Status().Update(ctx, scaler)
+	}); err != nil {
 		req.Logger.Error().Err(err).Msg("unable to update scaler status")
-		return ctrl.Result{RequeueAfter: 5 * 1000000000}, nil
+		return ctrl.Result{RequeueAfter: transientRequeueAfter}, nil
 	}
 
 	req.Logger.Info().

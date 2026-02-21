@@ -65,15 +65,15 @@ func (h *PeriodHandler) Execute(ctx *service.ReconciliationContext) error {
 		},
 	}
 
-	// Convert []common.ScalerPeriod to []*common.ScalerPeriod for utils.ValidatePeriod
+	// Convert []common.ScalerPeriod to []*common.ScalerPeriod for utils.SetActivePeriod
 	periods := make([]*common.ScalerPeriod, len(ctx.Scaler.Spec.Periods))
 	for i := range ctx.Scaler.Spec.Periods {
 		periods[i] = &ctx.Scaler.Spec.Periods[i]
 	}
 
-	// Capture previous period name before ValidatePeriod mutates the status in-place.
+	// Capture previous period name before SetActivePeriod mutates the status in-place.
 	// This is required to correctly detect a transition from an active period (e.g. "down")
-	// to "noaction": ValidatePeriod overwrites status.CurrentPeriod immediately, so comparing
+	// to "noaction": SetActivePeriod overwrites status.CurrentPeriod immediately, so comparing
 	// ctx.Scaler.Status.CurrentPeriod.Name after the call always sees the new value.
 	prevPeriodName := ""
 	if ctx.Scaler.Status.CurrentPeriod != nil {
@@ -81,7 +81,7 @@ func (h *PeriodHandler) Execute(ctx *service.ReconciliationContext) error {
 	}
 
 	// Validate and determine the current time period for scaling operations
-	period, err := utils.ValidatePeriod(
+	period, err := utils.SetActivePeriod(
 		ctx.Logger,
 		periods,
 		&ctx.Scaler.Status,

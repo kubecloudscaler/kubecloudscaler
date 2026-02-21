@@ -649,8 +649,11 @@ spec:
                     type: string
                   restoreOnDelete:
                     default: true
-                    description: 'Restore resource state on CR deletion (default:
-                      true)'
+                    description: |-
+                      RestoreOnDelete applies defaultPeriodType to all managed resources when the CR is deleted.
+                      Note: this does NOT restore the pre-CR state of resources. It applies the defaultPeriodType
+                      value (default: "down"), meaning VMs will be stopped on deletion unless defaultPeriodType
+                      is set to "up". To restore VMs to their original state, set defaultPeriodType accordingly.
                     type: boolean
                   waitForOperation:
                     description: Wait for operation to complete

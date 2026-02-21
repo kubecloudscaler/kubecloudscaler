@@ -91,7 +91,10 @@ func (c *VMnstances) SetState(ctx context.Context) ([]common.ScalerStatusSuccess
 	return success, failed, nil
 }
 
-// getDesiredState determines the desired state based on the current period
+// getDesiredState determines the desired state based on the current period.
+// When the period type is "noaction" (e.g. during CR deletion with RestoreOnDelete=true),
+// defaultPeriodType is applied — not the pre-CR VM state. This means RestoreOnDelete
+// stops VMs by default ("down") unless defaultPeriodType is explicitly set to "up".
 func (c *VMnstances) getDesiredState() string {
 	defaultPeriodType := gcpUtils.InstanceStopped
 	if c.Config.DefaultPeriodType == "up" {
@@ -135,78 +138,42 @@ func (c *VMnstances) applyInstanceState(ctx context.Context, instance *computepb
 	}
 }
 
-// executeInstanceOperation executes a common instance operation (start/stop)
-//
-//nolint:lll // Function signature requires long parameter names for clarity
-func (c *VMnstances) executeInstanceOperation(ctx context.Context, instance *computepb.Instance, zone, operation string, isAlreadyInState func(*computepb.Instance) bool, createRequest func(string, string, string) interface{}) error {
-	// Check if instance is already in the desired state
-	if isAlreadyInState(instance) {
+// startInstance starts a stopped instance.
+func (c *VMnstances) startInstance(ctx context.Context, instance *computepb.Instance, zone string) error {
+	if gcpUtils.IsInstanceRunning(instance) {
 		return nil
 	}
-
-	// Create the appropriate request
-	req := createRequest(c.Config.ProjectID, zone, instance.GetName())
-
-	// Execute the operation
-	var op interface{}
-	var err error
-
-	switch operation {
-	case "start":
-		startReq, ok := req.(*computepb.StartInstanceRequest)
-		if !ok {
-			return fmt.Errorf("expected *computepb.StartInstanceRequest, got %T", req)
-		}
-		op, err = c.Config.Client.Instances.Start(ctx, startReq)
-	case "stop":
-		stopReq, ok := req.(*computepb.StopInstanceRequest)
-		if !ok {
-			return fmt.Errorf("expected *computepb.StopInstanceRequest, got %T", req)
-		}
-		op, err = c.Config.Client.Instances.Stop(ctx, stopReq)
-	default:
-		return fmt.Errorf("unknown operation: %s", operation)
-	}
-
+	op, err := c.Config.Client.Instances.Start(ctx, &computepb.StartInstanceRequest{
+		Project:  c.Config.ProjectID,
+		Zone:     zone,
+		Instance: instance.GetName(),
+	})
 	if err != nil {
-		return fmt.Errorf("failed to %s instance %s: %w", operation, instance.GetName(), err)
+		return fmt.Errorf("failed to start instance %s: %w", instance.GetName(), err)
 	}
-
-	// Wait for the operation to complete
 	if c.Config.WaitForOperation {
-		operation, ok := op.(*computepb.Operation)
-		if !ok {
-			return fmt.Errorf("expected *computepb.Operation, got %T", op)
-		}
-		return c.waitForOperation(ctx, operation, zone)
+		return c.waitForOperation(ctx, op.Name(), zone)
 	}
 	return nil
 }
 
-// startInstance starts a stopped instance
-func (c *VMnstances) startInstance(ctx context.Context, instance *computepb.Instance, zone string) error {
-	return c.executeInstanceOperation(
-		ctx, instance, zone, "start", gcpUtils.IsInstanceRunning,
-		func(projectID, zone, instanceName string) interface{} {
-			return &computepb.StartInstanceRequest{
-				Project:  projectID,
-				Zone:     zone,
-				Instance: instanceName,
-			}
-		})
-}
-
-// stopInstance stops a running instance
+// stopInstance stops a running instance.
 func (c *VMnstances) stopInstance(ctx context.Context, instance *computepb.Instance, zone string) error {
-	return c.executeInstanceOperation(
-		ctx, instance, zone, "stop", gcpUtils.IsInstanceStopped,
-		func(projectID, zone, instanceName string) interface{} {
-			return &computepb.StopInstanceRequest{
-				Project:  projectID,
-				Zone:     zone,
-				Instance: instanceName,
-			}
-		})
+	if gcpUtils.IsInstanceStopped(instance) {
+		return nil
+	}
+	op, err := c.Config.Client.Instances.Stop(ctx, &computepb.StopInstanceRequest{
+		Project:  c.Config.ProjectID,
+		Zone:     zone,
+		Instance: instance.GetName(),
+	})
+	if err != nil {
+		return fmt.Errorf("failed to stop instance %s: %w", instance.GetName(), err)
+	}
+	if c.Config.WaitForOperation {
+		return c.waitForOperation(ctx, op.Name(), zone)
+	}
+	return nil
 }
 
 // extractZoneFromInstance extracts the zone from the instance's self link
@@ -228,7 +195,7 @@ func (c *VMnstances) extractZoneFromInstance(instance *computepb.Instance) strin
 }
 
 // waitForOperation waits for a GCP operation to complete
-func (c *VMnstances) waitForOperation(ctx context.Context, operation *computepb.Operation, zone string) error {
+func (c *VMnstances) waitForOperation(ctx context.Context, operationName, zone string) error {
 	// Set a timeout for the operation
 	timeout := time.After(OperationTimeoutMinutes * time.Minute)
 	ticker := time.NewTicker(OperationCheckIntervalSeconds * time.Second)
@@ -241,7 +208,7 @@ func (c *VMnstances) waitForOperation(ctx context.Context, operation *computepb.
 		case <-ticker.C:
 			// Check operation status
 			getReq := &computepb.GetZoneOperationRequest{
-				Operation: operation.GetName(),
+				Operation: operationName,
 				Project:   c.Config.ProjectID,
 				Zone:      zone,
 			}

@@ -347,7 +347,7 @@ _Appears in:_
 | `projectId` _string_ | ProjectID |   |   |
 | `region` _string_ | Region |   |   |
 | `authSecret` _string_ | AuthSecret name |   |   |
-| `restoreOnDelete` _boolean_ | Restore resource state on CR deletion (default: true) | true |   |
+| `restoreOnDelete` _boolean_ | RestoreOnDelete applies defaultPeriodType to all managed resources when the CR is deleted. Note: this does NOT restore the pre-CR state of resources. It applies the defaultPeriodType value (default: "down"), meaning VMs will be stopped on deletion unless defaultPeriodType is set to "up". To restore VMs to their original state, set defaultPeriodType accordingly. | true |   |
 | `waitForOperation` _boolean_ | Wait for operation to complete |   |   |
 | `defaultPeriodType` _string_ | Default status for resources | down | Enum: [down up] |
 

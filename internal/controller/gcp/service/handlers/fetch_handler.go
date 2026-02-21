@@ -19,12 +19,18 @@ package handlers
 
 import (
 	"fmt"
+	"time"
 
 	kubecloudscalerv1alpha3 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha3"
 	"github.com/kubecloudscaler/kubecloudscaler/internal/controller/gcp/service"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+// transientRequeueAfter is the delay before retrying after a transient error.
+// It is intentionally shorter than utils.ReconcileErrorDuration (10m) because
+// these errors (API blip, add/remove finalizer failure) are expected to resolve quickly.
+const transientRequeueAfter = 5 * time.Second
 
 // FetchHandler fetches the scaler resource from the Kubernetes API.
 // This is the first handler in the chain and populates the Scaler field in the context.
@@ -63,18 +69,9 @@ func (h *FetchHandler) Execute(req *service.ReconciliationContext) (ctrl.Result,
 			return ctrl.Result{}, service.NewCriticalError(fmt.Errorf("scaler resource not found: %w", err))
 		}
 
-		// Other API error - recoverable (can retry)
+		// Other API error - stop chain and requeue (Scaler is nil, next handlers would panic)
 		req.Logger.Warn().Err(err).Msg("transient error fetching scaler resource")
-		if h.next != nil {
-			// Continue chain but track requeue
-			result, err := h.next.Execute(req)
-			if err != nil {
-				return result, err
-			}
-			// Override with our requeue delay
-			return ctrl.Result{RequeueAfter: 5 * 1000000000}, nil
-		}
-		return ctrl.Result{RequeueAfter: 5 * 1000000000}, nil
+		return ctrl.Result{RequeueAfter: transientRequeueAfter}, nil
 	}
 
 	// Successfully fetched - populate context and continue

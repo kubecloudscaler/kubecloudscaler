@@ -12,12 +12,17 @@ import (
 )
 
 // IgnoreDeletionPredicate returns a predicate that ignores deletion events.
-// It only processes updates where the generation changes and deletes where the state is unknown.
+// It processes updates where the generation changes or where a DeletionTimestamp is first set,
+// and deletes where the state is unknown.
 func IgnoreDeletionPredicate() predicate.Predicate {
 	return predicate.Funcs{
 		UpdateFunc: func(e event.UpdateEvent) bool {
-			// Ignore updates to CR status in which case metadata.Generation does not change
-			return e.ObjectOld.GetGeneration() != e.ObjectNew.GetGeneration()
+			// Reconcile when spec changes (generation bump) or when deletion is initiated
+			// (DeletionTimestamp transitions nil → non-nil) so finalizer cleanup runs immediately.
+			generationChanged := e.ObjectOld.GetGeneration() != e.ObjectNew.GetGeneration()
+			deletionStarted := e.ObjectOld.GetDeletionTimestamp() == nil &&
+				e.ObjectNew.GetDeletionTimestamp() != nil
+			return generationChanged || deletionStarted
 		},
 		DeleteFunc: func(e event.DeleteEvent) bool {
 			// Evaluates to false if the object has been confirmed deleted.
@@ -26,30 +31,32 @@ func IgnoreDeletionPredicate() predicate.Predicate {
 	}
 }
 
-// noactionScalerPeriod is the constant definition for the noaction period.
-// Defined once as a package-level variable to avoid re-allocation on every call.
-var noactionScalerPeriod = &common.ScalerPeriod{
-	Type: "noaction",
-	Name: "noaction",
-	Time: common.TimePeriod{
-		Recurring: &common.RecurringPeriod{
-			Days:      []string{"all"},
-			StartTime: "00:00",
-			EndTime:   "23:59",
-			Once:      ptr.To(false),
+// newNoactionPeriod returns a fresh ScalerPeriod representing "no active period".
+// A factory is used instead of a package-level var to prevent callers from
+// accidentally mutating shared state.
+func newNoactionPeriod() *common.ScalerPeriod {
+	return &common.ScalerPeriod{
+		Type: "noaction",
+		Name: "noaction",
+		Time: common.TimePeriod{
+			Recurring: &common.RecurringPeriod{
+				Days:      []string{"all"},
+				StartTime: "00:00",
+				EndTime:   "23:59",
+				Once:      ptr.To(false),
+			},
 		},
-	},
+	}
 }
 
-// ValidatePeriod validates and returns the active period from the given periods.
-// It checks if any period is currently active and updates the status accordingly.
-// If forceRestore is true, it uses a restore period that spans the entire day.
-func ValidatePeriod(
+// SetActivePeriod determines the active period from the given list and updates status as a side effect.
+// If forceRestore is true, the "noaction" period (spanning the entire day) is used unconditionally.
+func SetActivePeriod(
 	logger *zerolog.Logger, periods []*common.ScalerPeriod,
 	status *common.ScalerStatus, forceRestore bool,
 ) (*periodPkg.Period, error) {
 	// check we are in an active period
-	onPeriod, err := periodPkg.New(noactionScalerPeriod)
+	onPeriod, err := periodPkg.New(newNoactionPeriod())
 	if err != nil {
 		logger.Error().Err(err).Msg("unable to load noaction period")
 

@@ -74,14 +74,14 @@ func (h *PeriodHandler) Execute(req *service.ReconciliationContext) (ctrl.Result
 		},
 	}
 
-	// Convert []common.ScalerPeriod to []*common.ScalerPeriod for utils.ValidatePeriod
+	// Convert []common.ScalerPeriod to []*common.ScalerPeriod for utils.SetActivePeriod
 	periods := make([]*common.ScalerPeriod, len(scaler.Spec.Periods))
 	for i := range scaler.Spec.Periods {
 		periods[i] = &scaler.Spec.Periods[i]
 	}
 
-	// Capture previous period name before ValidatePeriod mutates the status in-place.
-	// Same fix as the K8s controller: ValidatePeriod overwrites status.CurrentPeriod
+	// Capture previous period name before SetActivePeriod mutates the status in-place.
+	// Same fix as the K8s controller: SetActivePeriod overwrites status.CurrentPeriod
 	// immediately, so comparing scaler.Status.CurrentPeriod.Name after the call always
 	// sees the new value, causing the noaction skip to fire on every transition.
 	prevPeriodName := ""
@@ -90,7 +90,7 @@ func (h *PeriodHandler) Execute(req *service.ReconciliationContext) (ctrl.Result
 	}
 
 	// Validate and determine the current time period
-	period, err := utils.ValidatePeriod(
+	period, err := utils.SetActivePeriod(
 		req.Logger,
 		periods,
 		&scaler.Status,

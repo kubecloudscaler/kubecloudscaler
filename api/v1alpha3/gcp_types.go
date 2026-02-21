@@ -50,7 +50,10 @@ type GcpConfig struct {
 	Region string `json:"region,omitempty"`
 	// AuthSecret name
 	AuthSecret *string `json:"authSecret,omitempty"`
-	// Restore resource state on CR deletion (default: true)
+	// RestoreOnDelete applies defaultPeriodType to all managed resources when the CR is deleted.
+	// Note: this does NOT restore the pre-CR state of resources. It applies the defaultPeriodType
+	// value (default: "down"), meaning VMs will be stopped on deletion unless defaultPeriodType
+	// is set to "up". To restore VMs to their original state, set defaultPeriodType accordingly.
 	// +kubebuilder:default:=true
 	RestoreOnDelete bool `json:"restoreOnDelete,omitempty"`
 	// Wait for operation to complete
