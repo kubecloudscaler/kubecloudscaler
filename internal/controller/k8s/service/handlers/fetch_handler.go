@@ -17,8 +17,6 @@ limitations under the License.
 package handlers
 
 import (
-	"errors"
-
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	kubecloudscalerv1alpha3 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha3"
@@ -39,7 +37,8 @@ func NewFetchHandler() service.Handler {
 // Execute fetches the Scaler object and adds it to the reconciliation context.
 //
 // On success: Sets ctx.Scaler and calls next.Execute()
-// On error: Returns CriticalError for not found, RecoverableError for transient errors
+// On not found: Returns nil — the object was deleted (e.g. by Flow GC), nothing to do
+// On transient error: Returns RecoverableError
 func (h *FetchHandler) Execute(ctx *service.ReconciliationContext) error {
 	ctx.Logger.Debug().Msg("fetching scaler resource")
 
@@ -49,8 +48,10 @@ func (h *FetchHandler) Execute(ctx *service.ReconciliationContext) error {
 			ctx.Logger.Error().Err(err).Msg("unable to fetch Scaler")
 			return service.NewRecoverableError(err)
 		}
-		// If not found, it's a critical error for this chain, as we can't proceed without the scaler.
-		return service.NewCriticalError(errors.New("scaler resource not found"))
+		// Resource not found: it was deleted (e.g. owned by a Flow that was just removed).
+		// Return nil so controller-runtime does not log a spurious "Reconciler error".
+		ctx.Logger.Debug().Msg("scaler resource not found, likely deleted — skipping reconciliation")
+		return nil
 	}
 
 	ctx.Scaler = scaler

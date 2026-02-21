@@ -96,13 +96,12 @@ var _ = Describe("FetchHandler", func() {
 	})
 
 	Context("When the Scaler resource does not exist", func() {
-		It("should return a critical error", func() {
+		It("should return nil so controller-runtime does not log a spurious Reconciler error", func() {
 			reconCtx.Client = fake.NewClientBuilder().WithScheme(scheme).Build() // Client without the scaler
 
 			err := handler.Execute(reconCtx)
 
-			Expect(err).To(HaveOccurred())
-			Expect(service.IsCriticalError(err)).To(BeTrue())
+			Expect(err).ToNot(HaveOccurred())
 			Expect(reconCtx.Scaler).To(BeNil())
 		})
 	})
@@ -133,7 +132,7 @@ var _ = Describe("FetchHandler", func() {
 			Expect(nextCalled).To(BeTrue())
 		})
 
-		It("should not chain to the next handler on error", func() {
+		It("should not chain to the next handler when resource is not found", func() {
 			reconCtx.Client = fake.NewClientBuilder().WithScheme(scheme).Build() // Client without the scaler
 
 			nextCalled := false
@@ -147,7 +146,7 @@ var _ = Describe("FetchHandler", func() {
 
 			err := handler.Execute(reconCtx)
 
-			Expect(err).To(HaveOccurred())
+			Expect(err).ToNot(HaveOccurred())
 			Expect(nextCalled).To(BeFalse())
 		})
 	})
