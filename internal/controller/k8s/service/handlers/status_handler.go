@@ -59,17 +59,28 @@ func (h *StatusHandler) Execute(ctx *service.ReconciliationContext) error {
 		return nil
 	}
 
+	// Build the desired status from the in-memory state set by PeriodHandler and ScalingHandler.
+	// This must be snapshotted before the retry loop because re-fetching the object from the
+	// cluster would overwrite fields like Spec/SpecSHA/Type/Name that PeriodHandler wrote.
+	if ctx.Scaler.Status.CurrentPeriod == nil {
+		ctx.Scaler.Status.CurrentPeriod = &common.ScalerStatusPeriod{}
+	}
+	ctx.Scaler.Status.CurrentPeriod.Successful = ctx.SuccessResults
+	ctx.Scaler.Status.CurrentPeriod.Failed = ctx.FailedResults
+	ctx.Scaler.Status.Comments = ptr.To("time period processed")
+
+	desiredPeriod := *ctx.Scaler.Status.CurrentPeriod
+	desiredComments := ctx.Scaler.Status.Comments
+
 	// Persist status updates to the cluster, retrying on conflict by re-fetching the latest version
 	if err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		if err := ctx.Client.Get(ctx.Ctx, ctx.Request.NamespacedName, ctx.Scaler); err != nil {
 			return err
 		}
-		if ctx.Scaler.Status.CurrentPeriod == nil {
-			ctx.Scaler.Status.CurrentPeriod = &common.ScalerStatusPeriod{}
-		}
-		ctx.Scaler.Status.CurrentPeriod.Successful = ctx.SuccessResults
-		ctx.Scaler.Status.CurrentPeriod.Failed = ctx.FailedResults
-		ctx.Scaler.Status.Comments = ptr.To("time period processed")
+		// Restore desired status onto the freshly-fetched object (preserves resourceVersion)
+		periodCopy := desiredPeriod
+		ctx.Scaler.Status.CurrentPeriod = &periodCopy
+		ctx.Scaler.Status.Comments = desiredComments
 		return ctx.Client.Status().Update(ctx.Ctx, ctx.Scaler)
 	}); err != nil {
 		ctx.Logger.Error().Err(err).Msg("unable to update scaler status")
