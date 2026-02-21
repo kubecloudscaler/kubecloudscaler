@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.8.4](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.8.3...v1.8.4) (2026-02-21)
+
+
+### Bug Fixes
+
+* status ([830ceca](https://github.com/kubecloudscaler/kubecloudscaler/commit/830cecacef64d9c1b9ac60b21c0e3254b49bb76b))
+
 ## [1.8.3](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.8.2...v1.8.3) (2026-02-20)
 
 
