@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.8.5](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.8.4...v1.8.5) (2026-02-21)
+
+
+### Bug Fixes
+
+* address all go-senior review issues ([2a16d5e](https://github.com/kubecloudscaler/kubecloudscaler/commit/2a16d5ef5b33a27eb293296561b25882a3d1413d))
+
 ## [1.8.4](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.8.3...v1.8.4) (2026-02-21)
 
 
