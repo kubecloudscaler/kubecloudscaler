@@ -37,24 +37,24 @@
   - `api/v1alpha1/k8s_conversion.go:42-63`, `api/v1alpha1/gcp_conversion.go:42-62`
   - v1alpha1 `ExcludeResources []string` has no v1alpha3 equivalent. Round-trip v1alpha1 -> v1alpha3 -> v1alpha1 loses data. Same for GCP `DeploymentTimeAnnotation`.
 
-- [ ] **C2. GCP v1alpha2 `DefaultPeriodType` hardcoded to "down" instead of reading source**
+- [x] **C2. GCP v1alpha2 `DefaultPeriodType` hardcoded to "down" instead of reading source**
   - `api/v1alpha2/gcp_conversion.go:53`
   - `dst.Spec.Config.DefaultPeriodType = "down"` ignores `src.Spec.DefaultPeriodType`. A user who set `up` silently gets `down`.
 
-- [ ] **C3. GCP error classification uses type assertion instead of `errors.As`**
+- [x] **C3. GCP error classification uses type assertion instead of `errors.As`**
   - `internal/controller/gcp/service/errors.go:89-103`
   - `_, ok := err.(*CriticalErr)` breaks when errors are wrapped. K8s version correctly uses `errors.As`. Latent production bug: any wrapped critical error bypasses classification, causing infinite requeues.
 
-- [ ] **C4. GCP Reconcile treats all errors identically (no CriticalError vs RecoverableError distinction)**
+- [x] **C4. GCP Reconcile treats all errors identically (no CriticalError vs RecoverableError distinction)**
   - `internal/controller/gcp/scaler_controller.go:96-103`
   - Unlike K8s, which branches on error type, GCP always requeues. Critical errors (invalid auth, bad config) retry forever.
 
-- [ ] **C5. K8s and GCP Handler interfaces are incompatible**
+- [x] **C5. K8s and GCP Handler interfaces are incompatible**
   - K8s: `Execute(ctx *ReconciliationContext) error`
   - GCP: `Execute(req *ReconciliationContext) (ctrl.Result, error)`
   - Constitution defines a single canonical interface. GCP leaks `ctrl.Result` into handlers.
 
-- [ ] **C6. Duplicated and divergent error type systems**
+- [x] **C6. Duplicated and divergent error type systems**
   - K8s: `CriticalError` / `RecoverableError` with `errors.As`
   - GCP: `CriticalErr` / `RecoverableErr` with type assertion
   - Should be a single shared package.
@@ -84,13 +84,13 @@
 - [ ] **M4. `internal/utils` is a grab-bag**
   - Mixes predicates, business logic (`SetActivePeriod`), error vars, and constants.
 
-- [ ] **M5. GCP FetchHandler returns CriticalError for NotFound**
+- [x] **M5. GCP FetchHandler returns CriticalError for NotFound**
   - `gcp/service/handlers/fetch_handler.go:66-69`. K8s returns `nil` (correct for Flow GC deletion). GCP generates spurious error logs.
 
-- [ ] **M6. GCP ScalingHandler silently swallows failures**
+- [x] **M6. GCP ScalingHandler silently swallows failures**
   - `gcp/service/handlers/scaling_handler.go:66-76`. Errors logged but not recorded in `FailedResults`.
 
-- [ ] **M7. Nil pointer dereference risk in period conversion**
+- [x] **M7. Nil pointer dereference risk in period conversion**
   - All v1alpha1/v1alpha2 `ConvertTo`: `dst.Spec.Periods[i] = *period` panics if period is nil.
 
 - [ ] **M8. Flow webhook `getPeriodDuration` rejects overnight periods**
@@ -108,7 +108,7 @@
 - [ ] **M12. `NewResource` creates `context.Background()` internally**
   - `pkg/resources/resources.go:21-22`. Should accept caller context for cancellation.
 
-- [ ] **M13. Pervasive copy-paste errors in v1alpha2 conversion comments/logs**
+- [x] **M13. Pervasive copy-paste errors in v1alpha2 conversion comments/logs**
   - All v1alpha2 conversion files still reference "v1alpha1".
 
 - [ ] **M14. Typo in exported struct name: `VMnstances`**
@@ -132,7 +132,7 @@
 - [ ] **m12.** Duplicated `typeAssertionError` struct across 4 adapter packages
 - [ ] **m13.** Duplicated annotation constants across `pkg/k8s/utils/consts.go` and `pkg/gcp/utils/consts.go`
 - [ ] **m14.** `GetClient` in `pkg/gcp/utils/client/gcp.go` has unused second parameter
-- [ ] **m15.** GCP `ReconciliationResult` struct defined but never used (dead code)
+- [x] **m15.** GCP `ReconciliationResult` struct defined but never used (dead code)
 
 ---
 
