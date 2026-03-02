@@ -17,8 +17,9 @@ limitations under the License.
 package handlers
 
 import (
+	"fmt"
+
 	"github.com/kubecloudscaler/kubecloudscaler/internal/controller/gcp/service"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
@@ -48,45 +49,45 @@ func NewFinalizerHandler() service.Handler {
 
 // Execute implements the Handler interface.
 // It manages the finalizer lifecycle for the scaler resource.
-func (h *FinalizerHandler) Execute(req *service.ReconciliationContext) (ctrl.Result, error) {
-	req.Logger.Debug().Msg("managing finalizer")
+func (h *FinalizerHandler) Execute(ctx *service.ReconciliationContext) error {
+	ctx.Logger.Debug().Msg("managing finalizer")
 
-	ctx := req.Ctx
-	scaler := req.Scaler
+	scaler := ctx.Scaler
 
 	// Check if the object is being deleted by examining the DeletionTimestamp
 	if scaler.DeletionTimestamp.IsZero() {
 		// Object is not being deleted - ensure finalizer is present
 		if !controllerutil.ContainsFinalizer(scaler, ScalerFinalizer) {
-			req.Logger.Info().Msg("adding finalizer")
+			ctx.Logger.Info().Msg("adding finalizer")
 			controllerutil.AddFinalizer(scaler, ScalerFinalizer)
-			if err := req.Client.Update(ctx, scaler); err != nil {
-				req.Logger.Error().Err(err).Msg("failed to add finalizer")
-				return ctrl.Result{RequeueAfter: transientRequeueAfter}, nil
+			if err := ctx.Client.Update(ctx.Ctx, scaler); err != nil {
+				ctx.Logger.Error().Err(err).Msg("failed to add finalizer")
+				ctx.RequeueAfter = transientRequeueAfter
+				return service.NewRecoverableError(fmt.Errorf("add finalizer: %w", err))
 			}
 		}
 		// Finalizer present or added successfully, continue chain
-		if h.next != nil {
-			return h.next.Execute(req)
+		if h.next != nil && !ctx.SkipRemaining {
+			return h.next.Execute(ctx)
 		}
-		return ctrl.Result{}, nil
+		return nil
 	}
 
 	// Object is being deleted
 	if controllerutil.ContainsFinalizer(scaler, ScalerFinalizer) {
 		// Finalizer present - set flag for cleanup and continue
-		req.Logger.Info().Msg("scaler being deleted with finalizer, preparing for cleanup")
-		req.ShouldFinalize = true
-		if h.next != nil {
-			return h.next.Execute(req)
+		ctx.Logger.Info().Msg("scaler being deleted with finalizer, preparing for cleanup")
+		ctx.ShouldFinalize = true
+		if h.next != nil && !ctx.SkipRemaining {
+			return h.next.Execute(ctx)
 		}
-		return ctrl.Result{}, nil
+		return nil
 	}
 
 	// Finalizer already removed - skip remaining handlers
-	req.Logger.Info().Msg("finalizer already removed, skipping reconciliation")
-	req.SkipRemaining = true
-	return ctrl.Result{}, nil
+	ctx.Logger.Info().Msg("finalizer already removed, skipping reconciliation")
+	ctx.SkipRemaining = true
+	return nil
 }
 
 // SetNext sets the next handler in the chain.

@@ -17,11 +17,12 @@ limitations under the License.
 package handlers
 
 import (
+	"fmt"
+
 	"github.com/kubecloudscaler/kubecloudscaler/api/common"
 	kubecloudscalerv1alpha3 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha3"
 	"github.com/kubecloudscaler/kubecloudscaler/internal/controller/gcp/service"
 	"github.com/kubecloudscaler/kubecloudscaler/pkg/resources"
-	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 // ScalingHandler scales GCP resources based on the current period.
@@ -31,7 +32,7 @@ import (
 //   - Validate and filter resource types
 //   - Scale each resource type according to period configuration
 //   - Collect success and failure results
-//   - Continue chain even if individual resources fail (recoverable errors)
+//   - Continue chain even if individual resources fail (tracked in FailedResults)
 //
 // Error Handling:
 //   - Individual resource failures: Continue chain, track in FailedResults
@@ -47,31 +48,40 @@ func NewScalingHandler() service.Handler {
 
 // Execute implements the Handler interface.
 // It scales GCP resources based on the current period configuration.
-func (h *ScalingHandler) Execute(req *service.ReconciliationContext) (ctrl.Result, error) {
-	req.Logger.Debug().Msg("scaling GCP resources")
+func (h *ScalingHandler) Execute(ctx *service.ReconciliationContext) error {
+	ctx.Logger.Debug().Msg("scaling GCP resources")
 	var (
 		successResults []common.ScalerStatusSuccess
 		failedResults  []common.ScalerStatusFailed
 	)
 
 	// Validate and filter the list of resources to be scaled
-	resourceList := validResourceList(req.Scaler)
-	req.Logger.Debug().Strs("resources", resourceList).Msg("processing resource list")
+	resourceList := validResourceList(ctx.Scaler)
+	ctx.Logger.Debug().Strs("resources", resourceList).Msg("processing resource list")
 
 	// Process each resource type and perform scaling operations
-	ctx := req.Ctx
 	for _, resource := range resourceList {
 		// Create a resource handler for the specific resource type
-		curResource, err := resources.NewResource(resource, req.ResourceConfig, req.Logger)
+		curResource, err := resources.NewResource(resource, ctx.ResourceConfig, ctx.Logger)
 		if err != nil {
-			req.Logger.Error().Err(err).Str("resource", resource).Msg("unable to get resource handler")
+			ctx.Logger.Error().Err(err).Str("resource", resource).Msg("unable to get resource handler")
+			failedResults = append(failedResults, common.ScalerStatusFailed{
+				Kind:   resource,
+				Name:   resource,
+				Reason: fmt.Sprintf("unable to get resource handler: %v", err),
+			})
 			continue
 		}
 
 		// Execute the scaling operation for this resource type
-		success, failed, err := curResource.SetState(ctx)
+		success, failed, err := curResource.SetState(ctx.Ctx)
 		if err != nil {
-			req.Logger.Error().Err(err).Str("resource", resource).Msg("unable to set resource state")
+			ctx.Logger.Error().Err(err).Str("resource", resource).Msg("unable to set resource state")
+			failedResults = append(failedResults, common.ScalerStatusFailed{
+				Kind:   resource,
+				Name:   resource,
+				Reason: fmt.Sprintf("unable to set resource state: %v", err),
+			})
 			continue
 		}
 
@@ -80,18 +90,18 @@ func (h *ScalingHandler) Execute(req *service.ReconciliationContext) (ctrl.Resul
 		failedResults = append(failedResults, failed...)
 	}
 
-	req.SuccessResults = successResults
-	req.FailedResults = failedResults
+	ctx.SuccessResults = successResults
+	ctx.FailedResults = failedResults
 
-	req.Logger.Info().
+	ctx.Logger.Info().
 		Int("successful", len(successResults)).
 		Int("failed", len(failedResults)).
 		Msg("resource scaling completed")
 
-	if h.next != nil {
-		return h.next.Execute(req)
+	if h.next != nil && !ctx.SkipRemaining {
+		return h.next.Execute(ctx)
 	}
-	return ctrl.Result{}, nil
+	return nil
 }
 
 // SetNext sets the next handler in the chain.

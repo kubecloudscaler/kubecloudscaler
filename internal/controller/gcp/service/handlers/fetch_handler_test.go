@@ -86,10 +86,9 @@ var _ = Describe("FetchHandler", func() {
 		})
 
 		It("should fetch the scaler resource and populate context", func() {
-			result, err := fetchHandler.Execute(reconCtx)
+			err := fetchHandler.Execute(reconCtx)
 
 			Expect(err).ToNot(HaveOccurred())
-			Expect(result).To(Equal(ctrl.Result{}))
 			Expect(reconCtx.Scaler).ToNot(BeNil())
 			Expect(reconCtx.Scaler.Name).To(Equal(scalerName))
 			Expect(reconCtx.Scaler.Namespace).To(Equal(scalerNS))
@@ -98,7 +97,7 @@ var _ = Describe("FetchHandler", func() {
 		It("should complete in under 100ms", func() {
 			// Test execution time is implicitly tested by Ginkgo's timeout mechanisms
 			// Ginkgo will fail the test if it exceeds the default timeout
-			_, _ = fetchHandler.Execute(reconCtx)
+			_ = fetchHandler.Execute(reconCtx)
 		})
 	})
 
@@ -115,11 +114,11 @@ var _ = Describe("FetchHandler", func() {
 			fetchHandler = handlers.NewFetchHandler()
 		})
 
-		It("should return a critical error", func() {
-			_, err := fetchHandler.Execute(reconCtx)
+		It("should return nil and set SkipRemaining (resource deleted gracefully)", func() {
+			err := fetchHandler.Execute(reconCtx)
 
-			Expect(err).To(HaveOccurred())
-			Expect(service.IsCriticalError(err)).To(BeTrue())
+			Expect(err).ToNot(HaveOccurred())
+			Expect(reconCtx.SkipRemaining).To(BeTrue())
 			Expect(reconCtx.Scaler).To(BeNil())
 		})
 	})
@@ -139,9 +138,10 @@ var _ = Describe("FetchHandler", func() {
 
 		It("should handle the error appropriately", func() {
 			// This test needs a proper mock client to inject transient errors
-			// For now, we test the not-found case which is similar
-			_, err := fetchHandler.Execute(reconCtx)
-			Expect(err).To(HaveOccurred())
+			// For now, we test the not-found case which returns nil with SkipRemaining
+			err := fetchHandler.Execute(reconCtx)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(reconCtx.SkipRemaining).To(BeTrue())
 		})
 	})
 })

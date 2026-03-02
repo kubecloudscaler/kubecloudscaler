@@ -26,7 +26,7 @@ import (
 	kubecloudscalercloudv1alpha3 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha3"
 )
 
-// ConvertTo converts this K8s (v1alpha1) to the Hub version (v1alpha2).
+// ConvertTo converts this K8s (v1alpha1) to the Hub version (v1alpha3).
 func (src *K8s) ConvertTo(dstRaw conversion.Hub) error {
 	dst, ok := dstRaw.(*kubecloudscalercloudv1alpha3.K8s)
 	if !ok {
@@ -40,10 +40,12 @@ func (src *K8s) ConvertTo(dstRaw conversion.Hub) error {
 
 	// Spec
 	dst.Spec.DryRun = src.Spec.DryRun
-	// Convert []*common.ScalerPeriod to []common.ScalerPeriod
-	dst.Spec.Periods = make([]common.ScalerPeriod, len(src.Spec.Periods))
-	for i, period := range src.Spec.Periods {
-		dst.Spec.Periods[i] = *period
+	// Convert []*common.ScalerPeriod to []common.ScalerPeriod (skip nil pointers)
+	dst.Spec.Periods = make([]common.ScalerPeriod, 0, len(src.Spec.Periods))
+	for _, period := range src.Spec.Periods {
+		if period != nil {
+			dst.Spec.Periods = append(dst.Spec.Periods, *period)
+		}
 	}
 	dst.Spec.Config.Namespaces = src.Spec.Namespaces
 	dst.Spec.Config.ExcludeNamespaces = src.Spec.ExcludeNamespaces

@@ -26,13 +26,13 @@ import (
 	kubecloudscalercloudv1alpha3 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha3"
 )
 
-// ConvertTo converts this Gcp (v1alpha1) to the Hub version (v1alpha2).
+// ConvertTo converts this Gcp (v1alpha2) to the Hub version (v1alpha3).
 func (src *Gcp) ConvertTo(dstRaw conversion.Hub) error {
 	dst, ok := dstRaw.(*kubecloudscalercloudv1alpha3.Gcp)
 	if !ok {
 		return fmt.Errorf("expected *kubecloudscalercloudv1alpha3.Gcp, got %T", dstRaw)
 	}
-	log.Debug().Msgf("ConvertTo: Converting Gcp from Spoke version v1alpha1 to Hub version v1alpha3;"+
+	log.Debug().Msgf("ConvertTo: Converting Gcp from Spoke version v1alpha2 to Hub version v1alpha3;"+
 		"source: %s/%s, target: %s/%s", src.Namespace, src.Name, dst.Namespace, dst.Name)
 
 	// ObjectMeta
@@ -40,19 +40,21 @@ func (src *Gcp) ConvertTo(dstRaw conversion.Hub) error {
 
 	// Spec
 	dst.Spec.DryRun = src.Spec.DryRun
-	// Convert []*common.ScalerPeriod to []common.ScalerPeriod
-	dst.Spec.Periods = make([]common.ScalerPeriod, len(src.Spec.Periods))
-	for i, period := range src.Spec.Periods {
-		dst.Spec.Periods[i] = *period
+	// Convert []*common.ScalerPeriod to []common.ScalerPeriod (skip nil pointers)
+	dst.Spec.Periods = make([]common.ScalerPeriod, 0, len(src.Spec.Periods))
+	for _, period := range src.Spec.Periods {
+		if period != nil {
+			dst.Spec.Periods = append(dst.Spec.Periods, *period)
+		}
 	}
 	dst.Spec.Config.ProjectID = src.Spec.ProjectID
 	dst.Spec.Config.Region = src.Spec.Region
 	dst.Spec.Config.AuthSecret = src.Spec.AuthSecret
 	dst.Spec.Config.RestoreOnDelete = src.Spec.RestoreOnDelete
 	dst.Spec.Config.WaitForOperation = src.Spec.WaitForOperation
-	dst.Spec.Config.DefaultPeriodType = "down"
+	dst.Spec.Config.DefaultPeriodType = src.Spec.DefaultPeriodType
 
-	// convert fields from v1alpha1 to v1alpha2
+	// convert fields from v1alpha2 to v1alpha3
 	dst.Spec.Resources = src.Spec.Resources
 
 	// Status
@@ -69,7 +71,7 @@ func (dst *Gcp) ConvertFrom(srcRaw conversion.Hub) error {
 	if !ok {
 		return fmt.Errorf("expected *kubecloudscalercloudv1alpha3.Gcp, got %T", srcRaw)
 	}
-	log.Debug().Msgf("ConvertFrom: Converting Gcp from Hub version v1alpha3 to Spoke version v1alpha1;"+
+	log.Debug().Msgf("ConvertFrom: Converting Gcp from Hub version v1alpha3 to Spoke version v1alpha2;"+
 		"source: %s/%s, target: %s/%s", src.Namespace, src.Name, dst.Namespace, dst.Name)
 
 	// ObjectMeta
@@ -87,8 +89,9 @@ func (dst *Gcp) ConvertFrom(srcRaw conversion.Hub) error {
 	dst.Spec.AuthSecret = src.Spec.Config.AuthSecret
 	dst.Spec.RestoreOnDelete = src.Spec.Config.RestoreOnDelete
 	dst.Spec.WaitForOperation = src.Spec.Config.WaitForOperation
+	dst.Spec.DefaultPeriodType = src.Spec.Config.DefaultPeriodType
 
-	// convert fields from v1alpha2 to v1alpha1
+	// convert fields from v1alpha3 to v1alpha2
 	dst.Spec.Resources = src.Spec.Resources
 
 	// Status

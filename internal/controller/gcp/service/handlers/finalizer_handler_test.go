@@ -70,10 +70,9 @@ var _ = Describe("FinalizerHandler", func() {
 		})
 
 		It("should add finalizer and continue", func() {
-			result, err := finalizerHandler.Execute(reconCtx)
+			err := finalizerHandler.Execute(reconCtx)
 
 			Expect(err).ToNot(HaveOccurred())
-			Expect(result).To(Equal(ctrl.Result{}))
 			Expect(reconCtx.ShouldFinalize).To(BeFalse())
 		})
 	})
@@ -99,10 +98,9 @@ var _ = Describe("FinalizerHandler", func() {
 		})
 
 		It("should set ShouldFinalize flag and continue", func() {
-			result, err := finalizerHandler.Execute(reconCtx)
+			err := finalizerHandler.Execute(reconCtx)
 
 			Expect(err).ToNot(HaveOccurred())
-			Expect(result).To(Equal(ctrl.Result{}))
 			Expect(reconCtx.ShouldFinalize).To(BeTrue())
 		})
 	})
@@ -129,10 +127,9 @@ var _ = Describe("FinalizerHandler", func() {
 		})
 
 		It("should set SkipRemaining and stop chain", func() {
-			result, err := finalizerHandler.Execute(reconCtx)
+			err := finalizerHandler.Execute(reconCtx)
 
 			Expect(err).ToNot(HaveOccurred())
-			Expect(result).To(Equal(ctrl.Result{}))
 			Expect(reconCtx.SkipRemaining).To(BeTrue())
 		})
 	})

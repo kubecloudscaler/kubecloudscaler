@@ -16,89 +16,81 @@ limitations under the License.
 
 package service
 
-import "fmt"
-
-// ErrorCategory defines the severity of errors for appropriate handling in the chain.
-//
-// Error Categories:
-//
-//   - CriticalError: Errors that indicate reconciliation cannot proceed
-//     Examples: authentication failures, invalid configuration, resource not found
-//     Handling: Stop chain execution immediately
-//
-//   - RecoverableError: Errors that may be resolved with retry
-//     Examples: temporary rate limits, transient network issues, temporary API unavailability
-//     Handling: Allow chain continuation with requeue
-//
-// See data-model.md for full specification.
-type ErrorCategory string
-
-const (
-	// CriticalError indicates an error that requires chain execution to stop.
-	// Examples: authentication failures, invalid configuration, resource not found
-	CriticalError ErrorCategory = "critical"
-
-	// RecoverableError indicates an error that can be retried.
-	// Examples: temporary rate limits, transient network issues, temporary API unavailability
-	RecoverableError ErrorCategory = "recoverable"
+import (
+	"errors"
+	"fmt"
 )
 
-// CriticalErr wraps an error as a critical error.
-// Critical errors stop chain execution immediately.
-type CriticalErr struct {
+// CriticalError indicates an error that prevents further reconciliation and requires immediate stop.
+//
+// Usage:
+//   - Authentication failures
+//   - Invalid configuration
+//   - Resource not found (when required)
+//
+// Behavior:
+//   - Handler returns CriticalError and does not call next.Execute()
+//   - Chain execution stops immediately
+//   - Controller returns error to controller-runtime (no requeue)
+type CriticalError struct {
 	Err error
 }
 
-// Error implements the error interface.
-func (e *CriticalErr) Error() string {
+// Error returns the error message.
+func (e *CriticalError) Error() string {
 	return fmt.Sprintf("critical error: %v", e.Err)
 }
 
-// Unwrap returns the wrapped error.
-func (e *CriticalErr) Unwrap() error {
+// Unwrap returns the underlying error.
+func (e *CriticalError) Unwrap() error {
 	return e.Err
 }
 
-// RecoverableErr wraps an error as a recoverable error.
-// Recoverable errors allow chain continuation with requeue.
-type RecoverableErr struct {
+// RecoverableError indicates an error that may be resolved with a retry/requeue.
+//
+// Usage:
+//   - Temporary rate limits
+//   - Transient network issues
+//   - API update conflicts
+//
+// Behavior:
+//   - Handler returns RecoverableError and does not call next.Execute()
+//   - Chain execution stops
+//   - Controller returns ctrl.Result with requeue delay
+type RecoverableError struct {
 	Err error
 }
 
-// Error implements the error interface.
-func (e *RecoverableErr) Error() string {
+// Error returns the error message.
+func (e *RecoverableError) Error() string {
 	return fmt.Sprintf("recoverable error: %v", e.Err)
 }
 
-// Unwrap returns the wrapped error.
-func (e *RecoverableErr) Unwrap() error {
+// Unwrap returns the underlying error.
+func (e *RecoverableError) Unwrap() error {
 	return e.Err
 }
 
-// NewCriticalError creates a new critical error.
+// NewCriticalError creates a new CriticalError wrapping the given error.
 func NewCriticalError(err error) error {
-	return &CriticalErr{Err: err}
+	return &CriticalError{Err: err}
 }
 
-// NewRecoverableError creates a new recoverable error.
+// NewRecoverableError creates a new RecoverableError wrapping the given error.
 func NewRecoverableError(err error) error {
-	return &RecoverableErr{Err: err}
+	return &RecoverableError{Err: err}
 }
 
-// IsCriticalError checks if an error is a critical error.
+// IsCriticalError checks if the given error is a CriticalError.
+// Uses errors.As to correctly handle wrapped errors.
 func IsCriticalError(err error) bool {
-	if err == nil {
-		return false
-	}
-	_, ok := err.(*CriticalErr)
-	return ok
+	var criticalErr *CriticalError
+	return errors.As(err, &criticalErr)
 }
 
-// IsRecoverableError checks if an error is a recoverable error.
+// IsRecoverableError checks if the given error is a RecoverableError.
+// Uses errors.As to correctly handle wrapped errors.
 func IsRecoverableError(err error) bool {
-	if err == nil {
-		return false
-	}
-	_, ok := err.(*RecoverableErr)
-	return ok
+	var recoverableErr *RecoverableError
+	return errors.As(err, &recoverableErr)
 }
