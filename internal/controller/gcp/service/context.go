@@ -91,35 +91,9 @@ type ReconciliationContext struct {
 
 	// SkipRemaining indicates if remaining handlers should be skipped (set by any handler)
 	SkipRemaining bool
-}
 
-// ReconciliationResult encapsulates the outcome of handler execution.
-// This result determines how the chain should proceed after the handler completes.
-//
-// Validation Rules:
-//   - If Error is non-nil and ErrorCategory is Critical, Continue must be false
-//   - If Requeue is true, RequeueAfter must be > 0
-//   - If SkipRemaining is requested, Continue must be false
-//
-// See data-model.md for full specification.
-type ReconciliationResult struct {
-	// Continue indicates whether the chain should continue to the next handler
-	// Set to false to stop chain execution (e.g., on critical error or skip request)
-	Continue bool
-
-	// Requeue indicates whether reconciliation should be requeued
-	// Set to true for recoverable errors or temporary conditions (e.g., run-once period)
-	Requeue bool
-
-	// RequeueAfter is the delay before requeue (if Requeue is true)
-	// Must be > 0 if Requeue is true
+	// RequeueAfter is the requeue delay duration (first handler to set wins).
+	// Set by: Any handler (e.g., PeriodHandler for run-once periods)
+	// Used by: Controller (uses this value in ctrl.Result)
 	RequeueAfter time.Duration
-
-	// Error is the error encountered during handler execution
-	// Nil if no error occurred
-	Error error
-
-	// ErrorCategory categorizes the error for appropriate handling
-	// Critical errors stop the chain, recoverable errors allow continuation with retry
-	ErrorCategory ErrorCategory
 }

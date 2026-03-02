@@ -23,6 +23,7 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/rs/zerolog"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
@@ -63,7 +64,7 @@ var _ = Describe("StatusHandler", func() {
 
 			reconCtx = &service.ReconciliationContext{
 				Ctx:     context.Background(),
-				Request: ctrl.Request{},
+				Request: ctrl.Request{NamespacedName: types.NamespacedName{Name: "test-scaler", Namespace: "default"}},
 				Client:  k8sClient,
 				Logger:  &logger,
 				Scaler:  scaler,
@@ -75,14 +76,14 @@ var _ = Describe("StatusHandler", func() {
 		})
 
 		It("should update status successfully", func() {
-			result, err := statusHandler.Execute(reconCtx)
+			err := statusHandler.Execute(reconCtx)
 
 			Expect(err).ToNot(HaveOccurred())
-			Expect(result.RequeueAfter).To(BeNumerically(">", 0))
+			Expect(reconCtx.RequeueAfter).To(BeNumerically(">", 0))
 		})
 
 		It("should complete in under 100ms", func() {
-			_, _ = statusHandler.Execute(reconCtx)
+			_ = statusHandler.Execute(reconCtx)
 		})
 	})
 
@@ -96,7 +97,7 @@ var _ = Describe("StatusHandler", func() {
 
 			reconCtx = &service.ReconciliationContext{
 				Ctx:            context.Background(),
-				Request:        ctrl.Request{},
+				Request:        ctrl.Request{NamespacedName: types.NamespacedName{Name: "test-scaler", Namespace: "default"}},
 				Client:         k8sClient,
 				Logger:         &logger,
 				Scaler:         scaler,
@@ -108,10 +109,10 @@ var _ = Describe("StatusHandler", func() {
 		})
 
 		It("should update status with failures", func() {
-			result, err := statusHandler.Execute(reconCtx)
+			err := statusHandler.Execute(reconCtx)
 
 			Expect(err).ToNot(HaveOccurred())
-			Expect(result.RequeueAfter).To(BeNumerically(">", 0))
+			Expect(reconCtx.RequeueAfter).To(BeNumerically(">", 0))
 		})
 	})
 
@@ -127,7 +128,7 @@ var _ = Describe("StatusHandler", func() {
 
 			reconCtx = &service.ReconciliationContext{
 				Ctx:            context.Background(),
-				Request:        ctrl.Request{},
+				Request:        ctrl.Request{NamespacedName: types.NamespacedName{Name: "test-scaler", Namespace: "default"}},
 				Client:         k8sClient,
 				Logger:         &logger,
 				Scaler:         scaler,
@@ -136,10 +137,9 @@ var _ = Describe("StatusHandler", func() {
 		})
 
 		It("should remove finalizer", func() {
-			result, err := statusHandler.Execute(reconCtx)
+			err := statusHandler.Execute(reconCtx)
 
 			Expect(err).ToNot(HaveOccurred())
-			Expect(result).To(Equal(ctrl.Result{}))
 		})
 	})
 
@@ -153,7 +153,7 @@ var _ = Describe("StatusHandler", func() {
 
 			reconCtx = &service.ReconciliationContext{
 				Ctx:            context.Background(),
-				Request:        ctrl.Request{},
+				Request:        ctrl.Request{NamespacedName: types.NamespacedName{Name: "test-scaler", Namespace: "default"}},
 				Client:         k8sClient,
 				Logger:         &logger,
 				Scaler:         scaler,
@@ -163,11 +163,10 @@ var _ = Describe("StatusHandler", func() {
 		})
 
 		It("should return recoverable error with requeue", func() {
-			result, err := statusHandler.Execute(reconCtx)
+			err := statusHandler.Execute(reconCtx)
 
 			// Status update may fail without status subresource
 			// Handler should handle this gracefully
-			_ = result
 			_ = err // Error handling depends on implementation
 		})
 	})
@@ -182,7 +181,7 @@ var _ = Describe("StatusHandler", func() {
 
 			reconCtx = &service.ReconciliationContext{
 				Ctx:     context.Background(),
-				Request: ctrl.Request{},
+				Request: ctrl.Request{NamespacedName: types.NamespacedName{Name: "test-scaler", Namespace: "default"}},
 				Client:  k8sClient,
 				Logger:  &logger,
 				Scaler:  scaler,
@@ -197,10 +196,10 @@ var _ = Describe("StatusHandler", func() {
 		})
 
 		It("should update status with both success and failures", func() {
-			result, err := statusHandler.Execute(reconCtx)
+			err := statusHandler.Execute(reconCtx)
 
 			Expect(err).ToNot(HaveOccurred())
-			Expect(result.RequeueAfter).To(BeNumerically(">", 0))
+			Expect(reconCtx.RequeueAfter).To(BeNumerically(">", 0))
 		})
 	})
 })

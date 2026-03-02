@@ -17,6 +17,8 @@ limitations under the License.
 package handlers
 
 import (
+	"fmt"
+
 	"k8s.io/client-go/util/retry"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -24,7 +26,6 @@ import (
 	"github.com/kubecloudscaler/kubecloudscaler/api/common"
 	"github.com/kubecloudscaler/kubecloudscaler/internal/controller/gcp/service"
 	"github.com/kubecloudscaler/kubecloudscaler/internal/utils"
-	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 // StatusHandler updates the scaler status with operation results.
@@ -50,23 +51,22 @@ func NewStatusHandler() service.Handler {
 
 // Execute implements the Handler interface.
 // It updates the scaler status and handles finalizer cleanup.
-func (h *StatusHandler) Execute(req *service.ReconciliationContext) (ctrl.Result, error) {
-	req.Logger.Debug().Msg("updating scaler status")
+func (h *StatusHandler) Execute(ctx *service.ReconciliationContext) error {
+	ctx.Logger.Debug().Msg("updating scaler status")
 
-	scaler := req.Scaler
-
-	ctx := req.Ctx
+	scaler := ctx.Scaler
 
 	// Handle finalizer cleanup if deletion is in progress
-	if req.ShouldFinalize {
-		req.Logger.Info().Msg("removing finalizer for deleted scaler")
+	if ctx.ShouldFinalize {
+		ctx.Logger.Info().Msg("removing finalizer for deleted scaler")
 		controllerutil.RemoveFinalizer(scaler, ScalerFinalizer)
-		if err := req.Client.Update(ctx, scaler); err != nil {
-			req.Logger.Error().Err(err).Msg("failed to remove finalizer")
-			return ctrl.Result{RequeueAfter: transientRequeueAfter}, nil
+		if err := ctx.Client.Update(ctx.Ctx, scaler); err != nil {
+			ctx.Logger.Error().Err(err).Msg("failed to remove finalizer")
+			ctx.RequeueAfter = transientRequeueAfter
+			return service.NewRecoverableError(fmt.Errorf("remove finalizer: %w", err))
 		}
 		// Finalizer removed successfully, stop chain
-		return ctrl.Result{}, nil
+		return nil
 	}
 
 	// Build the desired status from the in-memory state set by PeriodHandler and ScalingHandler.
@@ -75,8 +75,8 @@ func (h *StatusHandler) Execute(req *service.ReconciliationContext) (ctrl.Result
 	if scaler.Status.CurrentPeriod == nil {
 		scaler.Status.CurrentPeriod = &common.ScalerStatusPeriod{}
 	}
-	scaler.Status.CurrentPeriod.Successful = req.SuccessResults
-	scaler.Status.CurrentPeriod.Failed = req.FailedResults
+	scaler.Status.CurrentPeriod.Successful = ctx.SuccessResults
+	scaler.Status.CurrentPeriod.Failed = ctx.FailedResults
 	scaler.Status.Comments = ptr.To("time period processed")
 
 	desiredPeriod := *scaler.Status.CurrentPeriod
@@ -84,26 +84,28 @@ func (h *StatusHandler) Execute(req *service.ReconciliationContext) (ctrl.Result
 
 	// Persist status updates to the cluster, retrying on conflict by re-fetching the latest version
 	if err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
-		if err := req.Client.Get(ctx, req.Request.NamespacedName, scaler); err != nil {
+		if err := ctx.Client.Get(ctx.Ctx, ctx.Request.NamespacedName, scaler); err != nil {
 			return err
 		}
 		// Restore desired status onto the freshly-fetched object (preserves resourceVersion)
 		periodCopy := desiredPeriod
 		scaler.Status.CurrentPeriod = &periodCopy
 		scaler.Status.Comments = desiredComments
-		return req.Client.Status().Update(ctx, scaler)
+		return ctx.Client.Status().Update(ctx.Ctx, scaler)
 	}); err != nil {
-		req.Logger.Error().Err(err).Msg("unable to update scaler status")
-		return ctrl.Result{RequeueAfter: transientRequeueAfter}, nil
+		ctx.Logger.Error().Err(err).Msg("unable to update scaler status")
+		ctx.RequeueAfter = transientRequeueAfter
+		return service.NewRecoverableError(fmt.Errorf("update scaler status: %w", err))
 	}
 
-	req.Logger.Info().
+	ctx.Logger.Info().
 		Str("name", scaler.Name).
 		Str("namespace", scaler.Namespace).
 		Msg("scaler status updated successfully")
 
 	// Requeue for the next reconciliation cycle
-	return ctrl.Result{RequeueAfter: utils.ReconcileSuccessDuration}, nil
+	ctx.RequeueAfter = utils.ReconcileSuccessDuration
+	return nil
 }
 
 // SetNext sets the next handler in the chain.

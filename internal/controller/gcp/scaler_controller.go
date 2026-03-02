@@ -37,28 +37,13 @@ type ScalerReconciler struct {
 	client.Client                 // Kubernetes client for API operations
 	Scheme        *runtime.Scheme // Scheme for type conversion and serialization
 	Logger        *zerolog.Logger
-	Chain         service.Chain // Handler chain for reconciliation
+	chain         service.Handler // handler chain, initialized once
 }
 
 // +kubebuilder:rbac:groups=kubecloudscaler.cloud,resources=gcps,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=kubecloudscaler.cloud,resources=gcps/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=kubecloudscaler.cloud,resources=gcps/finalizers,verbs=update
 
-// Reconcile is part of the main kubernetes reconciliation loop which aims to
-// move the current state of the cluster closer to the desired state.
-// This function handles the scaling of GCP resources based on configured time periods.
-//
-// The reconciliation process:
-// 1. Fetches the Scaler object from the cluster
-// 2. Manages finalizers for proper cleanup
-// 3. Validates and processes authentication secrets
-// 4. Determines the current time period and validates it
-// 5. Scales resources according to the period configuration
-// 6. Updates the status with results
-//
-// For more details, check Reconcile and its Result here:
-// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.18.4/pkg/reconcile
-//
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
 // This function delegates to the handler chain for reconciliation logic.
@@ -79,11 +64,6 @@ func (r *ScalerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		Str("namespace", req.Namespace).
 		Msg("reconciling scaler")
 
-	// Initialize chain if not set (for backward compatibility with tests)
-	if r.Chain == nil {
-		r.Chain = r.initializeChain()
-	}
-
 	// Create reconciliation context
 	reconCtx := &service.ReconciliationContext{
 		Ctx:     ctx,
@@ -92,43 +72,74 @@ func (r *ScalerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		Logger:  r.Logger,
 	}
 
-	// Execute handler chain
-	result, err := r.Chain.Execute(reconCtx)
-	if err != nil {
-		r.Logger.Error().Err(err).Msg("handler chain execution failed")
-		return ctrl.Result{RequeueAfter: utils.ReconcileErrorDuration}, client.IgnoreNotFound(err)
+	// Initialize chain lazily if not set (e.g., in tests without SetupWithManager)
+	if r.chain == nil {
+		r.chain = r.initializeChain()
 	}
 
-	return result, nil
+	// Execute the handler chain
+	err := r.chain.Execute(reconCtx)
+
+	// Handle chain execution result with proper error classification
+	if err != nil {
+		if service.IsCriticalError(err) {
+			r.Logger.Error().Err(err).Msg("critical error during reconciliation")
+			return ctrl.Result{}, client.IgnoreNotFound(err)
+		}
+		if service.IsRecoverableError(err) {
+			r.Logger.Warn().Err(err).Msg("recoverable error during reconciliation, will requeue")
+			requeue := utils.ReconcileErrorDuration
+			if reconCtx.RequeueAfter > 0 {
+				requeue = reconCtx.RequeueAfter
+			}
+			return ctrl.Result{RequeueAfter: requeue}, nil
+		}
+		// Unknown error type
+		r.Logger.Error().Err(err).Msg("unexpected error during reconciliation")
+		return ctrl.Result{RequeueAfter: utils.ReconcileErrorDuration}, nil
+	}
+
+	// Successful reconciliation - use requeue from context or default
+	if reconCtx.RequeueAfter > 0 {
+		return ctrl.Result{RequeueAfter: reconCtx.RequeueAfter}, nil
+	}
+	return ctrl.Result{}, nil
 }
 
-// initializeChain creates and configures the handler chain for reconciliation.
-// This method registers handlers in the fixed order required for GCP scaler reconciliation.
-// It uses the Chain of Responsibility pattern by linking handlers together with setNext().
-func (r *ScalerReconciler) initializeChain() service.Chain {
-	// Create handlers
-	statusHandler := handlers.NewStatusHandler()
-	scalingHandler := handlers.NewScalingHandler()
-	periodHandler := handlers.NewPeriodHandler()
-	authHandler := handlers.NewAuthHandler()
-	finalizerHandler := handlers.NewFinalizerHandler()
+// initializeChain creates and links the handler chain in fixed order.
+// This follows the classic Chain of Responsibility pattern where handlers
+// are linked via SetNext() calls.
+//
+// Handler Order:
+// 1. FetchHandler → 2. FinalizerHandler → 3. AuthHandler →
+// 4. PeriodHandler → 5. ScalingHandler → 6. StatusHandler
+func (r *ScalerReconciler) initializeChain() service.Handler {
+	// Create all handlers
 	fetchHandler := handlers.NewFetchHandler()
+	finalizerHandler := handlers.NewFinalizerHandler()
+	authHandler := handlers.NewAuthHandler()
+	periodHandler := handlers.NewPeriodHandler()
+	scalingHandler := handlers.NewScalingHandler()
+	statusHandler := handlers.NewStatusHandler()
 
-	// Set next for each handler in reverse order (building the chain backwards)
-	scalingHandler.SetNext(statusHandler)
-	periodHandler.SetNext(scalingHandler)
-	authHandler.SetNext(periodHandler)
-	finalizerHandler.SetNext(authHandler)
+	// Link handlers via SetNext() in fixed order
 	fetchHandler.SetNext(finalizerHandler)
+	finalizerHandler.SetNext(authHandler)
+	authHandler.SetNext(periodHandler)
+	periodHandler.SetNext(scalingHandler)
+	scalingHandler.SetNext(statusHandler)
+	// statusHandler.SetNext(nil) - implicit, last handler
 
-	// Return chain starting with fetch handler
-	return service.NewHandlerChain([]service.Handler{fetchHandler}, r.Logger)
+	// Return the first handler in the chain
+	return fetchHandler
 }
 
 // SetupWithManager sets up the controller with the Manager.
 // This method configures the controller to watch for GCP Scaler resources
 // and defines the reconciliation behavior.
 func (r *ScalerReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	r.chain = r.initializeChain()
+
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&kubecloudscalerv1alpha3.Gcp{}).              // Watch for GCP Scaler resources
 		WithEventFilter(utils.IgnoreDeletionPredicate()). // Filter out deletion events

@@ -77,7 +77,7 @@ var _ = Describe("AuthHandler", func() {
 		})
 
 		It("should attempt to create GCP client with default credentials", func() {
-			_, err := authHandler.Execute(reconCtx)
+			err := authHandler.Execute(reconCtx)
 
 			// Behaviour depends on the environment:
 			// - In environments without ADC, client creation fails with a critical error.
@@ -91,7 +91,7 @@ var _ = Describe("AuthHandler", func() {
 		})
 
 		It("should complete in under 100ms", func() {
-			_, _ = authHandler.Execute(reconCtx)
+			_ = authHandler.Execute(reconCtx)
 			// Test execution time is implicitly tested by Ginkgo's timeout mechanisms
 		})
 	})
@@ -127,7 +127,7 @@ var _ = Describe("AuthHandler", func() {
 		})
 
 		It("should fetch secret and attempt to create GCP client", func() {
-			_, err := authHandler.Execute(reconCtx)
+			err := authHandler.Execute(reconCtx)
 
 			// Secret should be populated in context
 			Expect(reconCtx.Secret).ToNot(BeNil())
@@ -159,7 +159,7 @@ var _ = Describe("AuthHandler", func() {
 		})
 
 		It("should return a critical error", func() {
-			_, err := authHandler.Execute(reconCtx)
+			err := authHandler.Execute(reconCtx)
 
 			Expect(err).To(HaveOccurred())
 			Expect(service.IsCriticalError(err)).To(BeTrue())
@@ -194,7 +194,7 @@ var _ = Describe("AuthHandler", func() {
 		})
 
 		It("should handle configuration correctly", func() {
-			_, err := authHandler.Execute(reconCtx)
+			err := authHandler.Execute(reconCtx)
 
 			// Secret should be fetched
 			Expect(reconCtx.Secret).ToNot(BeNil())

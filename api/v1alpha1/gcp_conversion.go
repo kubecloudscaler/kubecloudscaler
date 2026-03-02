@@ -26,7 +26,7 @@ import (
 	kubecloudscalercloudv1alpha3 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha3"
 )
 
-// ConvertTo converts this Gcp (v1alpha1) to the Hub version (v1alpha2).
+// ConvertTo converts this Gcp (v1alpha1) to the Hub version (v1alpha3).
 func (src *Gcp) ConvertTo(dstRaw conversion.Hub) error {
 	dst, ok := dstRaw.(*kubecloudscalercloudv1alpha3.Gcp)
 	if !ok {
@@ -40,10 +40,12 @@ func (src *Gcp) ConvertTo(dstRaw conversion.Hub) error {
 
 	// Spec
 	dst.Spec.DryRun = src.Spec.DryRun
-	// Convert []*common.ScalerPeriod to []common.ScalerPeriod
-	dst.Spec.Periods = make([]common.ScalerPeriod, len(src.Spec.Periods))
-	for i, period := range src.Spec.Periods {
-		dst.Spec.Periods[i] = *period
+	// Convert []*common.ScalerPeriod to []common.ScalerPeriod (skip nil pointers)
+	dst.Spec.Periods = make([]common.ScalerPeriod, 0, len(src.Spec.Periods))
+	for _, period := range src.Spec.Periods {
+		if period != nil {
+			dst.Spec.Periods = append(dst.Spec.Periods, *period)
+		}
 	}
 	dst.Spec.Config.ProjectID = src.Spec.ProjectID
 	dst.Spec.Config.Region = src.Spec.Region
@@ -62,7 +64,7 @@ func (src *Gcp) ConvertTo(dstRaw conversion.Hub) error {
 	return nil
 }
 
-// ConvertFrom converts the Hub version (v1alpha2) to this Gcp (v1alpha1).
+// ConvertFrom converts the Hub version (v1alpha3) to this Gcp (v1alpha1).
 //
 //nolint:revive,staticcheck // receiver name dst used to match conversion pattern (dst/src naming)
 func (dst *Gcp) ConvertFrom(srcRaw conversion.Hub) error {

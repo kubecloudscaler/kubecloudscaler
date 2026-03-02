@@ -23,7 +23,6 @@ import (
 
 	kubecloudscalerv1alpha3 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha3"
 	"github.com/kubecloudscaler/kubecloudscaler/internal/controller/gcp/service"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -38,12 +37,12 @@ const transientRequeueAfter = 5 * time.Second
 // Responsibilities:
 //   - Fetch the scaler resource using the Kubernetes client
 //   - Populate the Scaler field in the ReconciliationContext
-//   - Return critical error if resource is not found
+//   - Return nil if resource is not found (e.g., owned by a Flow that was just removed)
 //   - Return recoverable error for transient API failures
 //
 // Error Handling:
-//   - Resource not found: Critical error (stops chain)
-//   - API errors: Recoverable error (allows retry with requeue)
+//   - Resource not found: Return nil (stops chain gracefully, no error logged)
+//   - API errors: Set requeue and return nil (stops chain, allows retry)
 type FetchHandler struct {
 	next service.Handler
 }
@@ -55,36 +54,37 @@ func NewFetchHandler() service.Handler {
 
 // Execute implements the Handler interface.
 // It fetches the scaler resource from the Kubernetes API and populates the context.
-func (h *FetchHandler) Execute(req *service.ReconciliationContext) (ctrl.Result, error) {
-	req.Logger.Debug().Msg("fetching scaler resource")
-
-	ctx := req.Ctx
+func (h *FetchHandler) Execute(ctx *service.ReconciliationContext) error {
+	ctx.Logger.Debug().Msg("fetching scaler resource")
 
 	// Fetch the Scaler object from the Kubernetes API
 	scaler := &kubecloudscalerv1alpha3.Gcp{}
-	if err := req.Client.Get(ctx, req.Request.NamespacedName, scaler); err != nil {
+	if err := ctx.Client.Get(ctx.Ctx, ctx.Request.NamespacedName, scaler); err != nil {
 		if client.IgnoreNotFound(err) == nil {
-			// Resource not found - critical error (stops chain)
-			req.Logger.Error().Err(err).Msg("scaler resource not found")
-			return ctrl.Result{}, service.NewCriticalError(fmt.Errorf("scaler resource not found: %w", err))
+			// Resource not found: it was deleted (e.g., owned by a Flow that was just removed).
+			// Return nil to stop chain gracefully without error.
+			ctx.Logger.Info().Msg("scaler resource not found, skipping reconciliation")
+			ctx.SkipRemaining = true
+			return nil
 		}
 
 		// Other API error - stop chain and requeue (Scaler is nil, next handlers would panic)
-		req.Logger.Warn().Err(err).Msg("transient error fetching scaler resource")
-		return ctrl.Result{RequeueAfter: transientRequeueAfter}, nil
+		ctx.Logger.Warn().Err(err).Msg("transient error fetching scaler resource")
+		ctx.RequeueAfter = transientRequeueAfter
+		return service.NewRecoverableError(fmt.Errorf("fetch scaler resource: %w", err))
 	}
 
 	// Successfully fetched - populate context and continue
-	req.Scaler = scaler
-	req.Logger.Info().
+	ctx.Scaler = scaler
+	ctx.Logger.Info().
 		Str("name", scaler.Name).
 		Str("namespace", scaler.Namespace).
 		Msg("scaler resource fetched successfully")
 
 	if h.next != nil {
-		return h.next.Execute(req)
+		return h.next.Execute(ctx)
 	}
-	return ctrl.Result{}, nil
+	return nil
 }
 
 // SetNext sets the next handler in the chain.

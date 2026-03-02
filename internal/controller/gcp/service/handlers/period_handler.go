@@ -18,6 +18,7 @@ package handlers
 
 import (
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/kubecloudscaler/kubecloudscaler/api/common"
@@ -25,7 +26,6 @@ import (
 	"github.com/kubecloudscaler/kubecloudscaler/internal/utils"
 	gcpUtils "github.com/kubecloudscaler/kubecloudscaler/pkg/gcp/utils"
 	"github.com/kubecloudscaler/kubecloudscaler/pkg/resources"
-	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 const (
@@ -45,7 +45,7 @@ const (
 //
 // Error Handling:
 //   - Invalid period configuration: Critical error (stops chain)
-//   - Run-once period: Requeue (not an error)
+//   - Run-once period: Set RequeueAfter and return nil (not an error)
 type PeriodHandler struct {
 	next service.Handler
 }
@@ -57,15 +57,15 @@ func NewPeriodHandler() service.Handler {
 
 // Execute implements the Handler interface.
 // It validates periods and determines the current active period.
-func (h *PeriodHandler) Execute(req *service.ReconciliationContext) (ctrl.Result, error) {
-	req.Logger.Debug().Msg("validating period configuration")
+func (h *PeriodHandler) Execute(ctx *service.ReconciliationContext) error {
+	ctx.Logger.Debug().Msg("validating period configuration")
 
-	scaler := req.Scaler
+	scaler := ctx.Scaler
 
 	// Configure resource management settings
 	resourceConfig := resources.Config{
 		GCP: &gcpUtils.Config{
-			Client:            req.GCPClient,
+			Client:            ctx.GCPClient,
 			ProjectID:         scaler.Spec.Config.ProjectID,
 			Region:            scaler.Spec.Config.Region,
 			Names:             scaler.Spec.Resources.Names,
@@ -91,42 +91,45 @@ func (h *PeriodHandler) Execute(req *service.ReconciliationContext) (ctrl.Result
 
 	// Validate and determine the current time period
 	period, err := utils.SetActivePeriod(
-		req.Logger,
+		ctx.Logger,
 		periods,
 		&scaler.Status,
-		scaler.Spec.Config.RestoreOnDelete && req.ShouldFinalize,
+		scaler.Spec.Config.RestoreOnDelete && ctx.ShouldFinalize,
 	)
 	if err != nil {
 		// Handle run-once period - requeue until the period ends
 		if errors.Is(err, utils.ErrRunOncePeriod) {
 			requeueAfter := time.Until(period.GetEndTime.Add(RequeueDelaySeconds * time.Second))
-			req.Logger.Info().Dur("requeue_after", requeueAfter).Msg("run-once period active, requeuing")
-			return ctrl.Result{RequeueAfter: requeueAfter}, nil
+			ctx.Logger.Info().Dur("requeue_after", requeueAfter).Msg("run-once period active, requeuing")
+			ctx.RequeueAfter = requeueAfter
+			ctx.SkipRemaining = true
+			return nil
 		}
 
 		// Invalid period configuration - critical error
-		req.Logger.Error().Err(err).Msg("period validation failed")
-		return ctrl.Result{}, service.NewCriticalError(err)
+		ctx.Logger.Error().Err(err).Msg("period validation failed")
+		return service.NewCriticalError(fmt.Errorf("period validation: %w", err))
 	}
 
 	resourceConfig.GCP.Period = period
-	req.Period = period
-	req.ResourceConfig = resourceConfig
+	ctx.Period = period
+	ctx.ResourceConfig = resourceConfig
 
 	// Skip reconciliation only when the controller was already in "noaction" on the previous
 	// cycle. If we just transitioned from an active period the scaling handler must still run
 	// to restore resource state.
 	if prevPeriodName == "noaction" && period.Name == "noaction" {
-		req.Logger.Info().Msg("no action period detected, skipping reconciliation")
-		req.SkipRemaining = true
-		return ctrl.Result{RequeueAfter: utils.ReconcileSuccessDuration}, nil
+		ctx.Logger.Info().Msg("no action period detected, skipping reconciliation")
+		ctx.SkipRemaining = true
+		ctx.RequeueAfter = utils.ReconcileSuccessDuration
+		return nil
 	}
 
-	req.Logger.Info().Str("period", period.Name).Msg("period validated successfully")
-	if h.next != nil {
-		return h.next.Execute(req)
+	ctx.Logger.Info().Str("period", period.Name).Msg("period validated successfully")
+	if h.next != nil && !ctx.SkipRemaining {
+		return h.next.Execute(ctx)
 	}
-	return ctrl.Result{}, nil
+	return nil
 }
 
 // SetNext sets the next handler in the chain.

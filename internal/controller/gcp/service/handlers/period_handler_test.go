@@ -91,16 +91,15 @@ var _ = Describe("PeriodHandler", func() {
 		})
 
 		It("should validate period and populate context", func() {
-			result, err := periodHandler.Execute(reconCtx)
+			err := periodHandler.Execute(reconCtx)
 
 			// Period validation should succeed (or return appropriate result)
 			// The actual validation depends on current time
 			Expect(err).ToNot(HaveOccurred())
-			_ = result
 		})
 
 		It("should complete in under 100ms", func() {
-			_, _ = periodHandler.Execute(reconCtx)
+			_ = periodHandler.Execute(reconCtx)
 		})
 	})
 
@@ -144,10 +143,9 @@ var _ = Describe("PeriodHandler", func() {
 		})
 
 		It("should skip remaining handlers", func() {
-			result, err := periodHandler.Execute(reconCtx)
+			err := periodHandler.Execute(reconCtx)
 
 			Expect(err).ToNot(HaveOccurred())
-			_ = result
 
 			// May or may not skip depending on actual period validation
 			// This test validates the handler can process noaction periods
@@ -174,10 +172,9 @@ var _ = Describe("PeriodHandler", func() {
 		})
 
 		It("should handle empty periods gracefully", func() {
-			result, err := periodHandler.Execute(reconCtx)
+			err := periodHandler.Execute(reconCtx)
 
 			// Should either succeed with default period or return appropriate result
-			_ = result
 			// Error handling depends on implementation
 			_ = err
 		})
@@ -218,9 +215,8 @@ var _ = Describe("PeriodHandler", func() {
 		})
 
 		It("should handle restore on delete", func() {
-			result, err := periodHandler.Execute(reconCtx)
+			err := periodHandler.Execute(reconCtx)
 
-			_ = result
 			// Validation with restore flag should work
 			_ = err
 		})
