@@ -25,6 +25,7 @@ make fmt && make vet          # Format + vet
 # Local run (with webhooks)
 make generate-certs           # Generate certs into tmp/k8s-webhook-server/
 make run                      # Run controller locally against current kubeconfig
+# Metrics at https://localhost:8443/metrics (make run uses --metrics-disable-auth for dev)
 ```
 
 ## Architecture
@@ -43,7 +44,7 @@ make run                      # Run controller locally against current kubeconfi
 
 **GCP Scaler** (`internal/controller/gcp/`) — same chain pattern, manages GCP VM instances and Cloud SQL.
 
-**Flow Controller** (`internal/controller/flow/`) — service-oriented (no handler chain). Reads a `Flow` CR and creates/owns `K8s` and `Gcp` scaler objects. Each resource in a flow can have `startTimeDelay`/`endTimeDelay` offsets that shift the period times. Uses owner references so scaler objects are deleted when the Flow is deleted.
+**Flow Controller** (`internal/controller/flow/`) — service-oriented (no handler chain). Reads a `Flow` CR and creates/owns `K8s` and `Gcp` scaler objects. Each resource in a flow can have `startTimeDelay`/`endTimeDelay` offsets that shift the period times. Uses owner references so scaler objects are deleted when the Flow is deleted. Resource references use the typed union `types.FlowResourceRef` (`K8s *K8sResource`, `GCP *GcpResource`) instead of `interface{}`.
 
 ### Key Packages
 
@@ -51,7 +52,7 @@ make run                      # Run controller locally against current kubeconfi
 
 **`pkg/resources/`** — Factory that returns typed resource handlers via `resources.NewResource(name, config)`. Each handler implements `Scale()`, `Fetch()`, `Restore()`. Current types: `deployments`, `statefulsets`, `cronjobs`, `github-ars`, `hpa`, `vm-instances`.
 
-**`internal/utils/`** — `ValidatePeriod()` is the central function used by both K8s and GCP `PeriodHandler`s to check if a period is active, handle "once" periods (via SHA comparison), and return typed sentinel errors (`ErrPeriodNotActive`, `ErrRunOncePeriod`).
+**`internal/utils/`** — `SetActivePeriod(ctx, logger, periods, status, forceRestore)` is the central function used by both K8s and GCP `PeriodHandler`s to check if a period is active, handle "once" periods (via SHA comparison), and return typed sentinel errors (`ErrLoadPeriod`, `ErrRunOncePeriod`). It accepts a `context.Context` as first parameter for cancellation propagation.
 
 ### Error Handling Pattern
 
@@ -77,6 +78,19 @@ Shared mutable state threaded through the handler chain. Key fields set by each 
 ### API Versions
 
 `v1alpha3` is the storage version. `v1alpha1` and `v1alpha2` exist with conversion webhooks. All new work goes in `api/v1alpha3/`. Shared types (period definitions, status structs) live in `api/common/`.
+
+### Prometheus Metrics (`pkg/metrics/`)
+
+Custom metrics registered via `metrics.Register(ctrlmetrics.Registry)` in `main.go`:
+
+| Metric | Type | Labels | Instrumented in |
+|--------|------|--------|-----------------|
+| `kubecloudscaler_reconcile_total` | Counter | controller, result | Controllers (Reconcile) |
+| `kubecloudscaler_reconcile_duration_seconds` | Histogram | controller | Controllers (Reconcile) |
+| `kubecloudscaler_scaling_operations_total` | Counter | controller, resource_type, action, result | ScalingHandlers |
+| `kubecloudscaler_period_evaluation_total` | Counter | controller, outcome | PeriodHandlers |
+
+Label values: `controller` = k8s/gcp/flow; `result` = success/critical_error/recoverable_error/error; `action` = up/down; `outcome` = active/noaction/run_once_skip/error.
 
 ### Linting Notes
 

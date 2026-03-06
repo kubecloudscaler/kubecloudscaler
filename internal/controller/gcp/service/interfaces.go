@@ -17,62 +17,23 @@ limitations under the License.
 // Package service provides the service layer for GCP controller business logic.
 package service
 
-import (
-	ctrl "sigs.k8s.io/controller-runtime"
-)
-
 // Handler defines the contract for all handlers in the Chain of Responsibility pattern.
 // Each handler implements a single reconciliation step and can modify the shared context.
 //
-// This follows the Chain of Responsibility pattern where each handler:
-// - Processes its reconciliation step independently
-// - Modifies context as needed for subsequent handlers
-// - Calls the next handler in the chain via execute()
-// - Sets the next handler via setNext()
-//
-// See contracts/handler-interface.md for full contract specification.
+// This follows the same pattern as the K8s controller:
+//   - Processes its reconciliation step independently
+//   - Modifies context as needed for subsequent handlers (RequeueAfter, SkipRemaining)
+//   - Calls the next handler in the chain via Execute()
+//   - Returns CriticalError to stop chain without requeue
+//   - Returns RecoverableError to stop chain with requeue
+//   - Returns nil to continue to the next handler
 type Handler interface {
-	// Execute processes a single reconciliation step and passes control to the next handler.
-	//
-	// Parameters:
-	//   - req: Reconciliation context containing shared state
+	// Execute processes a single reconciliation step.
 	//
 	// Returns:
-	//   - ctrl.Result: Kubernetes reconciliation result (requeue behavior)
-	//   - error: Critical error that should stop chain execution (nil if successful)
-	//
-	// Error Handling:
-	//   - Critical errors: Return error, chain stops immediately
-	//   - Recoverable errors: Continue chain with requeue
-	//   - Success: Call next handler if available
-	Execute(req *ReconciliationContext) (ctrl.Result, error)
+	//   - error: nil to continue chain, CriticalError or RecoverableError to stop
+	Execute(ctx *ReconciliationContext) error
 
 	// SetNext sets the next handler in the chain.
-	//
-	// Parameters:
-	//   - next: The next handler to execute after this one
 	SetNext(next Handler)
-}
-
-// Chain defines the contract for executing a sequence of handlers.
-// The chain is simply the first handler in the chain, which will propagate
-// execution through all handlers via the Chain of Responsibility pattern.
-//
-// See contracts/chain-execution.md for full contract specification.
-type Chain interface {
-	// Execute runs all handlers in the chain in order.
-	//
-	// Parameters:
-	//   - req: Reconciliation context containing shared state
-	//
-	// Returns:
-	//   - ctrl.Result: Kubernetes reconciliation result (requeue behavior)
-	//   - error: Critical error from handler execution
-	//
-	// Behavior:
-	//   - Executes handlers in fixed order (fetch → finalizer → auth → period → scaling → status)
-	//   - Stops on critical errors
-	//   - Continues on recoverable errors with requeue
-	//   - Respects skip flag to stop early
-	Execute(req *ReconciliationContext) (ctrl.Result, error)
 }

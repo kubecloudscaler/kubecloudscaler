@@ -19,6 +19,7 @@ package k8s
 
 import (
 	"context"
+	"time"
 
 	"github.com/rs/zerolog"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -29,6 +30,7 @@ import (
 	"github.com/kubecloudscaler/kubecloudscaler/internal/controller/k8s/service"
 	"github.com/kubecloudscaler/kubecloudscaler/internal/controller/k8s/service/handlers"
 	"github.com/kubecloudscaler/kubecloudscaler/internal/utils"
+	"github.com/kubecloudscaler/kubecloudscaler/pkg/metrics"
 )
 
 // ScalerReconciler reconciles a Scaler object
@@ -63,10 +65,8 @@ type ScalerReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.18.4/pkg/reconcile
 func (r *ScalerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	r.Logger.Info().
-		Str("name", req.Name).
-		Str("namespace", req.Namespace).
-		Msg("reconciling scaler")
+	startTime := time.Now()
+	r.Logger.Debug().Str("name", req.Name).Str("namespace", req.Namespace).Msg("reconcile start")
 
 	// Create reconciliation context with initial values
 	reconCtx := &service.ReconciliationContext{
@@ -84,29 +84,36 @@ func (r *ScalerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	// Execute the handler chain
 	err := r.chain.Execute(reconCtx)
 
-	// Handle chain execution result
+	duration := time.Since(startTime)
+	metrics.ReconcileDurationSeconds.WithLabelValues(metrics.ControllerK8s).Observe(duration.Seconds())
+
 	if err != nil {
 		if service.IsCriticalError(err) {
-			r.Logger.Error().Err(err).Msg("critical error during reconciliation")
+			metrics.ReconcileTotal.WithLabelValues(metrics.ControllerK8s, metrics.ResultCriticalError).Inc()
+			r.Logger.Error().Err(err).Str("name", req.Name).Str("namespace", req.Namespace).Msg("reconcile failed (critical)")
 			return ctrl.Result{}, client.IgnoreNotFound(err)
 		}
 		if service.IsRecoverableError(err) {
-			r.Logger.Warn().Err(err).Msg("recoverable error during reconciliation, will requeue")
+			metrics.ReconcileTotal.WithLabelValues(metrics.ControllerK8s, metrics.ResultRecoverableError).Inc()
 			requeue := utils.ReconcileErrorDuration
 			if reconCtx.RequeueAfter > 0 {
 				requeue = reconCtx.RequeueAfter
 			}
+			r.Logger.Warn().Err(err).Str("name", req.Name).Dur("requeue_after", requeue).Msg("reconcile failed (recoverable)")
 			return ctrl.Result{RequeueAfter: requeue}, nil
 		}
-		// Unknown error type
-		r.Logger.Error().Err(err).Msg("unexpected error during reconciliation")
+		metrics.ReconcileTotal.WithLabelValues(metrics.ControllerK8s, metrics.ResultError).Inc()
+		r.Logger.Error().Err(err).Str("name", req.Name).Str("namespace", req.Namespace).Msg("reconcile failed")
 		return ctrl.Result{RequeueAfter: utils.ReconcileErrorDuration}, nil
 	}
 
-	// Successful reconciliation - use requeue from context or default
-	if reconCtx.RequeueAfter > 0 {
-		return ctrl.Result{RequeueAfter: reconCtx.RequeueAfter}, nil
+	metrics.ReconcileTotal.WithLabelValues(metrics.ControllerK8s, metrics.ResultSuccess).Inc()
+	requeueAfter := reconCtx.RequeueAfter
+	if requeueAfter > 0 {
+		r.Logger.Info().Str("name", req.Name).Str("namespace", req.Namespace).Dur("requeue_after", requeueAfter).Msg("reconcile ok")
+		return ctrl.Result{RequeueAfter: requeueAfter}, nil
 	}
+	r.Logger.Info().Str("name", req.Name).Str("namespace", req.Namespace).Msg("reconcile ok")
 	return ctrl.Result{}, nil
 }
 

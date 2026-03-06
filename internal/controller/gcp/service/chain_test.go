@@ -23,38 +23,82 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/rs/zerolog"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	kubecloudscalerv1alpha3 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha3"
 	"github.com/kubecloudscaler/kubecloudscaler/internal/controller/gcp/service"
 )
 
 func TestChain(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Chain Suite")
+	RunSpecs(t, "GCP Service Suite")
 }
 
-var _ = Describe("HandlerChain", func() {
+// MockHandler is a mock implementation of the Handler interface for testing.
+type MockHandler struct {
+	ExecuteFunc func(ctx *service.ReconciliationContext) error
+	next        service.Handler
+	executed    bool
+	order       int
+}
+
+func (m *MockHandler) Execute(ctx *service.ReconciliationContext) error {
+	m.executed = true
+	if m.ExecuteFunc != nil {
+		err := m.ExecuteFunc(ctx)
+		if err != nil {
+			return err
+		}
+	}
+	if ctx.SkipRemaining {
+		return nil
+	}
+	if m.next != nil {
+		return m.next.Execute(ctx)
+	}
+	return nil
+}
+
+func (m *MockHandler) SetNext(next service.Handler) {
+	m.next = next
+}
+
+var _ = Describe("Handler Chain Integration", func() {
 	var (
 		logger zerolog.Logger
-		scheme *runtime.Scheme
-		chain  service.Chain
 	)
 
 	BeforeEach(func() {
 		logger = zerolog.Nop()
-		scheme = runtime.NewScheme()
-		Expect(kubecloudscalerv1alpha3.AddToScheme(scheme)).To(Succeed())
 	})
 
-	Context("When executing empty chain", func() {
-		BeforeEach(func() {
-			chain = service.NewHandlerChain([]service.Handler{}, &logger)
-		})
+	Context("When executing a chain of handlers", func() {
+		It("should execute handlers in correct order", func() {
+			executionOrder := []int{}
 
-		It("should complete successfully", func() {
+			handler1 := &MockHandler{
+				ExecuteFunc: func(ctx *service.ReconciliationContext) error {
+					executionOrder = append(executionOrder, 1)
+					return nil
+				},
+			}
+			handler2 := &MockHandler{
+				ExecuteFunc: func(ctx *service.ReconciliationContext) error {
+					executionOrder = append(executionOrder, 2)
+					return nil
+				},
+			}
+			handler3 := &MockHandler{
+				ExecuteFunc: func(ctx *service.ReconciliationContext) error {
+					executionOrder = append(executionOrder, 3)
+					return nil
+				},
+			}
+
+			handler1.SetNext(handler2)
+			handler2.SetNext(handler3)
+
 			reconCtx := &service.ReconciliationContext{
 				Ctx: context.Background(),
 				Request: ctrl.Request{
@@ -63,170 +107,160 @@ var _ = Describe("HandlerChain", func() {
 						Namespace: "default",
 					},
 				},
+				Client: fake.NewClientBuilder().Build(),
 				Logger: &logger,
 			}
 
-			result, err := chain.Execute(reconCtx)
+			err := handler1.Execute(reconCtx)
 
 			Expect(err).ToNot(HaveOccurred())
-			// Empty chain returns zero-valued result, which is valid
-			_ = result
+			Expect(executionOrder).To(Equal([]int{1, 2, 3}))
 		})
-	})
 
-	Context("When executing chain with mock handlers", func() {
-		It("should execute handlers in order", func() {
-			executionOrder := []string{}
+		It("should stop chain on critical error", func() {
+			executionOrder := []int{}
 
-			// Create mock handlers that track execution order
-			handler1 := &mockHandler{
-				name: "handler1",
-				executeFunc: func(req *service.ReconciliationContext) (ctrl.Result, error) {
-					executionOrder = append(executionOrder, "handler1")
-					return ctrl.Result{}, nil
+			handler1 := &MockHandler{
+				ExecuteFunc: func(ctx *service.ReconciliationContext) error {
+					executionOrder = append(executionOrder, 1)
+					return nil
+				},
+			}
+			handler2 := &MockHandler{
+				ExecuteFunc: func(ctx *service.ReconciliationContext) error {
+					executionOrder = append(executionOrder, 2)
+					return service.NewCriticalError(nil)
+				},
+			}
+			handler3 := &MockHandler{
+				ExecuteFunc: func(ctx *service.ReconciliationContext) error {
+					executionOrder = append(executionOrder, 3)
+					return nil
 				},
 			}
 
-			handler2 := &mockHandler{
-				name: "handler2",
-				executeFunc: func(req *service.ReconciliationContext) (ctrl.Result, error) {
-					executionOrder = append(executionOrder, "handler2")
-					return ctrl.Result{}, nil
-				},
-			}
-
-			handler3 := &mockHandler{
-				name: "handler3",
-				executeFunc: func(req *service.ReconciliationContext) (ctrl.Result, error) {
-					executionOrder = append(executionOrder, "handler3")
-					return ctrl.Result{}, nil
-				},
-			}
-
-			chain = service.NewHandlerChain([]service.Handler{handler1, handler2, handler3}, &logger)
+			handler1.SetNext(handler2)
+			handler2.SetNext(handler3)
 
 			reconCtx := &service.ReconciliationContext{
-				Ctx:     context.Background(),
-				Request: ctrl.Request{},
-				Logger:  &logger,
-			}
-
-			result, err := chain.Execute(reconCtx)
-
-			Expect(err).ToNot(HaveOccurred())
-			_ = result
-			Expect(executionOrder).To(Equal([]string{"handler1", "handler2", "handler3"}))
-		})
-	})
-
-	Context("When handler returns critical error", func() {
-		It("should stop chain execution", func() {
-			executionOrder := []string{}
-
-			handler1 := &mockHandler{
-				name: "handler1",
-				executeFunc: func(req *service.ReconciliationContext) (ctrl.Result, error) {
-					executionOrder = append(executionOrder, "handler1")
-					return ctrl.Result{}, nil
+				Ctx: context.Background(),
+				Request: ctrl.Request{
+					NamespacedName: types.NamespacedName{
+						Name:      "test",
+						Namespace: "default",
+					},
 				},
+				Client: fake.NewClientBuilder().Build(),
+				Logger: &logger,
 			}
 
-			handler2 := &mockHandler{
-				name: "handler2-error",
-				executeFunc: func(req *service.ReconciliationContext) (ctrl.Result, error) {
-					executionOrder = append(executionOrder, "handler2-error")
-					return ctrl.Result{}, service.NewCriticalError(nil)
-				},
-			}
-
-			handler3 := &mockHandler{
-				name: "handler3-should-not-execute",
-				executeFunc: func(req *service.ReconciliationContext) (ctrl.Result, error) {
-					executionOrder = append(executionOrder, "handler3-should-not-execute")
-					return ctrl.Result{}, nil
-				},
-			}
-
-			chain = service.NewHandlerChain([]service.Handler{handler1, handler2, handler3}, &logger)
-
-			reconCtx := &service.ReconciliationContext{
-				Ctx:     context.Background(),
-				Request: ctrl.Request{},
-				Logger:  &logger,
-			}
-
-			result, err := chain.Execute(reconCtx)
+			err := handler1.Execute(reconCtx)
 
 			Expect(err).To(HaveOccurred())
 			Expect(service.IsCriticalError(err)).To(BeTrue())
-			_ = result
-			Expect(executionOrder).To(Equal([]string{"handler1", "handler2-error"}))
-			Expect(executionOrder).ToNot(ContainElement("handler3-should-not-execute"))
+			Expect(executionOrder).To(Equal([]int{1, 2}))
 		})
-	})
 
-	Context("When handler sets SkipRemaining flag", func() {
-		It("should stop chain execution early", func() {
-			executionOrder := []string{}
+		It("should stop chain when SkipRemaining is set", func() {
+			executionOrder := []int{}
 
-			handler1 := &mockHandler{
-				name: "handler1",
-				executeFunc: func(req *service.ReconciliationContext) (ctrl.Result, error) {
-					executionOrder = append(executionOrder, "handler1")
-					req.SkipRemaining = true
-					return ctrl.Result{}, nil
+			handler1 := &MockHandler{
+				ExecuteFunc: func(ctx *service.ReconciliationContext) error {
+					executionOrder = append(executionOrder, 1)
+					return nil
+				},
+			}
+			handler2 := &MockHandler{
+				ExecuteFunc: func(ctx *service.ReconciliationContext) error {
+					executionOrder = append(executionOrder, 2)
+					ctx.SkipRemaining = true
+					return nil
+				},
+			}
+			handler3 := &MockHandler{
+				ExecuteFunc: func(ctx *service.ReconciliationContext) error {
+					executionOrder = append(executionOrder, 3)
+					return nil
 				},
 			}
 
-			handler2 := &mockHandler{
-				name: "handler2-should-not-execute",
-				executeFunc: func(req *service.ReconciliationContext) (ctrl.Result, error) {
-					executionOrder = append(executionOrder, "handler2-should-not-execute")
-					return ctrl.Result{}, nil
-				},
-			}
-
-			chain = service.NewHandlerChain([]service.Handler{handler1, handler2}, &logger)
+			handler1.SetNext(handler2)
+			handler2.SetNext(handler3)
 
 			reconCtx := &service.ReconciliationContext{
-				Ctx:     context.Background(),
-				Request: ctrl.Request{},
-				Logger:  &logger,
+				Ctx: context.Background(),
+				Request: ctrl.Request{
+					NamespacedName: types.NamespacedName{
+						Name:      "test",
+						Namespace: "default",
+					},
+				},
+				Client: fake.NewClientBuilder().Build(),
+				Logger: &logger,
 			}
 
-			result, err := chain.Execute(reconCtx)
+			err := handler1.Execute(reconCtx)
 
 			Expect(err).ToNot(HaveOccurred())
-			_ = result
-			Expect(executionOrder).To(Equal([]string{"handler1"}))
-			Expect(executionOrder).ToNot(ContainElement("handler2-should-not-execute"))
+			Expect(executionOrder).To(Equal([]int{1, 2}))
+			Expect(reconCtx.SkipRemaining).To(BeTrue())
+		})
+
+		It("should allow context modification through chain", func() {
+			handler1 := &MockHandler{
+				ExecuteFunc: func(ctx *service.ReconciliationContext) error {
+					ctx.ShouldFinalize = true
+					return nil
+				},
+			}
+			handler2 := &MockHandler{
+				ExecuteFunc: func(ctx *service.ReconciliationContext) error {
+					Expect(ctx.ShouldFinalize).To(BeTrue())
+					return nil
+				},
+			}
+
+			handler1.SetNext(handler2)
+
+			reconCtx := &service.ReconciliationContext{
+				Ctx: context.Background(),
+				Request: ctrl.Request{
+					NamespacedName: types.NamespacedName{
+						Name:      "test",
+						Namespace: "default",
+					},
+				},
+				Client: fake.NewClientBuilder().Build(),
+				Logger: &logger,
+			}
+
+			err := handler1.Execute(reconCtx)
+
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("should handle empty chain (nil next)", func() {
+			handler := &MockHandler{
+				ExecuteFunc: func(ctx *service.ReconciliationContext) error {
+					return nil
+				},
+			}
+
+			reconCtx := &service.ReconciliationContext{
+				Ctx: context.Background(),
+				Request: ctrl.Request{
+					NamespacedName: types.NamespacedName{
+						Name:      "test",
+						Namespace: "default",
+					},
+				},
+				Client: fake.NewClientBuilder().Build(),
+				Logger: &logger,
+			}
+
+			err := handler.Execute(reconCtx)
+
+			Expect(err).ToNot(HaveOccurred())
 		})
 	})
 })
-
-// mockHandler is a test helper that implements the Handler interface
-type mockHandler struct {
-	name        string
-	next        service.Handler
-	executeFunc func(req *service.ReconciliationContext) (ctrl.Result, error)
-}
-
-func (m *mockHandler) Execute(req *service.ReconciliationContext) (ctrl.Result, error) {
-	result, err := m.executeFunc(req)
-	if err != nil {
-		return result, err
-	}
-	// Check if SkipRemaining was set
-	if req.SkipRemaining {
-		return result, nil
-	}
-	// Call next handler if available
-	if m.next != nil {
-		return m.next.Execute(req)
-	}
-	return result, nil
-}
-
-func (m *mockHandler) SetNext(next service.Handler) {
-	m.next = next
-}

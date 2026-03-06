@@ -22,6 +22,7 @@ import (
 	"github.com/kubecloudscaler/kubecloudscaler/api/common"
 	"github.com/kubecloudscaler/kubecloudscaler/internal/controller/k8s/service"
 	"github.com/kubecloudscaler/kubecloudscaler/internal/utils"
+	"github.com/kubecloudscaler/kubecloudscaler/pkg/metrics"
 	"github.com/kubecloudscaler/kubecloudscaler/pkg/resources"
 )
 
@@ -43,8 +44,6 @@ func NewScalingHandler() service.Handler {
 //   - Collects success and failure results
 //   - Always continues to next handler (errors are collected, not returned)
 func (h *ScalingHandler) Execute(ctx *service.ReconciliationContext) error {
-	ctx.Logger.Debug().Msg("scaling K8s resources")
-
 	var (
 		recSuccess []common.ScalerStatusSuccess
 		recFailed  []common.ScalerStatusFailed
@@ -53,7 +52,7 @@ func (h *ScalingHandler) Execute(ctx *service.ReconciliationContext) error {
 	// Validate and filter the list of resources to be scaled
 	resourceList, err := h.validResourceList(ctx)
 	if err != nil {
-		ctx.Logger.Error().Err(err).Msg("unable to get valid resources")
+		ctx.Logger.Error().Err(err).Msg("invalid resource list")
 		recFailed = append(recFailed, common.ScalerStatusFailed{
 			Kind:   "N/A",
 			Name:   "N/A",
@@ -68,13 +67,17 @@ func (h *ScalingHandler) Execute(ctx *service.ReconciliationContext) error {
 		return nil
 	}
 
-	ctx.Logger.Debug().Msgf("resourceList: %v", resourceList)
+	action := ""
+	if ctx.Period != nil {
+		action = ctx.Period.Type
+	}
 
 	// Process each resource type and perform scaling operations
 	for _, resource := range resourceList {
 		curResource, err := resources.NewResource(resource, ctx.ResourceConfig, ctx.Logger)
 		if err != nil {
-			ctx.Logger.Error().Err(err).Str("resource", resource).Msg("unable to get resource handler")
+			ctx.Logger.Error().Err(err).Str("resource", resource).Msg("resource handler creation failed")
+			metrics.ScalingOperationsTotal.WithLabelValues(metrics.ControllerK8s, resource, action, metrics.ResultFailure).Inc()
 			recFailed = append(recFailed, common.ScalerStatusFailed{
 				Kind:   resource,
 				Name:   "N/A",
@@ -85,13 +88,25 @@ func (h *ScalingHandler) Execute(ctx *service.ReconciliationContext) error {
 
 		success, failed, err := curResource.SetState(ctx.Ctx)
 		if err != nil {
-			ctx.Logger.Error().Err(err).Str("resource", resource).Msg("unable to set resource state")
+			ctx.Logger.Error().Err(err).Str("resource", resource).Msg("set state failed")
+			metrics.ScalingOperationsTotal.WithLabelValues(metrics.ControllerK8s, resource, action, metrics.ResultFailure).Inc()
 			recFailed = append(recFailed, common.ScalerStatusFailed{
 				Kind:   resource,
 				Name:   "N/A",
 				Reason: err.Error(),
 			})
 			continue
+		}
+
+		if len(success) > 0 {
+			metrics.ScalingOperationsTotal.WithLabelValues(
+				metrics.ControllerK8s, resource, action, metrics.ResultSuccess,
+			).Add(float64(len(success)))
+		}
+		if len(failed) > 0 {
+			metrics.ScalingOperationsTotal.WithLabelValues(
+				metrics.ControllerK8s, resource, action, metrics.ResultFailure,
+			).Add(float64(len(failed)))
 		}
 
 		recSuccess = append(recSuccess, success...)
@@ -104,7 +119,7 @@ func (h *ScalingHandler) Execute(ctx *service.ReconciliationContext) error {
 	ctx.Logger.Info().
 		Int("success_count", len(recSuccess)).
 		Int("failed_count", len(recFailed)).
-		Msg("scaling operations completed")
+		Msg("scaling completed")
 
 	// Call next handler in chain
 	if h.next != nil && !ctx.SkipRemaining {
@@ -147,7 +162,7 @@ func (h *ScalingHandler) validResourceList(ctx *service.ReconciliationContext) (
 
 		// Prevent mixing of app and HPA resources as they have different scaling behaviors
 		if isHpa && isApp {
-			ctx.Logger.Info().Msg(utils.ErrMixedAppsHPA.Error())
+			ctx.Logger.Info().Str("reason", utils.ErrMixedAppsHPA.Error()).Msg("resource list invalid")
 			return []string{}, utils.ErrMixedAppsHPA
 		}
 

@@ -220,13 +220,20 @@ Context("When resource does not exist", func() {
 
 ### 4. Avoid External Dependencies
 
-- ❌ No real Kubernetes API calls
-- ❌ No real GCP API calls
-- ❌ No network access
-- ✅ Use fake clients and mocks
-- ✅ Fast, deterministic tests
+- No real Kubernetes API calls
+- No real GCP API calls
+- No network access
+- Use fake clients and mocks
+- Fast, deterministic tests
 
-### 5. Verify Error Categories
+### 5. Deterministic Period Tests
+
+Period handler tests MUST NOT depend on `time.Now()` for pass/fail decisions. Strategies:
+- Use always-active periods: `days: ["all"]`, `startTime: "00:00"`, `endTime: "23:59"`.
+- For run-once tests, compute fixed period bounds relative to the test start time (e.g., `now ± 1m`).
+- Never use `if err == nil { ... }` branches that silently skip assertions.
+
+### 6. Verify Error Categories
 
 Always verify error categorization:
 

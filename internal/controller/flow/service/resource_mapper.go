@@ -100,9 +100,9 @@ func (m *ResourceMapperService) mapResource(
 
 // findK8sResource finds a K8s resource by name
 func (m *ResourceMapperService) findK8sResource(flow *kubecloudscalerv1alpha3.Flow, resourceName string) *kubecloudscalerv1alpha3.K8sResource {
-	for _, resource := range flow.Spec.Resources.K8s {
-		if resource.Name == resourceName {
-			return &resource
+	for i := range flow.Spec.Resources.K8s {
+		if flow.Spec.Resources.K8s[i].Name == resourceName {
+			return &flow.Spec.Resources.K8s[i]
 		}
 	}
 	return nil
@@ -110,9 +110,9 @@ func (m *ResourceMapperService) findK8sResource(flow *kubecloudscalerv1alpha3.Fl
 
 // findGcpResource finds a GCP resource by name
 func (m *ResourceMapperService) findGcpResource(flow *kubecloudscalerv1alpha3.Flow, resourceName string) *kubecloudscalerv1alpha3.GcpResource {
-	for _, resource := range flow.Spec.Resources.Gcp {
-		if resource.Name == resourceName {
-			return &resource
+	for i := range flow.Spec.Resources.Gcp {
+		if flow.Spec.Resources.Gcp[i].Name == resourceName {
+			return &flow.Spec.Resources.Gcp[i]
 		}
 	}
 	return nil
@@ -123,20 +123,20 @@ func (m *ResourceMapperService) determineResourceType(
 	resourceName string,
 	k8sResource *kubecloudscalerv1alpha3.K8sResource,
 	gcpResource *kubecloudscalerv1alpha3.GcpResource,
-) (string, interface{}, error) {
+) (string, types.FlowResourceRef, error) {
 	if k8sResource != nil && gcpResource != nil {
-		return "", nil, fmt.Errorf("resource %s is defined in both K8s and GCP resources", resourceName)
+		return "", types.FlowResourceRef{}, fmt.Errorf("resource %s is defined in both K8s and GCP resources", resourceName)
 	}
 
 	if k8sResource != nil {
-		return "k8s", *k8sResource, nil
+		return "k8s", types.FlowResourceRef{K8s: k8sResource}, nil
 	}
 
 	if gcpResource != nil {
-		return "gcp", *gcpResource, nil
+		return "gcp", types.FlowResourceRef{GCP: gcpResource}, nil
 	}
 
-	return "", nil, fmt.Errorf("resource %s referenced in flows but not defined in resources", resourceName)
+	return "", types.FlowResourceRef{}, fmt.Errorf("resource %s referenced in flows but not defined in resources", resourceName)
 }
 
 // findAssociatedPeriods finds all periods associated with a resource

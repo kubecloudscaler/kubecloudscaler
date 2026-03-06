@@ -101,16 +101,21 @@ func (p *Processor) ProcessResources(ctx context.Context) ([]common.ScalerStatus
 		return scalerStatusSuccess, scalerStatusFailed, err
 	}
 
-	p.logger.Debug().Msgf("number of %s: %d", p.strategy.GetKind(), len(list))
-
 	// Process each resource
 	for _, item := range list {
 		if err := p.processResource(ctx, item, &scalerStatusSuccess, &scalerStatusFailed); err != nil {
-			p.logger.Debug().Err(err).Str("resource", item.GetName()).Msg("error processing resource")
-			// Continue processing other resources even if one fails
+			// Continue processing other resources even if one fails; failure is recorded in scalerStatusFailed
 		}
 	}
 
+	if len(list) > 0 {
+		p.logger.Debug().
+			Str("kind", p.strategy.GetKind()).
+			Int("total", len(list)).
+			Int("success", len(scalerStatusSuccess)).
+			Int("failed", len(scalerStatusFailed)).
+			Msg("scaling run")
+	}
 	return scalerStatusSuccess, scalerStatusFailed, nil
 }
 
@@ -119,11 +124,8 @@ func (p *Processor) listResources(ctx context.Context) ([]ResourceItem, error) {
 	var allItems []ResourceItem
 
 	for _, ns := range p.resource.NsList {
-		p.logger.Debug().Msgf("found namespace: %s", ns)
-
 		items, err := p.lister.List(ctx, ns, p.resource.ListOptions)
 		if err != nil {
-			p.logger.Debug().Err(err).Msgf("error listing %s", p.strategy.GetKind())
 			// Use plural form for error message to match existing test expectations
 			kindPlural := p.strategy.GetKind() + "s"
 			return nil, fmt.Errorf("error listing %s: %w", kindPlural, err)
@@ -149,8 +151,6 @@ func (p *Processor) processResource(
 	successList *[]common.ScalerStatusSuccess,
 	failedList *[]common.ScalerStatusFailed,
 ) error {
-	p.logger.Debug().Msgf("resource-name: %s", item.GetName())
-
 	// Get the full resource
 	resource, err := p.getter.Get(ctx, item.GetNamespace(), item.GetName(), metaV1.GetOptions{})
 	if err != nil {
@@ -166,12 +166,8 @@ func (p *Processor) processResource(
 	}
 
 	if alreadyRestored {
-		p.logger.Debug().Msgf("nothing to do: %s", item.GetName())
 		return nil
 	}
-
-	// Update the resource
-	p.logger.Debug().Msgf("update %s: %s", p.strategy.GetKind(), item.GetName())
 
 	_, err = p.updater.Update(ctx, resource.GetNamespace(), resource, metaV1.UpdateOptions{
 		FieldManager: utils.FieldManager,

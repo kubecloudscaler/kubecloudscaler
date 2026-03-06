@@ -131,7 +131,7 @@ build: manifests generate fmt vet ## Build manager binary.
 
 .PHONY: run
 run: manifests generate fmt vet generate-certs ## Run a controller from your host.
-	go run ./cmd/main.go -zap-devel -zap-stacktrace-level=panic --webhook-cert-path=$(CERTSDIR) --log-format=raw --log-level=debug
+	go run ./cmd/main.go -zap-devel -zap-stacktrace-level=panic --metrics-bind-address=:8443 --metrics-disable-auth --webhook-cert-path=$(CERTSDIR) --log-format=raw --log-level=debug
 
 CERTSDIR=./tmp/k8s-webhook-server/serving-certs
 .PHONY: generate-certs
@@ -231,7 +231,7 @@ CONTROLLER_TOOLS_VERSION ?= v0.18.0
 ENVTEST_VERSION ?= $(shell go list -m -f "{{ .Version }}" sigs.k8s.io/controller-runtime | awk -F'[v.]' '{printf "release-%d.%d", $$2, $$3}')
 #ENVTEST_K8S_VERSION is the version of Kubernetes to use for setting up ENVTEST binaries (i.e. 1.31)
 ENVTEST_K8S_VERSION ?= $(shell go list -m -f "{{ .Version }}" k8s.io/api | awk -F'[v.]' '{printf "1.%d", $$3}')
-GOLANGCI_LINT_VERSION ?= v2.5.0
+GOLANGCI_LINT_VERSION ?= v2.11.1
 HELMIFY_VERSION ?= v0.4.19
 GEN_CRD_DOCS_VERSION ?= master
 API2MD_VERSION ?= main

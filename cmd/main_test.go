@@ -191,6 +191,7 @@ var _ = Describe("Main Package", func() {
 	Describe("Metrics Server Configuration", func() {
 		It("should configure metrics server with secure serving enabled", func() {
 			secureMetrics := true
+			metricsDisableAuth := false
 			var tlsOpts []func(*tls.Config)
 
 			metricsServerOptions := metricsserver.Options{
@@ -199,7 +200,7 @@ var _ = Describe("Main Package", func() {
 				TLSOpts:       tlsOpts,
 			}
 
-			if secureMetrics {
+			if secureMetrics && !metricsDisableAuth {
 				metricsServerOptions.FilterProvider = filters.WithAuthenticationAndAuthorization
 			}
 
@@ -210,6 +211,7 @@ var _ = Describe("Main Package", func() {
 
 		It("should configure metrics server with secure serving disabled", func() {
 			secureMetrics := false
+			metricsDisableAuth := false
 			var tlsOpts []func(*tls.Config)
 
 			metricsServerOptions := metricsserver.Options{
@@ -218,12 +220,31 @@ var _ = Describe("Main Package", func() {
 				TLSOpts:       tlsOpts,
 			}
 
-			if secureMetrics {
+			if secureMetrics && !metricsDisableAuth {
 				metricsServerOptions.FilterProvider = filters.WithAuthenticationAndAuthorization
 			}
 
 			Expect(metricsServerOptions.BindAddress).To(Equal(":8080"))
 			Expect(metricsServerOptions.SecureServing).To(BeFalse())
+			Expect(metricsServerOptions.FilterProvider).To(BeNil())
+		})
+
+		It("should disable auth when metrics-disable-auth is set", func() {
+			secureMetrics := true
+			metricsDisableAuth := true
+			var tlsOpts []func(*tls.Config)
+
+			metricsServerOptions := metricsserver.Options{
+				BindAddress:   ":8080",
+				SecureServing: secureMetrics,
+				TLSOpts:       tlsOpts,
+			}
+
+			if secureMetrics && !metricsDisableAuth {
+				metricsServerOptions.FilterProvider = filters.WithAuthenticationAndAuthorization
+			}
+
+			Expect(metricsServerOptions.SecureServing).To(BeTrue())
 			Expect(metricsServerOptions.FilterProvider).To(BeNil())
 		})
 	})

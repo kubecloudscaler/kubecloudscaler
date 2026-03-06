@@ -30,7 +30,7 @@ ScalerReconciler.Reconcile() - 277 lines
 
 ```
 ScalerReconciler.Reconcile() - 26 lines
-└── HandlerChain.Execute()
+└── firstHandler.Execute()
     ├── FetchHandler - Fetch scaler resource
     ├── FinalizerHandler - Manage finalizer lifecycle
     ├── AuthHandler - Setup GCP authentication
@@ -277,14 +277,17 @@ var _ = Describe("MyHandler", func() {
 
 ```go
 // internal/controller/gcp/scaler_controller.go
-func (r *ScalerReconciler) initializeChain() service.Chain {
-    handlerList := []service.Handler{
-        handlers.NewFetchHandler(),
-        handlers.NewFinalizerHandler(),
-        handlers.NewMyHandler(),  // Add here
-        // ... other handlers
-    }
-    return service.NewHandlerChain(handlerList, r.Logger)
+func (r *ScalerReconciler) initializeChain() service.Handler {
+    fetchHandler := handlers.NewFetchHandler()
+    finalizerHandler := handlers.NewFinalizerHandler()
+    myHandler := handlers.NewMyHandler()
+    // ... other handlers
+
+    fetchHandler.SetNext(finalizerHandler)
+    finalizerHandler.SetNext(myHandler)
+    // ...
+
+    return fetchHandler
 }
 ```
 
@@ -334,11 +337,11 @@ type ScalerReconciler struct {
     client.Client              // Kubernetes client
     Scheme *runtime.Scheme     // Scheme for type conversion
     Logger *zerolog.Logger     // Structured logger
-    Chain  service.Chain       // Handler chain (auto-initialized)
+    chain  service.Handler     // First handler in chain (auto-initialized)
 }
 ```
 
-The chain is automatically initialized on first reconciliation if not set.
+The handler chain is automatically initialized on first reconciliation if not set.
 
 ## Troubleshooting
 
@@ -390,5 +393,5 @@ Output will show:
 
 ---
 
-**Last Updated**: 2025-12-30
+**Last Updated**: 2026-03-06
 **Version**: 1.0.0 (Refactored with Chain of Responsibility)

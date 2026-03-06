@@ -43,16 +43,13 @@ func NewFinalizerHandler() service.Handler {
 //   - If being deleted with finalizer: Sets ShouldFinalize flag, continues chain
 //   - If being deleted without finalizer: Sets SkipRemaining, stops chain
 func (h *FinalizerHandler) Execute(ctx *service.ReconciliationContext) error {
-	ctx.Logger.Debug().Msg("managing finalizer")
-
 	// Check if the object is being deleted
 	if ctx.Scaler.DeletionTimestamp.IsZero() {
 		// Object is not being deleted - ensure finalizer is present
 		if !controllerutil.ContainsFinalizer(ctx.Scaler, ScalerFinalizer) {
-			ctx.Logger.Info().Msg("adding finalizer")
 			controllerutil.AddFinalizer(ctx.Scaler, ScalerFinalizer)
 			if err := ctx.Client.Update(ctx.Ctx, ctx.Scaler); err != nil {
-				ctx.Logger.Error().Err(err).Msg("failed to add finalizer")
+				ctx.Logger.Error().Err(err).Str("name", ctx.Scaler.Name).Msg("add finalizer failed")
 				ctx.RequeueAfter = utils.ReconcileErrorDuration
 				return service.NewRecoverableError(err)
 			}
@@ -60,11 +57,9 @@ func (h *FinalizerHandler) Execute(ctx *service.ReconciliationContext) error {
 	} else {
 		// Object is being deleted - handle finalizer cleanup
 		if controllerutil.ContainsFinalizer(ctx.Scaler, ScalerFinalizer) {
-			ctx.Logger.Info().Msg("deleting scaler with finalizer")
 			ctx.ShouldFinalize = true // Signal subsequent handlers to perform cleanup
 		} else {
-			// Finalizer already removed, stop reconciliation
-			ctx.Logger.Info().Msg("finalizer already removed, skipping remaining handlers")
+			ctx.Logger.Info().Str("name", ctx.Scaler.Name).Msg("finalizer already removed, skipping")
 			ctx.SkipRemaining = true // Signal the chain to stop
 			return nil
 		}

@@ -18,6 +18,7 @@ package handlers_test
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -35,6 +36,8 @@ import (
 	kubecloudscalerv1alpha3 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha3"
 	"github.com/kubecloudscaler/kubecloudscaler/internal/controller/k8s/service"
 	"github.com/kubecloudscaler/kubecloudscaler/internal/controller/k8s/service/handlers"
+	"github.com/kubecloudscaler/kubecloudscaler/internal/utils"
+	periodPkg "github.com/kubecloudscaler/kubecloudscaler/pkg/period"
 )
 
 var _ = Describe("PeriodHandler", func() {
@@ -60,13 +63,13 @@ var _ = Describe("PeriodHandler", func() {
 			Spec: kubecloudscalerv1alpha3.K8sSpec{
 				Periods: []common.ScalerPeriod{
 					{
-						Name: "test-period",
-						Type: "up",
+						Name: "noaction",
+						Type: "noaction",
 						Time: common.TimePeriod{
 							Recurring: &common.RecurringPeriod{
-								Days:      []string{"monday", "tuesday", "wednesday", "thursday", "friday"},
-								StartTime: "09:00",
-								EndTime:   "17:00",
+								Days:      []string{"all"},
+								StartTime: "00:00",
+								EndTime:   "23:59",
 								Once:      ptr.To(false),
 							},
 						},
@@ -90,44 +93,7 @@ var _ = Describe("PeriodHandler", func() {
 		}
 	})
 
-	Context("When a valid period is configured", func() {
-		It("should process period and continue chain or set skip flag", func() {
-			nextCalled := false
-			mockNext := &MockHandler{
-				ExecuteFunc: func(ctx *service.ReconciliationContext) error {
-					nextCalled = true
-					return nil
-				},
-			}
-			handler.SetNext(mockNext)
-
-			err := handler.Execute(reconCtx)
-
-			// Period validation may succeed or fail depending on current time
-			// We're testing that the handler processes correctly in all cases
-			if err != nil {
-				// If period validation fails, it should be a critical error
-				Expect(service.IsCriticalError(err)).To(BeTrue())
-			} else {
-				// Handler may continue to next, or skip remaining
-				// Both outcomes are valid depending on current time
-				if !reconCtx.SkipRemaining {
-					Expect(reconCtx.Period).ToNot(BeNil())
-					Expect(nextCalled).To(BeTrue())
-				}
-			}
-		})
-
-		It("should complete in under 100ms", func() {
-			startTime := time.Now()
-			_ = handler.Execute(reconCtx)
-			duration := time.Since(startTime)
-
-			Expect(duration).To(BeNumerically("<", 100*time.Millisecond))
-		})
-	})
-
-	Context("When noaction period is detected", func() {
+	Context("When noaction period remains active", func() {
 		BeforeEach(func() {
 			scaler.Status.CurrentPeriod = &common.ScalerStatusPeriod{
 				Name: "noaction",
@@ -135,22 +101,6 @@ var _ = Describe("PeriodHandler", func() {
 		})
 
 		It("should set SkipRemaining when current period is noaction", func() {
-			// Configure a period that would result in "noaction"
-			scaler.Spec.Periods = []common.ScalerPeriod{
-				{
-					Name: "noaction",
-					Type: "noaction",
-					Time: common.TimePeriod{
-						Recurring: &common.RecurringPeriod{
-							Days:      []string{"all"},
-							StartTime: "00:00",
-							EndTime:   "23:59",
-							Once:      ptr.To(false),
-						},
-					},
-				},
-			}
-
 			nextCalled := false
 			mockNext := &MockHandler{
 				ExecuteFunc: func(ctx *service.ReconciliationContext) error {
@@ -161,11 +111,112 @@ var _ = Describe("PeriodHandler", func() {
 			handler.SetNext(mockNext)
 
 			err := handler.Execute(reconCtx)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(reconCtx.SkipRemaining).To(BeTrue())
+			Expect(reconCtx.RequeueAfter).To(Equal(utils.ReconcileSuccessDuration))
+			Expect(nextCalled).To(BeFalse())
+		})
+	})
 
-			// If noaction period is detected and current status matches, chain should skip
-			if err == nil && reconCtx.SkipRemaining {
-				Expect(nextCalled).To(BeFalse())
+	Context("When transitioning to noaction from an active period", func() {
+		BeforeEach(func() {
+			scaler.Status.CurrentPeriod = &common.ScalerStatusPeriod{
+				Name: "up",
 			}
 		})
+
+		It("should continue to next handler to allow restore", func() {
+			nextCalled := false
+			mockNext := &MockHandler{
+				ExecuteFunc: func(ctx *service.ReconciliationContext) error {
+					nextCalled = true
+					return nil
+				},
+			}
+			handler.SetNext(mockNext)
+
+			err := handler.Execute(reconCtx)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(reconCtx.Period).ToNot(BeNil())
+			Expect(reconCtx.Period.Name).To(Equal("noaction"))
+			Expect(reconCtx.SkipRemaining).To(BeFalse())
+			Expect(nextCalled).To(BeTrue())
+		})
+	})
+
+	Context("When run-once period was already processed", func() {
+		BeforeEach(func() {
+			now := time.Now()
+			start := now.Add(-time.Minute).Format(time.DateTime)
+			end := now.Add(time.Minute).Format(time.DateTime)
+
+			scaler.Spec.Periods = []common.ScalerPeriod{
+				{
+					Name: "once-up",
+					Type: "up",
+					Time: common.TimePeriod{
+						Fixed: &common.FixedPeriod{
+							StartTime: start,
+							EndTime:   end,
+							Once:      ptr.To(true),
+						},
+					},
+				},
+			}
+
+			curPeriod, err := periodPkg.New(&scaler.Spec.Periods[0])
+			Expect(err).ToNot(HaveOccurred())
+			Expect(curPeriod).ToNot(BeNil())
+
+			scaler.Status.CurrentPeriod = &common.ScalerStatusPeriod{
+				Name:    scaler.Spec.Periods[0].Name,
+				Type:    scaler.Spec.Periods[0].Type,
+				SpecSHA: curPeriod.Hash,
+			}
+		})
+
+		It("should stop the chain and set requeue after period end", func() {
+			nextCalled := false
+			mockNext := &MockHandler{
+				ExecuteFunc: func(ctx *service.ReconciliationContext) error {
+					nextCalled = true
+					return nil
+				},
+			}
+			handler.SetNext(mockNext)
+
+			err := handler.Execute(reconCtx)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(reconCtx.SkipRemaining).To(BeTrue())
+			Expect(reconCtx.RequeueAfter).To(BeNumerically(">", 0))
+			Expect(nextCalled).To(BeFalse())
+		})
+
+		It("should cap requeue close to period remaining duration", func() {
+			_ = handler.Execute(reconCtx)
+			Expect(reconCtx.RequeueAfter).To(BeNumerically("<", 2*time.Minute+handlers.RequeueDelaySeconds*time.Second))
+			Expect(reconCtx.RequeueAfter).To(BeNumerically(">", time.Second))
+		})
+	})
+
+	It("should return critical error when period parsing fails", func() {
+		scaler.Spec.Periods = []common.ScalerPeriod{
+			{
+				Name: "bad-period",
+				Type: "up",
+				Time: common.TimePeriod{
+					Recurring: &common.RecurringPeriod{
+						Days:      []string{"not-a-day"},
+						StartTime: "09:00",
+						EndTime:   "17:00",
+						Once:      ptr.To(false),
+					},
+				},
+			},
+		}
+
+		err := handler.Execute(reconCtx)
+		Expect(err).To(HaveOccurred())
+		Expect(service.IsCriticalError(err)).To(BeTrue(), fmt.Sprintf("expected critical error, got %v", err))
 	})
 })

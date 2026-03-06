@@ -2,6 +2,7 @@ controllerManager:
   manager:
     args:
       - '--metrics-bind-address=:8443'
+      # - '--metrics-disable-auth'  # Uncomment to access /metrics without bearer token (dev/debug only)
       - '--leader-elect'
       - '--health-probe-bind-address=:8081'
       - '--webhook-cert-path=/tmp/k8s-webhook-server/serving-certs'

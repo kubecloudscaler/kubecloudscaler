@@ -26,6 +26,7 @@ import (
 	"github.com/kubecloudscaler/kubecloudscaler/internal/controller/k8s/service"
 	"github.com/kubecloudscaler/kubecloudscaler/internal/utils"
 	k8sUtils "github.com/kubecloudscaler/kubecloudscaler/pkg/k8s/utils"
+	"github.com/kubecloudscaler/kubecloudscaler/pkg/metrics"
 	"github.com/kubecloudscaler/kubecloudscaler/pkg/resources"
 )
 
@@ -50,8 +51,6 @@ func NewPeriodHandler() service.Handler {
 //   - If run-once period: Sets RequeueAfter, stops chain
 //   - If "noaction" period matches current status: Sets SkipRemaining, stops chain
 func (h *PeriodHandler) Execute(ctx *service.ReconciliationContext) error {
-	ctx.Logger.Debug().Msg("validating and determining current period")
-
 	// Configure resource management settings
 	ctx.ResourceConfig = resources.Config{
 		K8s: &k8sUtils.Config{
@@ -82,6 +81,7 @@ func (h *PeriodHandler) Execute(ctx *service.ReconciliationContext) error {
 
 	// Validate and determine the current time period for scaling operations
 	period, err := utils.SetActivePeriod(
+		ctx.Ctx,
 		ctx.Logger,
 		periods,
 		&ctx.Scaler.Status,
@@ -89,15 +89,18 @@ func (h *PeriodHandler) Execute(ctx *service.ReconciliationContext) error {
 	)
 	if err != nil {
 		if errors.Is(err, utils.ErrRunOncePeriod) {
-			ctx.Logger.Info().Msg("run-once period detected, requeuing until period ends")
+			metrics.PeriodEvaluationTotal.WithLabelValues(metrics.ControllerK8s, metrics.OutcomeRunOnceSkip).Inc()
+			requeueAfter := time.Until(period.GetEndTime.Add(RequeueDelaySeconds * time.Second))
 			if ctx.RequeueAfter == 0 {
-				ctx.RequeueAfter = time.Until(period.GetEndTime.Add(RequeueDelaySeconds * time.Second))
+				ctx.RequeueAfter = requeueAfter
 			}
+			ctx.Logger.Info().Dur("requeue_after", requeueAfter).Msg("run-once period active, requeuing")
 			ctx.SkipRemaining = true
 			return nil
 		}
 
-		ctx.Logger.Error().Err(err).Msg("unable to validate period")
+		metrics.PeriodEvaluationTotal.WithLabelValues(metrics.ControllerK8s, metrics.OutcomeError).Inc()
+		ctx.Logger.Error().Err(err).Msg("period validation failed")
 		ctx.Scaler.Status.Comments = ptr.To(err.Error())
 		return service.NewCriticalError(err)
 	}
@@ -108,7 +111,7 @@ func (h *PeriodHandler) Execute(ctx *service.ReconciliationContext) error {
 	// cycle (prevPeriodName). If we just transitioned from an active period the scaling handler
 	// must still run to restore replica counts.
 	if prevPeriodName == "noaction" && ctx.Period.Name == "noaction" {
-		ctx.Logger.Debug().Msg("no action period, skipping reconciliation")
+		metrics.PeriodEvaluationTotal.WithLabelValues(metrics.ControllerK8s, metrics.OutcomeNoaction).Inc()
 		ctx.SkipRemaining = true
 		if ctx.RequeueAfter == 0 {
 			ctx.RequeueAfter = utils.ReconcileSuccessDuration
@@ -116,7 +119,8 @@ func (h *PeriodHandler) Execute(ctx *service.ReconciliationContext) error {
 		return nil
 	}
 
-	ctx.Logger.Info().Str("period", ctx.Period.Name).Str("type", ctx.Period.Type).Msg("period determined")
+	metrics.PeriodEvaluationTotal.WithLabelValues(metrics.ControllerK8s, metrics.OutcomeActive).Inc()
+	ctx.Logger.Info().Str("period", ctx.Period.Name).Str("type", ctx.Period.Type).Msg("period active")
 
 	// Call next handler in chain
 	if h.next != nil && !ctx.SkipRemaining {

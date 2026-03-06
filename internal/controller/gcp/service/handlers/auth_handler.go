@@ -24,20 +24,9 @@ import (
 
 	"github.com/kubecloudscaler/kubecloudscaler/internal/controller/gcp/service"
 	gcpClient "github.com/kubecloudscaler/kubecloudscaler/pkg/gcp/utils/client"
-	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 // AuthHandler sets up GCP client with authentication.
-// This handler manages authentication secrets and initializes the GCP API client.
-//
-// Responsibilities:
-//   - Fetch authentication secret if specified
-//   - Initialize GCP client with credentials
-//   - Populate GCPClient and Secret in context
-//
-// Error Handling:
-//   - Secret not found: Critical error (stops chain)
-//   - Client creation failure: Critical error (stops chain)
 type AuthHandler struct {
 	next service.Handler
 }
@@ -47,20 +36,13 @@ func NewAuthHandler() service.Handler {
 	return &AuthHandler{}
 }
 
-// Execute implements the Handler interface.
-// It sets up GCP authentication and initializes the API client.
-func (h *AuthHandler) Execute(req *service.ReconciliationContext) (ctrl.Result, error) {
-	req.Logger.Debug().Msg("setting up GCP authentication")
-
-	ctx := req.Ctx
-	scaler := req.Scaler
+// Execute sets up GCP authentication and initializes the API client.
+func (h *AuthHandler) Execute(ctx *service.ReconciliationContext) error {
+	scaler := ctx.Scaler
 	var secret *corev1.Secret
 
-	// Handle authentication secret if specified
 	if scaler.Spec.Config.AuthSecret != nil {
-		req.Logger.Info().Msg("fetching authentication secret")
 		secret = &corev1.Secret{}
-		// Use operator namespace since GCP CRD is cluster-scoped (scaler.Namespace is empty)
 		secretNamespace := os.Getenv("POD_NAMESPACE")
 		if secretNamespace == "" {
 			secretNamespace = "kubecloudscaler-system"
@@ -70,27 +52,25 @@ func (h *AuthHandler) Execute(req *service.ReconciliationContext) (ctrl.Result, 
 			Name:      *scaler.Spec.Config.AuthSecret,
 		}
 
-		if err := req.Client.Get(ctx, namespacedSecret, secret); err != nil {
-			req.Logger.Error().Err(err).Msg("unable to fetch authentication secret")
-			return ctrl.Result{}, service.NewCriticalError(err)
+		if err := ctx.Client.Get(ctx.Ctx, namespacedSecret, secret); err != nil {
+			ctx.Logger.Error().Err(err).Str("secret", *scaler.Spec.Config.AuthSecret).Msg("fetch auth secret failed")
+			return service.NewCriticalError(err)
 		}
-		req.Secret = secret
+		ctx.Secret = secret
 	}
 
-	// Initialize GCP client
 	client, err := gcpClient.GetClient(secret, scaler.Spec.Config.ProjectID)
 	if err != nil {
-		req.Logger.Error().Err(err).Msg("unable to create GCP client")
-		return ctrl.Result{}, service.NewCriticalError(err)
+		ctx.Logger.Error().Err(err).Msg("create GCP client failed")
+		return service.NewCriticalError(err)
 	}
 
-	req.GCPClient = client
-	req.Logger.Info().Msg("GCP client initialized successfully")
+	ctx.GCPClient = client
 
 	if h.next != nil {
-		return h.next.Execute(req)
+		return h.next.Execute(ctx)
 	}
-	return ctrl.Result{}, nil
+	return nil
 }
 
 // SetNext sets the next handler in the chain.

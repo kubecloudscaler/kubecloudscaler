@@ -75,14 +75,14 @@ var _ = Describe("StatusHandler", func() {
 		})
 
 		It("should update status successfully", func() {
-			result, err := statusHandler.Execute(reconCtx)
+			err := statusHandler.Execute(reconCtx)
 
 			Expect(err).ToNot(HaveOccurred())
-			Expect(result.RequeueAfter).To(BeNumerically(">", 0))
+			Expect(reconCtx.RequeueAfter).To(BeNumerically(">", 0))
 		})
 
 		It("should complete in under 100ms", func() {
-			_, _ = statusHandler.Execute(reconCtx)
+			_ = statusHandler.Execute(reconCtx)
 		})
 	})
 
@@ -108,10 +108,10 @@ var _ = Describe("StatusHandler", func() {
 		})
 
 		It("should update status with failures", func() {
-			result, err := statusHandler.Execute(reconCtx)
+			err := statusHandler.Execute(reconCtx)
 
 			Expect(err).ToNot(HaveOccurred())
-			Expect(result.RequeueAfter).To(BeNumerically(">", 0))
+			Expect(reconCtx.RequeueAfter).To(BeNumerically(">", 0))
 		})
 	})
 
@@ -136,10 +136,9 @@ var _ = Describe("StatusHandler", func() {
 		})
 
 		It("should remove finalizer", func() {
-			result, err := statusHandler.Execute(reconCtx)
+			err := statusHandler.Execute(reconCtx)
 
 			Expect(err).ToNot(HaveOccurred())
-			Expect(result).To(Equal(ctrl.Result{}))
 		})
 	})
 
@@ -163,12 +162,11 @@ var _ = Describe("StatusHandler", func() {
 		})
 
 		It("should return recoverable error with requeue", func() {
-			result, err := statusHandler.Execute(reconCtx)
+			err := statusHandler.Execute(reconCtx)
 
 			// Status update may fail without status subresource
 			// Handler should handle this gracefully
-			_ = result
-			_ = err // Error handling depends on implementation
+			_ = err
 		})
 	})
 
@@ -197,10 +195,10 @@ var _ = Describe("StatusHandler", func() {
 		})
 
 		It("should update status with both success and failures", func() {
-			result, err := statusHandler.Execute(reconCtx)
+			err := statusHandler.Execute(reconCtx)
 
 			Expect(err).ToNot(HaveOccurred())
-			Expect(result.RequeueAfter).To(BeNumerically(">", 0))
+			Expect(reconCtx.RequeueAfter).To(BeNumerically(">", 0))
 		})
 	})
 })

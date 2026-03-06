@@ -110,18 +110,14 @@ var _ = Describe("ScalingHandler", func() {
 		})
 
 		It("should attempt to scale resources", func() {
-			result, err := scalingHandler.Execute(reconCtx)
+			err := scalingHandler.Execute(reconCtx)
 
 			// Scaling will fail without real GCP API, but handler should not crash
 			Expect(err).ToNot(HaveOccurred())
-			Expect(result).To(Equal(ctrl.Result{}))
-
-			// Results should be initialized (empty slices are valid)
-			// Note: Empty slices may be represented as nil in Go, which is valid
 		})
 
 		It("should complete in under 100ms", func() {
-			_, _ = scalingHandler.Execute(reconCtx)
+			_ = scalingHandler.Execute(reconCtx)
 		})
 	})
 
@@ -157,10 +153,9 @@ var _ = Describe("ScalingHandler", func() {
 		})
 
 		It("should use default resource type", func() {
-			result, err := scalingHandler.Execute(reconCtx)
+			err := scalingHandler.Execute(reconCtx)
 
 			Expect(err).ToNot(HaveOccurred())
-			Expect(result).To(Equal(ctrl.Result{}))
 		})
 	})
 
@@ -196,12 +191,9 @@ var _ = Describe("ScalingHandler", func() {
 		})
 
 		It("should attempt to scale all resource types", func() {
-			result, err := scalingHandler.Execute(reconCtx)
+			err := scalingHandler.Execute(reconCtx)
 
 			Expect(err).ToNot(HaveOccurred())
-			Expect(result).To(Equal(ctrl.Result{}))
-
-			// Handler should continue even if individual resources fail
 		})
 	})
 
@@ -237,11 +229,10 @@ var _ = Describe("ScalingHandler", func() {
 		})
 
 		It("should continue chain execution", func() {
-			result, err := scalingHandler.Execute(reconCtx)
+			err := scalingHandler.Execute(reconCtx)
 
 			// Handler should continue even if resource handler creation fails
 			Expect(err).ToNot(HaveOccurred())
-			Expect(result).To(Equal(ctrl.Result{}))
 		})
 	})
 })

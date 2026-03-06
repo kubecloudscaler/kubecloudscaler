@@ -61,15 +61,11 @@ func (s *StatusUpdaterService) UpdateFlowStatus(
 		s.updateConditionInFlow(flow, condition)
 		return s.client.Status().Update(ctx, flow)
 	}); err != nil {
-		s.logger.Error().Err(err).Msg("unable to update flow status")
+		s.logger.Error().Err(err).Str("name", flow.Name).Msg("flow status update failed")
 		return ctrl.Result{RequeueAfter: utils.ReconcileErrorDuration}, err
 	}
 
-	s.logger.Info().
-		Str("name", flow.Name).
-		Str("condition", condition.Type).
-		Str("status", string(condition.Status)).
-		Msg("flow status updated")
+	s.logger.Info().Str("name", flow.Name).Str("condition", condition.Type).Str("status", string(condition.Status)).Msg("status updated")
 
 	return ctrl.Result{RequeueAfter: utils.ReconcileSuccessDuration}, nil
 }

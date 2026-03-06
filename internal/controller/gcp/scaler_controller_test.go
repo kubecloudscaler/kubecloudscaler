@@ -132,16 +132,12 @@ var _ = Describe("Scaler Controller", func() {
 				NamespacedName: typeNamespacedName,
 			})
 
-			// In test environment without GCP credentials, authentication will fail
-			// The refactored controller correctly returns a critical error (improved behavior)
-			// Original controller logged error but returned nil - this is now properly surfaced
+			// In test environment without GCP credentials, authentication will fail.
+			// The controller returns a critical error (not requeued) for auth failure.
 			if err != nil {
-				// Verify error is related to authentication (expected in test environment)
 				Expect(err.Error()).To(ContainSubstring("credentials"))
-				Expect(result.RequeueAfter).To(BeNumerically(">", 0))
 				By("Verified: Controller properly handles authentication failure with critical error")
 			} else {
-				// If GCP credentials are available, reconciliation should succeed
 				Expect(result.Requeue || result.RequeueAfter > 0).To(BeTrue())
 				By("Verified: Controller successfully reconciled with available credentials")
 			}

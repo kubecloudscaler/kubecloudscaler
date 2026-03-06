@@ -180,6 +180,13 @@ go test -coverprofile=coverage.out ./internal/controller/k8s/service/handlers/..
 go tool cover -html=coverage.out
 ```
 
+### Deterministic Period Tests
+
+Period handler tests MUST NOT depend on `time.Now()` for pass/fail decisions. Strategies:
+- Use always-active periods: `days: ["all"]`, `startTime: "00:00"`, `endTime: "23:59"`.
+- For run-once tests, compute fixed period bounds relative to the test start time (e.g., `now ± 1m`).
+- Never use `if err == nil { ... }` branches that silently skip assertions.
+
 ### Metrics
 
 - **Test Coverage**: 69.2% (target: 80%)

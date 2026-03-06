@@ -65,7 +65,7 @@ func TestFlowProcessorService_ProcessFlow_Performance(t *testing.T) {
 		return map[string]types.ResourceInfo{
 			"test-resource": {
 				Type:     "k8s",
-				Resource: kubecloudscalerv1alpha3.K8sResource{Name: "test-resource"},
+				Resource: types.FlowResourceRef{K8s: &kubecloudscalerv1alpha3.K8sResource{Name: "test-resource"}},
 				Periods:  []types.PeriodWithDelay{},
 			},
 		}, nil

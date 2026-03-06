@@ -19,6 +19,7 @@ package controller
 
 import (
 	"context"
+	"time"
 
 	"github.com/rs/zerolog"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -30,6 +31,7 @@ import (
 	kubecloudscalerv1alpha3 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha3"
 	"github.com/kubecloudscaler/kubecloudscaler/internal/controller/flow/service"
 	"github.com/kubecloudscaler/kubecloudscaler/internal/utils"
+	"github.com/kubecloudscaler/kubecloudscaler/pkg/metrics"
 )
 
 const flowFinalizer = "kubecloudscaler.cloud/flow-finalizer"
@@ -94,27 +96,33 @@ func NewFlowReconciler(
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.22.1/pkg/reconcile
 func (r *FlowReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	startTime := time.Now()
+
 	flow, err := r.fetchFlow(ctx, req)
 	if err != nil {
+		r.observeReconcile(startTime, metrics.ResultError)
 		return ctrl.Result{}, err
 	}
 
-	r.Logger.Info().
-		Str("name", flow.Name).
-		Str("kind", flow.Kind).
-		Str("apiVersion", flow.APIVersion).
-		Msg("reconciling flow")
+	r.Logger.Debug().Str("name", flow.Name).Msg("reconcile start")
 
 	// Handle finalizer management
 	if stop, result, err := r.handleFinalizers(ctx, flow); stop {
+		resultLabel := metrics.ResultSuccess
+		if err != nil {
+			resultLabel = metrics.ResultError
+		}
+		r.observeReconcile(startTime, resultLabel)
 		return result, err
 	}
 
 	// Process flow and create resources
 	if err := r.flowProcessor.ProcessFlow(ctx, flow); err != nil {
+		r.observeReconcile(startTime, metrics.ResultError)
 		return r.handleProcessingError(ctx, flow, err)
 	}
 
+	r.observeReconcile(startTime, metrics.ResultSuccess)
 	// Update status to indicate successful processing
 	return r.statusUpdater.UpdateFlowStatus(ctx, flow, metav1.Condition{
 		Type:    "Processed",
@@ -124,11 +132,16 @@ func (r *FlowReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	})
 }
 
+func (r *FlowReconciler) observeReconcile(startTime time.Time, result string) {
+	metrics.ReconcileDurationSeconds.WithLabelValues(metrics.ControllerFlow).Observe(time.Since(startTime).Seconds())
+	metrics.ReconcileTotal.WithLabelValues(metrics.ControllerFlow, result).Inc()
+}
+
 // fetchFlow fetches the Flow object from the Kubernetes API
 func (r *FlowReconciler) fetchFlow(ctx context.Context, req ctrl.Request) (*kubecloudscalerv1alpha3.Flow, error) {
 	flow := &kubecloudscalerv1alpha3.Flow{}
 	if err := r.Get(ctx, req.NamespacedName, flow); err != nil {
-		r.Logger.Error().Err(err).Msg("unable to fetch Flow")
+		r.Logger.Error().Err(err).Str("name", req.Name).Msg("fetch Flow failed")
 		return nil, client.IgnoreNotFound(err)
 	}
 	return flow, nil
@@ -141,23 +154,19 @@ func (r *FlowReconciler) handleFinalizers(ctx context.Context, flow *kubecloudsc
 	if flow.DeletionTimestamp.IsZero() {
 		// Object is not being deleted - ensure finalizer is present
 		if !controllerutil.ContainsFinalizer(flow, flowFinalizer) {
-			r.Logger.Info().Msg("adding finalizer")
 			controllerutil.AddFinalizer(flow, flowFinalizer)
 			if err := r.Update(ctx, flow); err != nil {
-				r.Logger.Error().Err(err).Msg("failed to add finalizer")
+				r.Logger.Error().Err(err).Str("name", flow.Name).Msg("add finalizer failed")
 				return true, ctrl.Result{RequeueAfter: utils.ReconcileErrorDuration}, err
 			}
 		}
 		return false, ctrl.Result{}, nil
 	}
 
-	// Object is being deleted - handle finalizer cleanup
 	if controllerutil.ContainsFinalizer(flow, flowFinalizer) {
-		r.Logger.Info().Msg("deleting flow with finalizer")
-		r.Logger.Info().Msg("removing finalizer")
 		controllerutil.RemoveFinalizer(flow, flowFinalizer)
 		if err := r.Update(ctx, flow); err != nil {
-			r.Logger.Error().Err(err).Msg("failed to remove finalizer")
+			r.Logger.Error().Err(err).Str("name", flow.Name).Msg("remove finalizer failed")
 			return true, ctrl.Result{RequeueAfter: utils.ReconcileErrorDuration}, err
 		}
 		return true, ctrl.Result{}, nil
@@ -169,7 +178,7 @@ func (r *FlowReconciler) handleFinalizers(ctx context.Context, flow *kubecloudsc
 
 // handleProcessingError handles processing errors and updates flow status accordingly.
 func (r *FlowReconciler) handleProcessingError(ctx context.Context, flow *kubecloudscalerv1alpha3.Flow, err error) (ctrl.Result, error) {
-	r.Logger.Error().Err(err).Msg("flow processing failed")
+	r.Logger.Error().Err(err).Str("name", flow.Name).Msg("flow processing failed")
 	return r.statusUpdater.UpdateFlowStatus(ctx, flow, metav1.Condition{
 		Type:    "Processed",
 		Status:  metav1.ConditionFalse,

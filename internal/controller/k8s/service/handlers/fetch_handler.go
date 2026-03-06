@@ -40,22 +40,17 @@ func NewFetchHandler() service.Handler {
 // On not found: Returns nil — the object was deleted (e.g. by Flow GC), nothing to do
 // On transient error: Returns RecoverableError
 func (h *FetchHandler) Execute(ctx *service.ReconciliationContext) error {
-	ctx.Logger.Debug().Msg("fetching scaler resource")
-
 	scaler := &kubecloudscalerv1alpha3.K8s{}
 	if err := ctx.Client.Get(ctx.Ctx, ctx.Request.NamespacedName, scaler); err != nil {
 		if client.IgnoreNotFound(err) != nil {
-			ctx.Logger.Error().Err(err).Msg("unable to fetch Scaler")
+			ctx.Logger.Error().Err(err).Str("name", ctx.Request.Name).Str("namespace", ctx.Request.Namespace).Msg("unable to fetch Scaler")
 			return service.NewRecoverableError(err)
 		}
-		// Resource not found: it was deleted (e.g. owned by a Flow that was just removed).
-		// Return nil so controller-runtime does not log a spurious "Reconciler error".
-		ctx.Logger.Debug().Msg("scaler resource not found, likely deleted — skipping reconciliation")
 		return nil
 	}
 
 	ctx.Scaler = scaler
-	ctx.Logger.Info().Str("name", scaler.Name).Str("namespace", scaler.Namespace).Msg("scaler resource fetched successfully")
+	ctx.Logger.Info().Str("name", scaler.Name).Str("namespace", scaler.Namespace).Msg("scaler fetched")
 
 	// Call next handler in chain
 	if h.next != nil {

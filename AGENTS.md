@@ -48,12 +48,42 @@ TDD is MANDATORY for all business logic in the `internal/controller/*/service/` 
 - `zap` is used for controller-runtime internal logging (via `ctrl.SetLogger`)
 - Prometheus metrics MUST be exposed for monitoring via `prometheus/client_golang`
 - Logging MUST use appropriate levels:
-  - `debug` - Verbose development-time information
-  - `info` - Normal operational events (reconcile success, scaling actions)
+  - `debug` - Verbose development-time information (e.g. per-resource steps, period iteration details)
+  - `info` - One log per meaningful outcome (reconcile result, handler result, scaling summary)
   - `warn` - Recoverable issues (temporary API failures, retries)
   - `error` - Unrecoverable failures requiring attention
 - Minimal cardinality in labels and traces to keep observability overhead low
 - NEVER log secrets, tokens, or credentials at any log level
+
+#### Prometheus Metrics (`pkg/metrics/`)
+Custom metrics are defined in `pkg/metrics/metrics.go` and registered via `metrics.Register(ctrlmetrics.Registry)` in `cmd/main.go`:
+
+| Metric | Type | Labels | Instrumentation Point |
+|--------|------|--------|-----------------------|
+| `kubecloudscaler_reconcile_total` | Counter | `controller`, `result` | Each controller's `Reconcile()` method |
+| `kubecloudscaler_reconcile_duration_seconds` | Histogram | `controller` | Each controller's `Reconcile()` method |
+| `kubecloudscaler_scaling_operations_total` | Counter | `controller`, `resource_type`, `action`, `result` | K8s/GCP `ScalingHandler` |
+| `kubecloudscaler_period_evaluation_total` | Counter | `controller`, `outcome` | K8s/GCP `PeriodHandler` |
+
+Label values:
+- `controller`: `k8s`, `gcp`, `flow`
+- `result`: `success`, `critical_error`, `recoverable_error`, `error`
+- `action`: period type (`up`, `down`)
+- `outcome`: `active`, `noaction`, `run_once_skip`, `error`
+
+When adding new metrics:
+- Define in `pkg/metrics/metrics.go` and add to `allCollectors` slice
+- Keep cardinality low — never use unbounded labels like resource names
+- Use constants from the metrics package for label values
+- Add tests in `pkg/metrics/metrics_test.go`
+
+#### Logging strategy (readability and volume)
+- **One log per outcome**: Prefer a single log at the end of an operation with result fields (e.g. `success_count`, `period`, `result`) instead of "starting X" + "X completed".
+- **Structured fields over Msgf**: Use `.Str("key", value)`, `.Int()`, `.Err(err)` so logs are queryable; avoid `.Msgf()` for multi-line or complex formats.
+- **Handler chain**: Log once per handler with the outcome (Info for success with key data, Error on failure). Omit Debug "entering handler" when an Info at exit carries the same context.
+- **Hot paths**: In loops (e.g. period evaluation, per-resource scaling), log a single Debug summary (e.g. `periods_checked`, `active_period`) instead of one line per iteration.
+- **Controllers**: One Info per reconciliation with request identifiers; on success optionally one Info with `result` and `requeue_after`; on error one Error. Avoid duplicate "reconciling" and "reconciled" unless the second adds outcome.
+- See [docs/development/logging.md](docs/development/logging.md) for the full strategy.
 
 ### V. Go Conventions & Code Style (Go 1.25+)
 - Code MUST follow idiomatic Go conventions (Effective Go, Google's Go Style Guide, Go Proverbs)
@@ -234,9 +264,11 @@ The Flow controller orchestrates multi-resource scaling:
 - `FlowProcessor` - Core workflow processing
 - `FlowValidator` - Validates flow configuration
 - `ResourceCreator` - Creates child K8s/Gcp resources
-- `ResourceMapper` - Maps flow definitions to resource specs
+- `ResourceMapper` - Maps flow definitions to resource specs using `types.FlowResourceRef` typed union
 - `StatusUpdater` - Aggregates status from child resources
 - `TimeCalculator` - Computes timing delays for cascade scaling
+
+Resource references use the typed union `types.FlowResourceRef` (with `K8s *K8sResource` / `GCP *GcpResource` pointers) instead of `interface{}`. This provides compile-time type safety and eliminates runtime type assertions in `processResource`.
 
 ### Directory Structure
 
@@ -257,10 +289,11 @@ The Flow controller orchestrates multi-resource scaling:
 │   │   │   ├── scaler_controller.go
 │   │   │   └── service/handlers/
 │   │   └── flow/                # Flow orchestration controller
+│   │       ├── types/           # Typed unions (FlowResourceRef, PeriodWithDelay)
 │   │       └── service/         # Flow business logic services
 │   ├── webhook/v1alpha3/        # Admission webhooks
 │   └── utils/                   # Internal utility functions
-├── pkg/                           # Shared packages (period logic, resource utilities)
+├── pkg/                           # Shared packages (period logic, resource utilities, metrics)
 ├── config/                        # Kustomize manifests (CRDs, RBAC, webhooks, manager)
 ├── helm/                          # Helm chart
 ├── test/e2e/                     # End-to-end tests
@@ -367,6 +400,7 @@ var _ = Describe("FetchHandler", func() {
 - Test error classification (critical vs recoverable) explicitly
 - Test handler chain order and next-handler invocation
 - Test CRD conversion functions bidirectionally (v1alpha1 ↔ v1alpha3, v1alpha2 ↔ v1alpha3)
+- Tests MUST be **deterministic**: never depend on `time.Now()` for pass/fail. Use always-active periods (e.g. `days: ["all"]`, `startTime: "00:00"`, `endTime: "23:59"`) or fixed periods computed relative to test start time. Assertions must not use `if err == nil { ... }` branches that silently skip checks.
 
 ### envtest Best Practices
 - Start envtest environment in `BeforeSuite`, stop in `AfterSuite`
@@ -546,4 +580,4 @@ All PRs MUST verify:
 
 This document synthesizes [CLAUDE.md](CLAUDE.md) and [.specify/memory/constitution.md](.specify/memory/constitution.md). The constitution supersedes all other practices. For amendments to constitutional principles, see the Governance section in the constitution.
 
-**Last Updated**: 2026-02-19
+**Last Updated**: 2026-03-06

@@ -36,6 +36,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/certwatcher"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	ctrlmetrics "sigs.k8s.io/controller-runtime/pkg/metrics"
 	"sigs.k8s.io/controller-runtime/pkg/metrics/filters"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
@@ -47,6 +48,7 @@ import (
 	gcpController "github.com/kubecloudscaler/kubecloudscaler/internal/controller/gcp"
 	k8sController "github.com/kubecloudscaler/kubecloudscaler/internal/controller/k8s"
 	webhookv1alpha3 "github.com/kubecloudscaler/kubecloudscaler/internal/webhook/v1alpha3"
+	"github.com/kubecloudscaler/kubecloudscaler/pkg/metrics"
 	// +kubebuilder:scaffold:imports
 )
 
@@ -89,6 +91,10 @@ func main() {
 			"Enabling this will ensure there is only one active controller manager.")
 	flag.BoolVar(&secureMetrics, "metrics-secure", true,
 		"If set, the metrics endpoint is served securely via HTTPS. Use --metrics-secure=false to use HTTP instead.")
+	var metricsDisableAuth bool
+	flag.BoolVar(&metricsDisableAuth, "metrics-disable-auth", false,
+		"If set, disables authentication on the metrics endpoint. Use only for local development; "+
+			"Prometheus in-cluster uses bearerTokenFile and does not need this.")
 	flag.StringVar(&webhookCertPath, "webhook-cert-path", "", "The directory that contains the webhook certificate.")
 	flag.StringVar(&webhookCertName, "webhook-cert-name", "tls.crt", "The name of the webhook certificate file.")
 	flag.StringVar(&webhookCertKey, "webhook-cert-key", "tls.key", "The name of the webhook key file.")
@@ -186,7 +192,7 @@ func main() {
 		TLSOpts:       tlsOpts,
 	}
 
-	if secureMetrics {
+	if secureMetrics && !metricsDisableAuth {
 		// FilterProvider is used to protect the metrics endpoint with authn/authz.
 		// These configurations ensure that only authorized users and service accounts
 		// can access the metrics endpoint. The RBAC are configured in 'config/rbac/kustomization.yaml'. More info:
@@ -244,6 +250,8 @@ func main() {
 		setupLog.Error(err, "unable to start manager")
 		os.Exit(1)
 	}
+
+	metrics.Register(ctrlmetrics.Registry)
 
 	if err = (&k8sController.ScalerReconciler{
 		Client: mgr.GetClient(),

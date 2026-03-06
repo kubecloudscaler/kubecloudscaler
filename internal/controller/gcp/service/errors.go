@@ -18,59 +18,30 @@ package service
 
 import "fmt"
 
-// ErrorCategory defines the severity of errors for appropriate handling in the chain.
-//
-// Error Categories:
-//
-//   - CriticalError: Errors that indicate reconciliation cannot proceed
-//     Examples: authentication failures, invalid configuration, resource not found
-//     Handling: Stop chain execution immediately
-//
-//   - RecoverableError: Errors that may be resolved with retry
-//     Examples: temporary rate limits, transient network issues, temporary API unavailability
-//     Handling: Allow chain continuation with requeue
-//
-// See data-model.md for full specification.
-type ErrorCategory string
-
-const (
-	// CriticalError indicates an error that requires chain execution to stop.
-	// Examples: authentication failures, invalid configuration, resource not found
-	CriticalError ErrorCategory = "critical"
-
-	// RecoverableError indicates an error that can be retried.
-	// Examples: temporary rate limits, transient network issues, temporary API unavailability
-	RecoverableError ErrorCategory = "recoverable"
-)
-
 // CriticalErr wraps an error as a critical error.
-// Critical errors stop chain execution immediately.
+// Critical errors stop chain execution immediately and should not be requeued.
 type CriticalErr struct {
 	Err error
 }
 
-// Error implements the error interface.
 func (e *CriticalErr) Error() string {
 	return fmt.Sprintf("critical error: %v", e.Err)
 }
 
-// Unwrap returns the wrapped error.
 func (e *CriticalErr) Unwrap() error {
 	return e.Err
 }
 
 // RecoverableErr wraps an error as a recoverable error.
-// Recoverable errors allow chain continuation with requeue.
+// Recoverable errors stop chain execution but are requeued.
 type RecoverableErr struct {
 	Err error
 }
 
-// Error implements the error interface.
 func (e *RecoverableErr) Error() string {
 	return fmt.Sprintf("recoverable error: %v", e.Err)
 }
 
-// Unwrap returns the wrapped error.
 func (e *RecoverableErr) Unwrap() error {
 	return e.Err
 }

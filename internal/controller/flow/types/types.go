@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"github.com/kubecloudscaler/kubecloudscaler/api/common"
+	kubecloudscalerv1alpha3 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha3"
 )
 
 // PeriodWithDelay contains period information with calculated delay
@@ -31,9 +32,16 @@ type PeriodWithDelay struct {
 	EndTime        time.Time
 }
 
+// FlowResourceRef is a typed union for flow resources.
+// Exactly one pointer should be non-nil.
+type FlowResourceRef struct {
+	K8s *kubecloudscalerv1alpha3.K8sResource
+	GCP *kubecloudscalerv1alpha3.GcpResource
+}
+
 // ResourceInfo contains information about a resource and its associated periods
 type ResourceInfo struct {
-	Type     string            // "k8s" or "gcp"
-	Resource interface{}       // K8sResource or GcpResource
+	Type     string // "k8s" or "gcp"
+	Resource FlowResourceRef
 	Periods  []PeriodWithDelay // Associated periods with delays
 }

@@ -43,14 +43,12 @@ func NewStatusHandler() service.Handler {
 //   - If ShouldFinalize: Removes finalizer, returns without requeue
 //   - Otherwise: Updates status with success/failure results, sets requeue
 func (h *StatusHandler) Execute(ctx *service.ReconciliationContext) error {
-	ctx.Logger.Debug().Msg("updating scaler status")
-
 	// Handle finalizer cleanup if the object is being deleted
 	if ctx.ShouldFinalize {
-		ctx.Logger.Info().Msg("removing finalizer")
+		ctx.Logger.Info().Str("name", ctx.Scaler.Name).Msg("finalizer removed")
 		controllerutil.RemoveFinalizer(ctx.Scaler, ScalerFinalizer)
 		if err := ctx.Client.Update(ctx.Ctx, ctx.Scaler); err != nil {
-			ctx.Logger.Error().Err(err).Msg("failed to remove finalizer")
+			ctx.Logger.Error().Err(err).Str("name", ctx.Scaler.Name).Msg("remove finalizer failed")
 			ctx.RequeueAfter = utils.ReconcileErrorDuration
 			return service.NewRecoverableError(err)
 		}
@@ -83,12 +81,12 @@ func (h *StatusHandler) Execute(ctx *service.ReconciliationContext) error {
 		ctx.Scaler.Status.Comments = desiredComments
 		return ctx.Client.Status().Update(ctx.Ctx, ctx.Scaler)
 	}); err != nil {
-		ctx.Logger.Error().Err(err).Msg("unable to update scaler status")
+		ctx.Logger.Error().Err(err).Str("name", ctx.Scaler.Name).Msg("status update failed")
 		ctx.RequeueAfter = utils.ReconcileErrorDuration
 		return service.NewRecoverableError(err)
 	}
 
-	ctx.Logger.Info().Str("name", ctx.Scaler.Name).Str("namespace", ctx.Scaler.Namespace).Msg("scaler status updated")
+	ctx.Logger.Info().Str("name", ctx.Scaler.Name).Str("namespace", ctx.Scaler.Namespace).Msg("status updated")
 
 	// Set requeue for the next reconciliation cycle
 	if ctx.RequeueAfter == 0 {

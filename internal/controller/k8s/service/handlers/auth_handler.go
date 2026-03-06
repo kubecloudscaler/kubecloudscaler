@@ -54,13 +54,9 @@ func NewAuthHandler() service.Handler {
 //   - If no AuthSecret: Creates K8s client with default credentials
 //   - On success: Sets ctx.K8sClient, ctx.DynamicClient, ctx.Secret
 func (h *AuthHandler) Execute(ctx *service.ReconciliationContext) error {
-	ctx.Logger.Debug().Msg("setting up K8s authentication")
-
-	// Handle authentication secret for K8s access
 	var secret *corev1.Secret
 	cacheKey := "" // default client
 	if ctx.Scaler.Spec.Config.AuthSecret != nil {
-		ctx.Logger.Info().Msg("auth secret found for K8s authentication")
 		// Use operator namespace since K8s CRD is cluster-scoped (ctx.Request.Namespace is empty)
 		secretNamespace := os.Getenv("POD_NAMESPACE")
 		if secretNamespace == "" {
@@ -74,7 +70,7 @@ func (h *AuthHandler) Execute(ctx *service.ReconciliationContext) error {
 		// Fetch the secret from the cluster
 		secret = &corev1.Secret{}
 		if err := ctx.Client.Get(ctx.Ctx, namespacedSecret, secret); err != nil {
-			ctx.Logger.Error().Err(err).Msg("unable to fetch secret")
+			ctx.Logger.Error().Err(err).Str("secret", *ctx.Scaler.Spec.Config.AuthSecret).Msg("fetch auth secret failed")
 			return service.NewCriticalError(fmt.Errorf("unable to fetch auth secret: %w", err))
 		}
 		ctx.Secret = secret
@@ -94,7 +90,7 @@ func (h *AuthHandler) Execute(ctx *service.ReconciliationContext) error {
 		// Initialize K8s client for resource operations
 		kubeClient, dynamicClient, err := k8sClient.GetClient(secret)
 		if err != nil {
-			ctx.Logger.Error().Err(err).Msg("unable to create K8s client")
+			ctx.Logger.Error().Err(err).Msg("create K8s client failed")
 			return service.NewCriticalError(fmt.Errorf("failed to create K8s client: %w", err))
 		}
 		h.clientCache.Store(cacheKey, &cachedClient{
@@ -104,8 +100,6 @@ func (h *AuthHandler) Execute(ctx *service.ReconciliationContext) error {
 		ctx.K8sClient = kubeClient
 		ctx.DynamicClient = dynamicClient
 	}
-
-	ctx.Logger.Debug().Msg("K8s client initialized successfully")
 
 	// Call next handler in chain
 	if h.next != nil && !ctx.SkipRemaining {

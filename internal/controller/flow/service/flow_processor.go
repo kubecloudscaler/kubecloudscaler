@@ -50,9 +50,7 @@ func NewFlowProcessorService(
 
 // ProcessFlow processes the flow definition and creates/deploys resources
 func (s *FlowProcessorService) ProcessFlow(ctx context.Context, flow *kubecloudscalerv1alpha3.Flow) error {
-	s.logger.Info().
-		Str("flow", flow.Name).
-		Msg("processing flow")
+	s.logger.Debug().Str("flow", flow.Name).Msg("processing flow")
 
 	// Extract flow data
 	resourceNames, periodNames, err := s.validator.ExtractFlowData(flow)
@@ -78,10 +76,7 @@ func (s *FlowProcessorService) ProcessFlow(ctx context.Context, flow *kubeclouds
 		}
 	}
 
-	s.logger.Info().
-		Str("flow", flow.Name).
-		Int("resources", len(resourceMappings)).
-		Msg("flow processed successfully")
+	s.logger.Info().Str("flow", flow.Name).Int("resources", len(resourceMappings)).Msg("flow processed")
 
 	return nil
 }
@@ -95,17 +90,15 @@ func (s *FlowProcessorService) processResource(
 ) error {
 	switch resourceInfo.Type {
 	case "k8s":
-		k8sResource, ok := resourceInfo.Resource.(kubecloudscalerv1alpha3.K8sResource)
-		if !ok {
-			return fmt.Errorf("expected K8sResource, got %T", resourceInfo.Resource)
+		if resourceInfo.Resource.K8s == nil {
+			return fmt.Errorf("expected K8sResource for %s resource", resourceInfo.Type)
 		}
-		return s.resourceCreator.CreateK8sResource(ctx, flow, resourceName, k8sResource, resourceInfo.Periods)
+		return s.resourceCreator.CreateK8sResource(ctx, flow, resourceName, *resourceInfo.Resource.K8s, resourceInfo.Periods)
 	case "gcp":
-		gcpResource, ok := resourceInfo.Resource.(kubecloudscalerv1alpha3.GcpResource)
-		if !ok {
-			return fmt.Errorf("expected GcpResource, got %T", resourceInfo.Resource)
+		if resourceInfo.Resource.GCP == nil {
+			return fmt.Errorf("expected GcpResource for %s resource", resourceInfo.Type)
 		}
-		return s.resourceCreator.CreateGcpResource(ctx, flow, resourceName, gcpResource, resourceInfo.Periods)
+		return s.resourceCreator.CreateGcpResource(ctx, flow, resourceName, *resourceInfo.Resource.GCP, resourceInfo.Periods)
 	default:
 		return fmt.Errorf("unknown resource type: %s", resourceInfo.Type)
 	}

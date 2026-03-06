@@ -2,6 +2,8 @@
 package utils
 
 import (
+	"context"
+
 	"github.com/rs/zerolog"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/event"
@@ -52,6 +54,7 @@ func newNoactionPeriod() *common.ScalerPeriod {
 // SetActivePeriod determines the active period from the given list and updates status as a side effect.
 // If forceRestore is true, the "noaction" period (spanning the entire day) is used unconditionally.
 func SetActivePeriod(
+	_ context.Context,
 	logger *zerolog.Logger, periods []*common.ScalerPeriod,
 	status *common.ScalerStatus, forceRestore bool,
 ) (*periodPkg.Period, error) {
@@ -59,42 +62,26 @@ func SetActivePeriod(
 	onPeriod, err := periodPkg.New(newNoactionPeriod())
 	if err != nil {
 		logger.Error().Err(err).Msg("unable to load noaction period")
-
 		return nil, ErrLoadNoactionPeriod
 	}
 
 	if !forceRestore {
 		for _, period := range periods {
-			logger.Debug().Msgf("checking period:\n  type => %s\n  def => %+v\n", period.Type, period.Time)
 			curPeriod, err := periodPkg.New(period)
 			if err != nil {
-				logger.Error().Err(err).Msg("unable to load period")
-
+				logger.Error().Err(err).Str("period_name", period.Name).Msg("unable to load period")
 				return nil, ErrLoadPeriod
 			}
-
-			logger.Debug().Msgf("is period:\n  type => %s\n  def => %v\n  isActive => %t", curPeriod.Type, curPeriod.Period, curPeriod.IsActive)
-
-			logger.Debug().Msgf("starttime: %v\n", curPeriod.GetStartTime.String())
-			logger.Debug().Msgf("endtime: %v\n", curPeriod.GetEndTime.String())
-
 			if curPeriod.IsActive {
 				onPeriod = curPeriod
-
 				break
 			}
 		}
 	}
 
-	// if we are in a once period, we do nothing if the period has already been processed
 	if ptr.Deref(onPeriod.Once, false) && status.CurrentPeriod != nil && status.CurrentPeriod.SpecSHA == onPeriod.Hash {
-		logger.Debug().Msg("period already running")
-
 		return onPeriod, ErrRunOncePeriod
 	}
-
-	// we always parse resources to scale or restore values
-	logger.Debug().Msgf("is period:\n  type => %s\n  def => %v\n", onPeriod.Type, onPeriod.Period)
 
 	// prepare status
 	status.CurrentPeriod = &common.ScalerStatusPeriod{}
