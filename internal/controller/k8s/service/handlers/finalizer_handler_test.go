@@ -33,6 +33,7 @@ import (
 	kubecloudscalerv1alpha3 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha3"
 	"github.com/kubecloudscaler/kubecloudscaler/internal/controller/k8s/service"
 	"github.com/kubecloudscaler/kubecloudscaler/internal/controller/k8s/service/handlers"
+	"github.com/kubecloudscaler/kubecloudscaler/internal/controller/k8s/service/testutil"
 )
 
 var _ = Describe("FinalizerHandler", func() {
@@ -75,7 +76,7 @@ var _ = Describe("FinalizerHandler", func() {
 			reconCtx.Client = fake.NewClientBuilder().WithScheme(scheme).WithObjects(scaler).Build()
 
 			nextCalled := false
-			mockNext := &MockHandler{
+			mockNext := &testutil.MockHandler{
 				ExecuteFunc: func(ctx *service.ReconciliationContext) error {
 					nextCalled = true
 					return nil
@@ -112,7 +113,7 @@ var _ = Describe("FinalizerHandler", func() {
 
 		It("should set ShouldFinalize flag and continue", func() {
 			nextCalled := false
-			mockNext := &MockHandler{
+			mockNext := &testutil.MockHandler{
 				ExecuteFunc: func(ctx *service.ReconciliationContext) error {
 					nextCalled = true
 					return nil
@@ -147,7 +148,7 @@ var _ = Describe("FinalizerHandler", func() {
 			reconCtx.Scaler = scalerNoFinalizer
 
 			nextCalled := false
-			mockNext := &MockHandler{
+			mockNext := &testutil.MockHandler{
 				ExecuteFunc: func(ctx *service.ReconciliationContext) error {
 					nextCalled = true
 					return nil

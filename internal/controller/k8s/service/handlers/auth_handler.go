@@ -18,7 +18,6 @@ package handlers
 
 import (
 	"fmt"
-	"os"
 	"sync"
 
 	corev1 "k8s.io/api/core/v1"
@@ -26,11 +25,13 @@ import (
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 
+	"github.com/kubecloudscaler/kubecloudscaler/internal/config"
 	"github.com/kubecloudscaler/kubecloudscaler/internal/controller/k8s/service"
 	k8sClient "github.com/kubecloudscaler/kubecloudscaler/pkg/k8s/utils/client"
 )
 
 // cachedClient holds a cached K8s client pair.
+// Note: cache has no eviction policy; acceptable when secret count is low.
 type cachedClient struct {
 	k8sClient     kubernetes.Interface
 	dynamicClient dynamic.Interface
@@ -38,13 +39,17 @@ type cachedClient struct {
 
 // AuthHandler is a handler that sets up the K8s client with authentication.
 type AuthHandler struct {
-	next        service.Handler
-	clientCache sync.Map // map[string]*cachedClient (keyed by secret name, "" for default)
+	next              service.Handler
+	clientCache       sync.Map // map[string]*cachedClient (keyed by secret name, "" for default)
+	namespaceResolver config.NamespaceResolver
 }
 
-// NewAuthHandler creates a new AuthHandler.
-func NewAuthHandler() service.Handler {
-	return &AuthHandler{}
+// NewAuthHandler creates a new AuthHandler. If nsResolver is nil, uses config.DefaultNamespaceResolver().
+func NewAuthHandler(nsResolver config.NamespaceResolver) service.Handler {
+	if nsResolver == nil {
+		nsResolver = config.DefaultNamespaceResolver()
+	}
+	return &AuthHandler{namespaceResolver: nsResolver}
 }
 
 // Execute sets up the K8s client with authentication and adds it to the reconciliation context.
@@ -54,18 +59,12 @@ func NewAuthHandler() service.Handler {
 //   - If no AuthSecret: Creates K8s client with default credentials
 //   - On success: Sets ctx.K8sClient, ctx.DynamicClient, ctx.Secret
 func (h *AuthHandler) Execute(ctx *service.ReconciliationContext) error {
-	ctx.Logger.Debug().Msg("setting up K8s authentication")
-
 	// Handle authentication secret for K8s access
 	var secret *corev1.Secret
 	cacheKey := "" // default client
 	if ctx.Scaler.Spec.Config.AuthSecret != nil {
-		ctx.Logger.Info().Msg("auth secret found for K8s authentication")
 		// Use operator namespace since K8s CRD is cluster-scoped (ctx.Request.Namespace is empty)
-		secretNamespace := os.Getenv("POD_NAMESPACE")
-		if secretNamespace == "" {
-			secretNamespace = "kubecloudscaler-system"
-		}
+		secretNamespace := h.namespaceResolver.Resolve()
 		namespacedSecret := types.NamespacedName{
 			Namespace: secretNamespace,
 			Name:      *ctx.Scaler.Spec.Config.AuthSecret,
@@ -104,8 +103,6 @@ func (h *AuthHandler) Execute(ctx *service.ReconciliationContext) error {
 		ctx.K8sClient = kubeClient
 		ctx.DynamicClient = dynamicClient
 	}
-
-	ctx.Logger.Debug().Msg("K8s client initialized successfully")
 
 	// Call next handler in chain
 	if h.next != nil && !ctx.SkipRemaining {

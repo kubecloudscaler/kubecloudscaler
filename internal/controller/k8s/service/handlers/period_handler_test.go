@@ -35,6 +35,7 @@ import (
 	kubecloudscalerv1alpha3 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha3"
 	"github.com/kubecloudscaler/kubecloudscaler/internal/controller/k8s/service"
 	"github.com/kubecloudscaler/kubecloudscaler/internal/controller/k8s/service/handlers"
+	"github.com/kubecloudscaler/kubecloudscaler/internal/controller/k8s/service/testutil"
 )
 
 var _ = Describe("PeriodHandler", func() {
@@ -93,7 +94,7 @@ var _ = Describe("PeriodHandler", func() {
 	Context("When a valid period is configured", func() {
 		It("should process period and continue chain or set skip flag", func() {
 			nextCalled := false
-			mockNext := &MockHandler{
+			mockNext := &testutil.MockHandler{
 				ExecuteFunc: func(ctx *service.ReconciliationContext) error {
 					nextCalled = true
 					return nil
@@ -152,7 +153,7 @@ var _ = Describe("PeriodHandler", func() {
 			}
 
 			nextCalled := false
-			mockNext := &MockHandler{
+			mockNext := &testutil.MockHandler{
 				ExecuteFunc: func(ctx *service.ReconciliationContext) error {
 					nextCalled = true
 					return nil

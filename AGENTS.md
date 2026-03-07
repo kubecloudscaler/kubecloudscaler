@@ -1,4 +1,4 @@
-# agents.md
+# AGENTS.md
 
 This file provides comprehensive guidance to AI agents (including Claude Code) when working with code in this repository. All agents MUST adhere to the principles and constraints defined in this document.
 
@@ -54,6 +54,10 @@ TDD is MANDATORY for all business logic in the `internal/controller/*/service/` 
   - `error` - Unrecoverable failures requiring attention
 - Minimal cardinality in labels and traces to keep observability overhead low
 - NEVER log secrets, tokens, or credentials at any log level
+
+**Logging strategy**: See [docs/logging-strategy.md](docs/logging-strategy.md). In short: **Info** = business events (reconcile, period, finalizer) + one final structured summary (`reconciled` with period/success/failed); **Debug** = detail for troubleshooting only; no per-handler or per-resource logs.
+
+**Metrics**: Custom Prometheus metrics (namespace `kubecloudscaler_`): reconciliations (total, duration, result), scaling operations (by kind, success/failed), period activations (up/down/noaction). Details and example queries in [docs/metrics.md](docs/metrics.md). Registration via `internal/metrics.Init()` at startup; controllers use `metrics.GetRecorder()`.
 
 ### V. Go Conventions & Code Style (Go 1.25+)
 - Code MUST follow idiomatic Go conventions (Effective Go, Google's Go Style Guide, Go Proverbs)
@@ -228,6 +232,18 @@ Each handler:
 - Returns `RecoverableError` to stop chain with requeue
 - Returns `nil` to continue to next handler
 
+**ReconciliationContext (field contract)**: Shared mutable state; key fields set by each handler:
+- Controller sets: `Ctx`, `Request`, `Client`, `Logger`
+- FetchHandler sets: `Scaler`
+- AuthHandler sets: `K8sClient`, `DynamicClient`, `Secret`
+- PeriodHandler sets: `Period`, `ResourceConfig`; may set `SkipRemaining = true` (no active period)
+- ScalingHandler sets: `SuccessResults`, `FailedResults`
+- Any handler may set: `RequeueAfter` (first write wins), `SkipRemaining`
+
+**Error handling in handlers**: `service.NewCriticalError(err)` → stop chain, no requeue; `service.NewRecoverableError(err)` → stop chain, requeue after `ctx.RequeueAfter` or `utils.ReconcileErrorDuration` (10m); `nil` → continue. Controller uses `service.IsCriticalError(err)` / `service.IsRecoverableError(err)`. Conflict errors (HTTP 409) on status updates: use `retry.RetryOnConflict(retry.DefaultRetry, ...)`, do not just requeue.
+
+**Key packages**: `pkg/period/` — period activation (`period.New`, `IsActive`, `Type`, `Hash`, `Once`); recurring and fixed. `pkg/resources/` — factory `resources.NewResource(ctx, name, config, logger)`; handlers implement `SetState(ctx)`; types: deployments, statefulsets, cronjobs, github-ars, hpa, vm-instances. `internal/utils/` — `SetActivePeriod()` used by K8s and GCP PeriodHandlers; sentinel errors `ErrRunOncePeriod`. **API versions**: v1alpha3 is storage; v1alpha1/v1alpha2 via conversion webhooks; shared types in `api/common/`.
+
 ### Flow Controller
 
 The Flow controller orchestrates multi-resource scaling:
@@ -272,22 +288,25 @@ The Flow controller orchestrates multi-resource scaling:
 
 ```bash
 # Build
-make build                    # Build manager binary to bin/kubecloudscaler
+make build                    # Produces bin/kubecloudscaler
+make manifests                # Regenerate CRDs/RBAC/webhooks after API changes
+make generate                 # Regenerate DeepCopy code after API type changes
 
-# Run locally (generates webhook certs automatically)
-make run                      # Run controller with debug logging
+# Test
+make test                     # All unit tests (excludes e2e), uses envtest
+go test ./pkg/period/... -v   # Single package
+go test ./internal/... -run TestName -v  # Single test by name
+make test-coverage            # HTML coverage report
+make test-e2e                 # End-to-end tests (spins up Kind cluster)
 
-# Tests
-make test                     # Run unit tests with coverage
-make test-coverage            # Run tests with HTML coverage report + per-package analysis
-make test-bench               # Run benchmarks
-go test ./internal/controller/gcp/service/handlers/...  # Run specific handler tests
-go test ./... -run TestFetch  # Run single test by name
+# Lint / Format
+make lint                     # golangci-lint
+make lint-fix                 # With auto-fixes
+make fmt && make vet          # Format + vet
 
-# Lint
-make lint                     # Run golangci-lint v2
-make lint-fix                 # Run with auto-fix
-make lint-config              # Verify linter configuration
+# Local run (with webhooks)
+make generate-certs           # Generate certs into tmp/k8s-webhook-server/
+make run                      # Run controller locally against current kubeconfig
 
 # Code generation (run after modifying CRD types)
 make generate                 # Generate DeepCopy methods
@@ -295,9 +314,6 @@ make manifests                # Generate CRDs, RBAC, webhook configs
 
 # Documentation
 make doc                      # Generate API documentation via api2md
-
-# E2E tests (requires Kind)
-make test-e2e                 # Sets up Kind cluster, runs e2e tests, tears down
 
 # Deployment
 make install                  # Install CRDs into cluster
@@ -407,6 +423,8 @@ var _ = Describe("FetchHandler", func() {
 - Cognitive complexity >20 triggers `gocognit`
 - Functions >200 lines or >50 statements trigger `funlen`
 - Duplicate blocks >100 tokens trigger `dupl`
+- Line length limit: 140 chars (`lll`)
+- Magic numbers flagged (`mnd`) — use constants; test files exempt
 - Any complexity override requires justification via `//nolint:linter // reason`
 
 ## Development Workflow
@@ -544,6 +562,6 @@ All PRs MUST verify:
 
 ## Governance
 
-This document synthesizes [CLAUDE.md](CLAUDE.md) and [.specify/memory/constitution.md](.specify/memory/constitution.md). The constitution supersedes all other practices. For amendments to constitutional principles, see the Governance section in the constitution.
+This document is the single source of guidance for AI agents (including Claude Code) and synthesizes the former CLAUDE.md and [.specify/memory/constitution.md](.specify/memory/constitution.md). The constitution supersedes all other practices. For amendments to constitutional principles, see the Governance section in the constitution.
 
-**Last Updated**: 2026-02-19
+**Last Updated**: 2026-03-07

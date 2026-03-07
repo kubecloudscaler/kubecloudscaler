@@ -43,8 +43,6 @@ func NewScalingHandler() service.Handler {
 //   - Collects success and failure results
 //   - Always continues to next handler (errors are collected, not returned)
 func (h *ScalingHandler) Execute(ctx *service.ReconciliationContext) error {
-	ctx.Logger.Debug().Msg("scaling K8s resources")
-
 	var (
 		recSuccess []common.ScalerStatusSuccess
 		recFailed  []common.ScalerStatusFailed
@@ -68,11 +66,9 @@ func (h *ScalingHandler) Execute(ctx *service.ReconciliationContext) error {
 		return nil
 	}
 
-	ctx.Logger.Debug().Msgf("resourceList: %v", resourceList)
-
 	// Process each resource type and perform scaling operations
 	for _, resource := range resourceList {
-		curResource, err := resources.NewResource(resource, ctx.ResourceConfig, ctx.Logger)
+		curResource, err := resources.NewResource(ctx.Ctx, resource, ctx.ResourceConfig, ctx.Logger)
 		if err != nil {
 			ctx.Logger.Error().Err(err).Str("resource", resource).Msg("unable to get resource handler")
 			recFailed = append(recFailed, common.ScalerStatusFailed{
@@ -101,10 +97,11 @@ func (h *ScalingHandler) Execute(ctx *service.ReconciliationContext) error {
 	ctx.SuccessResults = recSuccess
 	ctx.FailedResults = recFailed
 
-	ctx.Logger.Info().
-		Int("success_count", len(recSuccess)).
-		Int("failed_count", len(recFailed)).
-		Msg("scaling operations completed")
+	ctx.Logger.Debug().
+		Int("success", len(recSuccess)).
+		Int("failed", len(recFailed)).
+		Strs("resources", resourceList).
+		Msg("scaling done")
 
 	// Call next handler in chain
 	if h.next != nil && !ctx.SkipRemaining {

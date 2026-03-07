@@ -19,15 +19,18 @@ package k8s
 
 import (
 	"context"
+	"time"
 
 	"github.com/rs/zerolog"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/kubecloudscaler/kubecloudscaler/api/common"
 	kubecloudscalerv1alpha3 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha3"
 	"github.com/kubecloudscaler/kubecloudscaler/internal/controller/k8s/service"
 	"github.com/kubecloudscaler/kubecloudscaler/internal/controller/k8s/service/handlers"
+	"github.com/kubecloudscaler/kubecloudscaler/internal/metrics"
 	"github.com/kubecloudscaler/kubecloudscaler/internal/utils"
 )
 
@@ -63,6 +66,9 @@ type ScalerReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.18.4/pkg/reconcile
 func (r *ScalerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	start := time.Now()
+	rec := metrics.GetRecorder()
+
 	r.Logger.Info().
 		Str("name", req.Name).
 		Str("namespace", req.Namespace).
@@ -83,14 +89,17 @@ func (r *ScalerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 
 	// Execute the handler chain
 	err := r.chain.Execute(reconCtx)
+	duration := time.Since(start).Seconds()
 
 	// Handle chain execution result
 	if err != nil {
 		if service.IsCriticalError(err) {
+			rec.RecordReconcile(metrics.ControllerK8sScaler, metrics.ResultCriticalError, duration)
 			r.Logger.Error().Err(err).Msg("critical error during reconciliation")
 			return ctrl.Result{}, client.IgnoreNotFound(err)
 		}
 		if service.IsRecoverableError(err) {
+			rec.RecordReconcile(metrics.ControllerK8sScaler, metrics.ResultRecoverableError, duration)
 			r.Logger.Warn().Err(err).Msg("recoverable error during reconciliation, will requeue")
 			requeue := utils.ReconcileErrorDuration
 			if reconCtx.RequeueAfter > 0 {
@@ -98,16 +107,41 @@ func (r *ScalerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 			}
 			return ctrl.Result{RequeueAfter: requeue}, nil
 		}
-		// Unknown error type
+		rec.RecordReconcile(metrics.ControllerK8sScaler, metrics.ResultRecoverableError, duration)
 		r.Logger.Error().Err(err).Msg("unexpected error during reconciliation")
 		return ctrl.Result{RequeueAfter: utils.ReconcileErrorDuration}, nil
 	}
+
+	// Success: record period and scaling metrics, then reconcile result
+	if reconCtx.Period != nil {
+		rec.RecordPeriodActive(metrics.ControllerK8sScaler,
+			metrics.NormalizePeriodType(reconCtx.Period.Type))
+	}
+	metrics.RecordScalingFromResults(rec, metrics.ControllerK8sScaler,
+		toScalingResults(reconCtx.SuccessResults), toScalingResultsFailed(reconCtx.FailedResults))
+	rec.RecordReconcile(metrics.ControllerK8sScaler, metrics.ResultSuccess, duration)
 
 	// Successful reconciliation - use requeue from context or default
 	if reconCtx.RequeueAfter > 0 {
 		return ctrl.Result{RequeueAfter: reconCtx.RequeueAfter}, nil
 	}
 	return ctrl.Result{}, nil
+}
+
+func toScalingResults(s []common.ScalerStatusSuccess) []metrics.ScalingResult {
+	out := make([]metrics.ScalingResult, 0, len(s))
+	for _, r := range s {
+		out = append(out, metrics.ScalingResult{Kind: r.Kind})
+	}
+	return out
+}
+
+func toScalingResultsFailed(s []common.ScalerStatusFailed) []metrics.ScalingResult {
+	out := make([]metrics.ScalingResult, 0, len(s))
+	for _, r := range s {
+		out = append(out, metrics.ScalingResult{Kind: r.Kind})
+	}
+	return out
 }
 
 // initializeChain creates and links the handler chain in fixed order.
@@ -121,7 +155,7 @@ func (r *ScalerReconciler) initializeChain() service.Handler {
 	// Create all handlers
 	fetchHandler := handlers.NewFetchHandler()
 	finalizerHandler := handlers.NewFinalizerHandler()
-	authHandler := handlers.NewAuthHandler()
+	authHandler := handlers.NewAuthHandler(nil)
 	periodHandler := handlers.NewPeriodHandler()
 	scalingHandler := handlers.NewScalingHandler()
 	statusHandler := handlers.NewStatusHandler()

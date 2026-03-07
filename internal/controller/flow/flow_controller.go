@@ -19,6 +19,7 @@ package controller
 
 import (
 	"context"
+	"time"
 
 	"github.com/rs/zerolog"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -29,6 +30,7 @@ import (
 
 	kubecloudscalerv1alpha3 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha3"
 	"github.com/kubecloudscaler/kubecloudscaler/internal/controller/flow/service"
+	"github.com/kubecloudscaler/kubecloudscaler/internal/metrics"
 	"github.com/kubecloudscaler/kubecloudscaler/internal/utils"
 )
 
@@ -94,8 +96,12 @@ func NewFlowReconciler(
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.22.1/pkg/reconcile
 func (r *FlowReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	start := time.Now()
+	rec := metrics.GetRecorder()
+
 	flow, err := r.fetchFlow(ctx, req)
 	if err != nil {
+		rec.RecordReconcile(metrics.ControllerFlow, metrics.ResultCriticalError, time.Since(start).Seconds())
 		return ctrl.Result{}, err
 	}
 
@@ -107,21 +113,33 @@ func (r *FlowReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 
 	// Handle finalizer management
 	if stop, result, err := r.handleFinalizers(ctx, flow); stop {
+		resultLabel := metrics.ResultSuccess
+		if err != nil {
+			resultLabel = metrics.ResultRecoverableError
+		}
+		rec.RecordReconcile(metrics.ControllerFlow, resultLabel, time.Since(start).Seconds())
 		return result, err
 	}
 
 	// Process flow and create resources
 	if err := r.flowProcessor.ProcessFlow(ctx, flow); err != nil {
+		rec.RecordReconcile(metrics.ControllerFlow, metrics.ResultRecoverableError, time.Since(start).Seconds())
 		return r.handleProcessingError(ctx, flow, err)
 	}
 
 	// Update status to indicate successful processing
-	return r.statusUpdater.UpdateFlowStatus(ctx, flow, metav1.Condition{
+	result, err := r.statusUpdater.UpdateFlowStatus(ctx, flow, metav1.Condition{
 		Type:    "Processed",
 		Status:  metav1.ConditionTrue,
 		Reason:  "ProcessingSucceeded",
 		Message: "Flow processed successfully",
 	})
+	resultLabel := metrics.ResultSuccess
+	if err != nil {
+		resultLabel = metrics.ResultRecoverableError
+	}
+	rec.RecordReconcile(metrics.ControllerFlow, resultLabel, time.Since(start).Seconds())
+	return result, err
 }
 
 // fetchFlow fetches the Flow object from the Kubernetes API

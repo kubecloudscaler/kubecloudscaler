@@ -54,7 +54,7 @@ var _ = Describe("AuthHandler", func() {
 		scaler.SetNamespace("default")
 		scaler.Spec.Config.ProjectID = "test-project"
 
-		authHandler = handlers.NewAuthHandler()
+		authHandler = handlers.NewAuthHandler(nil)
 	})
 
 	Context("When auth secret is not specified", func() {

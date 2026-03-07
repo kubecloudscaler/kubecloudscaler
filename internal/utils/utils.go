@@ -36,11 +36,11 @@ func IgnoreDeletionPredicate() predicate.Predicate {
 // accidentally mutating shared state.
 func newNoactionPeriod() *common.ScalerPeriod {
 	return &common.ScalerPeriod{
-		Type: "noaction",
-		Name: "noaction",
+		Type: periodPkg.NoactionPeriodName,
+		Name: periodPkg.NoactionPeriodName,
 		Time: common.TimePeriod{
 			Recurring: &common.RecurringPeriod{
-				Days:      []string{"all"},
+				Days:      []string{periodPkg.AllDays},
 				StartTime: "00:00",
 				EndTime:   "23:59",
 				Once:      ptr.To(false),
@@ -65,36 +65,23 @@ func SetActivePeriod(
 
 	if !forceRestore {
 		for _, period := range periods {
-			logger.Debug().Msgf("checking period:\n  type => %s\n  def => %+v\n", period.Type, period.Time)
 			curPeriod, err := periodPkg.New(period)
 			if err != nil {
 				logger.Error().Err(err).Msg("unable to load period")
-
 				return nil, ErrLoadPeriod
 			}
-
-			logger.Debug().Msgf("is period:\n  type => %s\n  def => %v\n  isActive => %t", curPeriod.Type, curPeriod.Period, curPeriod.IsActive)
-
-			logger.Debug().Msgf("starttime: %v\n", curPeriod.GetStartTime.String())
-			logger.Debug().Msgf("endtime: %v\n", curPeriod.GetEndTime.String())
-
+			logger.Debug().Str("period", period.Type).Bool("active", curPeriod.IsActive).Msg("period checked")
 			if curPeriod.IsActive {
 				onPeriod = curPeriod
-
 				break
 			}
 		}
 	}
 
-	// if we are in a once period, we do nothing if the period has already been processed
 	if ptr.Deref(onPeriod.Once, false) && status.CurrentPeriod != nil && status.CurrentPeriod.SpecSHA == onPeriod.Hash {
-		logger.Debug().Msg("period already running")
-
+		logger.Debug().Str("period", onPeriod.Name).Msg("run-once already applied")
 		return onPeriod, ErrRunOncePeriod
 	}
-
-	// we always parse resources to scale or restore values
-	logger.Debug().Msgf("is period:\n  type => %s\n  def => %v\n", onPeriod.Type, onPeriod.Period)
 
 	// prepare status
 	status.CurrentPeriod = &common.ScalerStatusPeriod{}

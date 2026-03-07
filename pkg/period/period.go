@@ -72,20 +72,20 @@ func New(period *common.ScalerPeriod) (*Period, error) {
 }
 
 func isDay(day string, localTime *time.Time) (bool, error) {
-	if day == allDays {
+	if day == AllDays {
 		return true, nil
 	}
 
 	localDay := int(localTime.Weekday())
 	sanitizedDay := strings.ToLower(day)
 
-	if strings.Count(day, "") <= dayStringLength {
-		sanitizedDay = "bad"
+	// Reject day strings shorter than minDayLength to avoid panic on sanitizedDay[:3]
+	if len(day) < dayStringLength {
+		return false, fmt.Errorf("%w: %s", ErrBadDay, day)
 	}
 
-	// check if the day is valid
-	// shorten the day value to 3 chars, lowered
-	indexedDay := slices.Index(weekDays, sanitizedDay[:3])
+	// check if the day is valid — shorten the day value to 3 chars, lowered
+	indexedDay := slices.Index(weekDays, sanitizedDay[:dayStringLength])
 
 	switch indexedDay {
 	case -1:
@@ -214,9 +214,7 @@ func convertFixedToRecurring(fixed *common.FixedPeriod) *common.RecurringPeriod 
 	}
 
 	return &common.RecurringPeriod{
-		Days: []string{
-			"all",
-		},
+		Days:        []string{AllDays},
 		StartTime:   fixed.StartTime,
 		EndTime:     fixed.EndTime,
 		Timezone:    fixed.Timezone,

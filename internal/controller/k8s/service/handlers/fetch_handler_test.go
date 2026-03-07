@@ -32,6 +32,7 @@ import (
 	kubecloudscalerv1alpha3 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha3"
 	"github.com/kubecloudscaler/kubecloudscaler/internal/controller/k8s/service"
 	"github.com/kubecloudscaler/kubecloudscaler/internal/controller/k8s/service/handlers"
+	"github.com/kubecloudscaler/kubecloudscaler/internal/controller/k8s/service/testutil"
 )
 
 var _ = Describe("FetchHandler", func() {
@@ -118,7 +119,7 @@ var _ = Describe("FetchHandler", func() {
 
 			// Create a mock next handler that tracks if it was called
 			nextCalled := false
-			mockNext := &MockHandler{
+			mockNext := &testutil.MockHandler{
 				ExecuteFunc: func(ctx *service.ReconciliationContext) error {
 					nextCalled = true
 					return nil
@@ -136,7 +137,7 @@ var _ = Describe("FetchHandler", func() {
 			reconCtx.Client = fake.NewClientBuilder().WithScheme(scheme).Build() // Client without the scaler
 
 			nextCalled := false
-			mockNext := &MockHandler{
+			mockNext := &testutil.MockHandler{
 				ExecuteFunc: func(ctx *service.ReconciliationContext) error {
 					nextCalled = true
 					return nil
@@ -151,23 +152,3 @@ var _ = Describe("FetchHandler", func() {
 		})
 	})
 })
-
-// MockHandler is a mock implementation of the Handler interface for testing.
-type MockHandler struct {
-	ExecuteFunc func(ctx *service.ReconciliationContext) error
-	next        service.Handler
-}
-
-func (m *MockHandler) Execute(ctx *service.ReconciliationContext) error {
-	if m.ExecuteFunc != nil {
-		return m.ExecuteFunc(ctx)
-	}
-	if m.next != nil {
-		return m.next.Execute(ctx)
-	}
-	return nil
-}
-
-func (m *MockHandler) SetNext(next service.Handler) {
-	m.next = next
-}

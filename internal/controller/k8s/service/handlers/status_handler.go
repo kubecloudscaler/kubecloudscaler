@@ -43,11 +43,9 @@ func NewStatusHandler() service.Handler {
 //   - If ShouldFinalize: Removes finalizer, returns without requeue
 //   - Otherwise: Updates status with success/failure results, sets requeue
 func (h *StatusHandler) Execute(ctx *service.ReconciliationContext) error {
-	ctx.Logger.Debug().Msg("updating scaler status")
-
 	// Handle finalizer cleanup if the object is being deleted
 	if ctx.ShouldFinalize {
-		ctx.Logger.Info().Msg("removing finalizer")
+		ctx.Logger.Info().Str("name", ctx.Scaler.Name).Msg("removing finalizer")
 		controllerutil.RemoveFinalizer(ctx.Scaler, ScalerFinalizer)
 		if err := ctx.Client.Update(ctx.Ctx, ctx.Scaler); err != nil {
 			ctx.Logger.Error().Err(err).Msg("failed to remove finalizer")
@@ -88,7 +86,13 @@ func (h *StatusHandler) Execute(ctx *service.ReconciliationContext) error {
 		return service.NewRecoverableError(err)
 	}
 
-	ctx.Logger.Info().Str("name", ctx.Scaler.Name).Str("namespace", ctx.Scaler.Namespace).Msg("scaler status updated")
+	// Single summary log per successful reconciliation (period + counts)
+	ctx.Logger.Info().
+		Str("name", ctx.Scaler.Name).
+		Str("period", ctx.Period.Name).
+		Int("success", len(ctx.SuccessResults)).
+		Int("failed", len(ctx.FailedResults)).
+		Msg("reconciled")
 
 	// Set requeue for the next reconciliation cycle
 	if ctx.RequeueAfter == 0 {

@@ -18,11 +18,11 @@ package handlers
 
 import (
 	"fmt"
-	"os"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 
+	"github.com/kubecloudscaler/kubecloudscaler/internal/config"
 	"github.com/kubecloudscaler/kubecloudscaler/internal/controller/gcp/service"
 	gcpClient "github.com/kubecloudscaler/kubecloudscaler/pkg/gcp/utils/client"
 )
@@ -39,31 +39,28 @@ import (
 //   - Secret not found: Critical error (stops chain)
 //   - Client creation failure: Critical error (stops chain)
 type AuthHandler struct {
-	next service.Handler
+	next              service.Handler
+	namespaceResolver config.NamespaceResolver
 }
 
-// NewAuthHandler creates a new authentication handler.
-func NewAuthHandler() service.Handler {
-	return &AuthHandler{}
+// NewAuthHandler creates a new authentication handler. If nsResolver is nil, uses config.DefaultNamespaceResolver().
+func NewAuthHandler(nsResolver config.NamespaceResolver) service.Handler {
+	if nsResolver == nil {
+		nsResolver = config.DefaultNamespaceResolver()
+	}
+	return &AuthHandler{namespaceResolver: nsResolver}
 }
 
 // Execute implements the Handler interface.
 // It sets up GCP authentication and initializes the API client.
 func (h *AuthHandler) Execute(ctx *service.ReconciliationContext) error {
-	ctx.Logger.Debug().Msg("setting up GCP authentication")
-
 	scaler := ctx.Scaler
 	var secret *corev1.Secret
 
-	// Handle authentication secret if specified
 	if scaler.Spec.Config.AuthSecret != nil {
-		ctx.Logger.Info().Msg("fetching authentication secret")
 		secret = &corev1.Secret{}
 		// Use operator namespace since GCP CRD is cluster-scoped (scaler.Namespace is empty)
-		secretNamespace := os.Getenv("POD_NAMESPACE")
-		if secretNamespace == "" {
-			secretNamespace = "kubecloudscaler-system"
-		}
+		secretNamespace := h.namespaceResolver.Resolve()
 		namespacedSecret := types.NamespacedName{
 			Namespace: secretNamespace,
 			Name:      *scaler.Spec.Config.AuthSecret,
@@ -84,8 +81,6 @@ func (h *AuthHandler) Execute(ctx *service.ReconciliationContext) error {
 	}
 
 	ctx.GCPClient = client
-	ctx.Logger.Info().Msg("GCP client initialized successfully")
-
 	if h.next != nil && !ctx.SkipRemaining {
 		return h.next.Execute(ctx)
 	}

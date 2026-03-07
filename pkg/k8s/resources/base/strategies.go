@@ -65,19 +65,16 @@ func (s *IntReplicasStrategy) GetKind() string {
 func (s *IntReplicasStrategy) ApplyScaling(ctx context.Context, resource ResourceItem, periodType string, period *periodPkg.Period) (bool, error) {
 	switch periodType {
 	case periodTypeDown:
-		s.logger.Debug().Msgf("scaling down: %s", resource.GetName())
 		currentReplicas := s.getReplicas(resource)
 		resource.SetAnnotations(s.annotationMgr.AddIntAnnotations(resource.GetAnnotations(), period, currentReplicas))
 		s.setReplicas(resource, ptr.To(period.MinReplicas))
 
 	case "up":
-		s.logger.Debug().Msgf("scaling up: %s", resource.GetName())
 		currentReplicas := s.getReplicas(resource)
 		resource.SetAnnotations(s.annotationMgr.AddIntAnnotations(resource.GetAnnotations(), period, currentReplicas))
 		s.setReplicas(resource, ptr.To(period.MaxReplicas))
 
 	default:
-		s.logger.Debug().Msgf("restoring: %s", resource.GetName())
 		isAlreadyRestored, replicas, annotations, err := s.annotationMgr.RestoreIntAnnotations(resource.GetAnnotations())
 		if err != nil {
 			return false, err
@@ -129,7 +126,6 @@ func (s *MinMaxReplicasStrategy) GetKind() string {
 func (s *MinMaxReplicasStrategy) ApplyScaling(ctx context.Context, resource ResourceItem, periodType string, period *periodPkg.Period) (bool, error) {
 	switch periodType {
 	case periodTypeDown, "up":
-		s.logger.Debug().Msgf("scaling %s: %s", periodType, resource.GetName())
 		minReplicas, maxReplicas := s.getMinMaxReplicas(resource)
 		resource.SetAnnotations(s.annotationMgr.AddMinMaxAnnotations(
 			resource.GetAnnotations(),
@@ -140,7 +136,6 @@ func (s *MinMaxReplicasStrategy) ApplyScaling(ctx context.Context, resource Reso
 		s.setMinMaxReplicas(resource, ptr.To(period.MinReplicas), ptr.To(period.MaxReplicas))
 
 	default:
-		s.logger.Debug().Msgf("restoring: %s", resource.GetName())
 		isAlreadyRestored, minReplicas, maxReplicas, annotations, err := s.annotationMgr.RestoreMinMaxAnnotations(resource.GetAnnotations())
 		if err != nil {
 			return false, err
@@ -198,7 +193,6 @@ func (s *BoolSuspendStrategy) GetKind() string {
 func (s *BoolSuspendStrategy) ApplyScaling(ctx context.Context, resource ResourceItem, periodType string, period *periodPkg.Period) (bool, error) {
 	switch periodType {
 	case periodTypeDown:
-		s.logger.Debug().Msgf("scaling down: %s", resource.GetName())
 		currentSuspend := s.getSuspend(resource)
 		resource.SetAnnotations(s.annotationMgr.AddBoolAnnotations(
 			resource.GetAnnotations(),
@@ -211,7 +205,6 @@ func (s *BoolSuspendStrategy) ApplyScaling(ctx context.Context, resource Resourc
 		if s.onUpError != nil {
 			return false, s.onUpError(resource)
 		}
-		s.logger.Debug().Msgf("scaling up: %s", resource.GetName())
 		currentSuspend := s.getSuspend(resource)
 		resource.SetAnnotations(s.annotationMgr.AddBoolAnnotations(
 			resource.GetAnnotations(),
@@ -221,7 +214,6 @@ func (s *BoolSuspendStrategy) ApplyScaling(ctx context.Context, resource Resourc
 		s.setSuspend(resource, ptr.To(!s.suspended))
 
 	default:
-		s.logger.Debug().Msgf("restoring: %s", resource.GetName())
 		isAlreadyRestored, suspend, annotations, err := s.annotationMgr.RestoreBoolAnnotations(resource.GetAnnotations())
 		if err != nil {
 			return false, err

@@ -49,20 +49,17 @@ func NewScalingHandler() service.Handler {
 // Execute implements the Handler interface.
 // It scales GCP resources based on the current period configuration.
 func (h *ScalingHandler) Execute(ctx *service.ReconciliationContext) error {
-	ctx.Logger.Debug().Msg("scaling GCP resources")
 	var (
 		successResults []common.ScalerStatusSuccess
 		failedResults  []common.ScalerStatusFailed
 	)
 
-	// Validate and filter the list of resources to be scaled
 	resourceList := validResourceList(ctx.Scaler)
-	ctx.Logger.Debug().Strs("resources", resourceList).Msg("processing resource list")
 
 	// Process each resource type and perform scaling operations
 	for _, resource := range resourceList {
 		// Create a resource handler for the specific resource type
-		curResource, err := resources.NewResource(resource, ctx.ResourceConfig, ctx.Logger)
+		curResource, err := resources.NewResource(ctx.Ctx, resource, ctx.ResourceConfig, ctx.Logger)
 		if err != nil {
 			ctx.Logger.Error().Err(err).Str("resource", resource).Msg("unable to get resource handler")
 			failedResults = append(failedResults, common.ScalerStatusFailed{
@@ -93,10 +90,11 @@ func (h *ScalingHandler) Execute(ctx *service.ReconciliationContext) error {
 	ctx.SuccessResults = successResults
 	ctx.FailedResults = failedResults
 
-	ctx.Logger.Info().
-		Int("successful", len(successResults)).
+	ctx.Logger.Debug().
+		Int("success", len(successResults)).
 		Int("failed", len(failedResults)).
-		Msg("resource scaling completed")
+		Strs("resources", resourceList).
+		Msg("scaling done")
 
 	if h.next != nil && !ctx.SkipRemaining {
 		return h.next.Execute(ctx)

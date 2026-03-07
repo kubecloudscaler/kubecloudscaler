@@ -25,6 +25,7 @@ import (
 	"github.com/kubecloudscaler/kubecloudscaler/internal/controller/gcp/service"
 	"github.com/kubecloudscaler/kubecloudscaler/internal/utils"
 	gcpUtils "github.com/kubecloudscaler/kubecloudscaler/pkg/gcp/utils"
+	periodPkg "github.com/kubecloudscaler/kubecloudscaler/pkg/period"
 	"github.com/kubecloudscaler/kubecloudscaler/pkg/resources"
 )
 
@@ -58,8 +59,6 @@ func NewPeriodHandler() service.Handler {
 // Execute implements the Handler interface.
 // It validates periods and determines the current active period.
 func (h *PeriodHandler) Execute(ctx *service.ReconciliationContext) error {
-	ctx.Logger.Debug().Msg("validating period configuration")
-
 	scaler := ctx.Scaler
 
 	// Configure resource management settings
@@ -118,14 +117,14 @@ func (h *PeriodHandler) Execute(ctx *service.ReconciliationContext) error {
 	// Skip reconciliation only when the controller was already in "noaction" on the previous
 	// cycle. If we just transitioned from an active period the scaling handler must still run
 	// to restore resource state.
-	if prevPeriodName == "noaction" && period.Name == "noaction" {
-		ctx.Logger.Info().Msg("no action period detected, skipping reconciliation")
+	if prevPeriodName == periodPkg.NoactionPeriodName && period.Name == periodPkg.NoactionPeriodName {
+		ctx.Logger.Info().Str("period", periodPkg.NoactionPeriodName).Msg("no action period, skipping")
 		ctx.SkipRemaining = true
 		ctx.RequeueAfter = utils.ReconcileSuccessDuration
 		return nil
 	}
 
-	ctx.Logger.Info().Str("period", period.Name).Msg("period validated successfully")
+	ctx.Logger.Info().Str("period", period.Name).Str("type", period.Type).Msg("active period set")
 	if h.next != nil && !ctx.SkipRemaining {
 		return h.next.Execute(ctx)
 	}

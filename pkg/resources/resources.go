@@ -16,9 +16,8 @@ import (
 )
 
 // NewResource creates a new resource instance based on the resource type name.
-// It returns the created resource or an error if the resource type is invalid.
-func NewResource(resourceName string, config Config, logger *zerolog.Logger) (IResource, error) {
-	ctx := context.Background()
+// The ctx is propagated for cancellation and timeout; pass the reconciliation context when available.
+func NewResource(ctx context.Context, resourceName string, config Config, logger *zerolog.Logger) (IResource, error) {
 	ctx = logger.With().Str("resource-type", resourceName).Logger().WithContext(ctx)
 
 	switch resourceName {

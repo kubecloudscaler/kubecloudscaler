@@ -34,6 +34,7 @@ import (
 	kubecloudscalerv1alpha3 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha3"
 	"github.com/kubecloudscaler/kubecloudscaler/internal/controller/k8s/service"
 	"github.com/kubecloudscaler/kubecloudscaler/internal/controller/k8s/service/handlers"
+	"github.com/kubecloudscaler/kubecloudscaler/internal/controller/k8s/service/testutil"
 	k8sUtils "github.com/kubecloudscaler/kubecloudscaler/pkg/k8s/utils"
 	"github.com/kubecloudscaler/kubecloudscaler/pkg/period"
 	"github.com/kubecloudscaler/kubecloudscaler/pkg/resources"
@@ -92,7 +93,7 @@ var _ = Describe("ScalingHandler", func() {
 	Context("When resource configuration is valid", func() {
 		It("should attempt to scale resources and continue", func() {
 			nextCalled := false
-			mockNext := &MockHandler{
+			mockNext := &testutil.MockHandler{
 				ExecuteFunc: func(ctx *service.ReconciliationContext) error {
 					nextCalled = true
 					return nil
@@ -121,7 +122,7 @@ var _ = Describe("ScalingHandler", func() {
 			scaler.Spec.Resources.Types = []string{} // No types specified
 
 			nextCalled := false
-			mockNext := &MockHandler{
+			mockNext := &testutil.MockHandler{
 				ExecuteFunc: func(ctx *service.ReconciliationContext) error {
 					nextCalled = true
 					return nil
@@ -139,7 +140,7 @@ var _ = Describe("ScalingHandler", func() {
 	Context("When scaling operations produce results", func() {
 		It("should continue chain and collect results", func() {
 			nextCalled := false
-			mockNext := &MockHandler{
+			mockNext := &testutil.MockHandler{
 				ExecuteFunc: func(ctx *service.ReconciliationContext) error {
 					nextCalled = true
 					return nil

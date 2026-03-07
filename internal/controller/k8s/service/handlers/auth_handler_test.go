@@ -34,6 +34,7 @@ import (
 	kubecloudscalerv1alpha3 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha3"
 	"github.com/kubecloudscaler/kubecloudscaler/internal/controller/k8s/service"
 	"github.com/kubecloudscaler/kubecloudscaler/internal/controller/k8s/service/handlers"
+	"github.com/kubecloudscaler/kubecloudscaler/internal/controller/k8s/service/testutil"
 )
 
 var _ = Describe("AuthHandler", func() {
@@ -46,7 +47,7 @@ var _ = Describe("AuthHandler", func() {
 	)
 
 	BeforeEach(func() {
-		handler = handlers.NewAuthHandler()
+		handler = handlers.NewAuthHandler(nil)
 		logger = zerolog.Nop()
 		scheme = runtime.NewScheme()
 		Expect(kubecloudscalerv1alpha3.AddToScheme(scheme)).To(Succeed())
@@ -117,7 +118,7 @@ var _ = Describe("AuthHandler", func() {
 			reconCtx.Client = fake.NewClientBuilder().WithScheme(scheme).WithObjects(scaler, authSecret).Build()
 
 			nextCalled := false
-			mockNext := &MockHandler{
+			mockNext := &testutil.MockHandler{
 				ExecuteFunc: func(ctx *service.ReconciliationContext) error {
 					nextCalled = true
 					return nil
@@ -147,7 +148,7 @@ var _ = Describe("AuthHandler", func() {
 			reconCtx.Client = fake.NewClientBuilder().WithScheme(scheme).WithObjects(scaler).Build()
 
 			nextCalled := false
-			mockNext := &MockHandler{
+			mockNext := &testutil.MockHandler{
 				ExecuteFunc: func(ctx *service.ReconciliationContext) error {
 					nextCalled = true
 					return nil

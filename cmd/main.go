@@ -46,6 +46,7 @@ import (
 	flowController "github.com/kubecloudscaler/kubecloudscaler/internal/controller/flow"
 	gcpController "github.com/kubecloudscaler/kubecloudscaler/internal/controller/gcp"
 	k8sController "github.com/kubecloudscaler/kubecloudscaler/internal/controller/k8s"
+	"github.com/kubecloudscaler/kubecloudscaler/internal/metrics"
 	webhookv1alpha3 "github.com/kubecloudscaler/kubecloudscaler/internal/webhook/v1alpha3"
 	// +kubebuilder:scaffold:imports
 )
@@ -98,6 +99,9 @@ func main() {
 	flag.StringVar(&metricsCertKey, "metrics-cert-key", "tls.key", "The name of the metrics server key file.")
 	flag.BoolVar(&enableHTTP2, "enable-http2", false,
 		"If set, HTTP/2 will be enabled for the metrics and webhook servers")
+	var metricsDisableAuth bool
+	flag.BoolVar(&metricsDisableAuth, "metrics-disable-auth", false,
+		"If set, the metrics endpoint is served without authentication/authorization (useful for local dev only).")
 	flag.StringVar(&logFormat, "log-format", "json", "Set log format \"raw\" or \"json\"")
 	flag.StringVar(&logLevel, "log-level", "info", "Set log level \"debug\", \"info\", \"warn\", \"error\", \"fatal\"")
 	opts := zap.Options{
@@ -186,12 +190,15 @@ func main() {
 		TLSOpts:       tlsOpts,
 	}
 
-	if secureMetrics {
+	if secureMetrics && !metricsDisableAuth {
 		// FilterProvider is used to protect the metrics endpoint with authn/authz.
 		// These configurations ensure that only authorized users and service accounts
 		// can access the metrics endpoint. The RBAC are configured in 'config/rbac/kustomization.yaml'. More info:
 		// https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.21.0/pkg/metrics/filters#WithAuthenticationAndAuthorization
 		metricsServerOptions.FilterProvider = filters.WithAuthenticationAndAuthorization
+	}
+	if metricsDisableAuth {
+		setupLog.Info("Metrics endpoint authentication is disabled (dev only; do not use in production)")
 	}
 
 	// If the certificate is not specified, controller-runtime will automatically
@@ -220,6 +227,8 @@ func main() {
 			config.GetCertificate = metricsCertWatcher.GetCertificate
 		})
 	}
+
+	metrics.Init()
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:                 scheme,

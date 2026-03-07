@@ -50,8 +50,6 @@ func NewFinalizerHandler() service.Handler {
 // Execute implements the Handler interface.
 // It manages the finalizer lifecycle for the scaler resource.
 func (h *FinalizerHandler) Execute(ctx *service.ReconciliationContext) error {
-	ctx.Logger.Debug().Msg("managing finalizer")
-
 	scaler := ctx.Scaler
 
 	// Check if the object is being deleted by examining the DeletionTimestamp

@@ -28,40 +28,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	"github.com/kubecloudscaler/kubecloudscaler/internal/controller/k8s/service"
+	"github.com/kubecloudscaler/kubecloudscaler/internal/controller/k8s/service/testutil"
 )
 
 func TestService(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "K8s Service Suite")
-}
-
-// MockHandler is a mock implementation of the Handler interface for testing.
-type MockHandler struct {
-	ExecuteFunc func(ctx *service.ReconciliationContext) error
-	next        service.Handler
-	executed    bool
-	order       int
-}
-
-func (m *MockHandler) Execute(ctx *service.ReconciliationContext) error {
-	m.executed = true
-	if m.ExecuteFunc != nil {
-		err := m.ExecuteFunc(ctx)
-		if err != nil {
-			return err
-		}
-	}
-	if ctx.SkipRemaining {
-		return nil
-	}
-	if m.next != nil {
-		return m.next.Execute(ctx)
-	}
-	return nil
-}
-
-func (m *MockHandler) SetNext(next service.Handler) {
-	m.next = next
 }
 
 var _ = Describe("Handler Chain Integration", func() {
@@ -77,19 +49,19 @@ var _ = Describe("Handler Chain Integration", func() {
 		It("should execute handlers in correct order", func() {
 			executionOrder := []int{}
 
-			handler1 := &MockHandler{
+			handler1 := &testutil.MockHandler{
 				ExecuteFunc: func(ctx *service.ReconciliationContext) error {
 					executionOrder = append(executionOrder, 1)
 					return nil
 				},
 			}
-			handler2 := &MockHandler{
+			handler2 := &testutil.MockHandler{
 				ExecuteFunc: func(ctx *service.ReconciliationContext) error {
 					executionOrder = append(executionOrder, 2)
 					return nil
 				},
 			}
-			handler3 := &MockHandler{
+			handler3 := &testutil.MockHandler{
 				ExecuteFunc: func(ctx *service.ReconciliationContext) error {
 					executionOrder = append(executionOrder, 3)
 					return nil
@@ -122,19 +94,19 @@ var _ = Describe("Handler Chain Integration", func() {
 		It("should stop chain on critical error", func() {
 			executionOrder := []int{}
 
-			handler1 := &MockHandler{
+			handler1 := &testutil.MockHandler{
 				ExecuteFunc: func(ctx *service.ReconciliationContext) error {
 					executionOrder = append(executionOrder, 1)
 					return nil
 				},
 			}
-			handler2 := &MockHandler{
+			handler2 := &testutil.MockHandler{
 				ExecuteFunc: func(ctx *service.ReconciliationContext) error {
 					executionOrder = append(executionOrder, 2)
 					return service.NewCriticalError(nil)
 				},
 			}
-			handler3 := &MockHandler{
+			handler3 := &testutil.MockHandler{
 				ExecuteFunc: func(ctx *service.ReconciliationContext) error {
 					executionOrder = append(executionOrder, 3)
 					return nil
@@ -166,20 +138,20 @@ var _ = Describe("Handler Chain Integration", func() {
 		It("should stop chain when SkipRemaining is set", func() {
 			executionOrder := []int{}
 
-			handler1 := &MockHandler{
+			handler1 := &testutil.MockHandler{
 				ExecuteFunc: func(ctx *service.ReconciliationContext) error {
 					executionOrder = append(executionOrder, 1)
 					return nil
 				},
 			}
-			handler2 := &MockHandler{
+			handler2 := &testutil.MockHandler{
 				ExecuteFunc: func(ctx *service.ReconciliationContext) error {
 					executionOrder = append(executionOrder, 2)
 					ctx.SkipRemaining = true
 					return nil
 				},
 			}
-			handler3 := &MockHandler{
+			handler3 := &testutil.MockHandler{
 				ExecuteFunc: func(ctx *service.ReconciliationContext) error {
 					executionOrder = append(executionOrder, 3)
 					return nil
@@ -209,13 +181,13 @@ var _ = Describe("Handler Chain Integration", func() {
 		})
 
 		It("should allow context modification through chain", func() {
-			handler1 := &MockHandler{
+			handler1 := &testutil.MockHandler{
 				ExecuteFunc: func(ctx *service.ReconciliationContext) error {
 					ctx.ShouldFinalize = true
 					return nil
 				},
 			}
-			handler2 := &MockHandler{
+			handler2 := &testutil.MockHandler{
 				ExecuteFunc: func(ctx *service.ReconciliationContext) error {
 					// Verify handler1 modified context
 					Expect(ctx.ShouldFinalize).To(BeTrue())
@@ -243,7 +215,7 @@ var _ = Describe("Handler Chain Integration", func() {
 		})
 
 		It("should handle empty chain (nil next)", func() {
-			handler := &MockHandler{
+			handler := &testutil.MockHandler{
 				ExecuteFunc: func(ctx *service.ReconciliationContext) error {
 					return nil
 				},

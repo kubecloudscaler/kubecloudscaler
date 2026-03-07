@@ -55,32 +55,18 @@ func NewFetchHandler() service.Handler {
 // Execute implements the Handler interface.
 // It fetches the scaler resource from the Kubernetes API and populates the context.
 func (h *FetchHandler) Execute(ctx *service.ReconciliationContext) error {
-	ctx.Logger.Debug().Msg("fetching scaler resource")
-
-	// Fetch the Scaler object from the Kubernetes API
 	scaler := &kubecloudscalerv1alpha3.Gcp{}
 	if err := ctx.Client.Get(ctx.Ctx, ctx.Request.NamespacedName, scaler); err != nil {
 		if client.IgnoreNotFound(err) == nil {
-			// Resource not found: it was deleted (e.g., owned by a Flow that was just removed).
-			// Return nil to stop chain gracefully without error.
-			ctx.Logger.Info().Msg("scaler resource not found, skipping reconciliation")
 			ctx.SkipRemaining = true
 			return nil
 		}
-
-		// Other API error - stop chain and requeue (Scaler is nil, next handlers would panic)
 		ctx.Logger.Warn().Err(err).Msg("transient error fetching scaler resource")
 		ctx.RequeueAfter = transientRequeueAfter
 		return service.NewRecoverableError(fmt.Errorf("fetch scaler resource: %w", err))
 	}
 
-	// Successfully fetched - populate context and continue
 	ctx.Scaler = scaler
-	ctx.Logger.Info().
-		Str("name", scaler.Name).
-		Str("namespace", scaler.Namespace).
-		Msg("scaler resource fetched successfully")
-
 	if h.next != nil {
 		return h.next.Execute(ctx)
 	}

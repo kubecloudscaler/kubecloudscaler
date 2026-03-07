@@ -43,8 +43,6 @@ func NewFinalizerHandler() service.Handler {
 //   - If being deleted with finalizer: Sets ShouldFinalize flag, continues chain
 //   - If being deleted without finalizer: Sets SkipRemaining, stops chain
 func (h *FinalizerHandler) Execute(ctx *service.ReconciliationContext) error {
-	ctx.Logger.Debug().Msg("managing finalizer")
-
 	// Check if the object is being deleted
 	if ctx.Scaler.DeletionTimestamp.IsZero() {
 		// Object is not being deleted - ensure finalizer is present
