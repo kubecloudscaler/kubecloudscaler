@@ -21,6 +21,7 @@ import (
 	"sync"
 
 	"github.com/prometheus/client_golang/prometheus"
+	ctrlmetrics "sigs.k8s.io/controller-runtime/pkg/metrics"
 )
 
 const (
@@ -54,7 +55,8 @@ type Recorder interface {
 	RecordPeriodActive(controller, periodType string)
 }
 
-// Init registers custom metrics with the default Prometheus registry.
+// Init registers custom metrics with the controller-runtime metrics registry,
+// which is the same registry exposed by the /metrics endpoint.
 // Safe to call multiple times; registration runs once.
 // Controllers should call Init from main before starting the manager.
 func Init() {
@@ -62,8 +64,7 @@ func Init() {
 }
 
 func registerMetrics() {
-	registry := prometheus.DefaultRegisterer
-	registry.MustRegister(
+	ctrlmetrics.Registry.MustRegister(
 		reconcileTotal,
 		reconcileDurationSeconds,
 		scalingOperationsTotal,
