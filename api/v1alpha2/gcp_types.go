@@ -46,13 +46,13 @@ type GcpSpec struct {
 	AuthSecret *string `json:"authSecret,omitempty"`
 	// Restore resource state on CR deletion (default: true)
 	// +kubebuilder:default:=true
-	RestoreOnDelete bool `json:"restoreOnDelete,omitempty"`
+	RestoreOnDelete bool `json:"restoreOnDelete"`
 	// Wait for operation to complete
 	WaitForOperation bool `json:"waitForOperation,omitempty"`
 	// Default status for resources
 	// +kubebuilder:validation:Enum=down;up
 	// +kubebuilder:default:=down
-	DefaultPeriodType string `json:"defaultPeriodType,omitempty"`
+	DefaultPeriodType string `json:"defaultPeriodType"`
 }
 
 // +kubebuilder:object:root=true

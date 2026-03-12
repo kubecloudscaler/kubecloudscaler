@@ -18,8 +18,6 @@ package v1alpha2
 
 import (
 	"fmt"
-
-	"github.com/rs/zerolog/log"
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
 
 	"github.com/kubecloudscaler/kubecloudscaler/api/common"
@@ -32,9 +30,6 @@ func (src *K8s) ConvertTo(dstRaw conversion.Hub) error {
 	if !ok {
 		return fmt.Errorf("expected *kubecloudscalercloudv1alpha3.K8s, got %T", dstRaw)
 	}
-	log.Debug().Msgf("ConvertTo: Converting K8s from Spoke version v1alpha2 to Hub version v1alpha3;"+
-		"source: %s/%s, target: %s/%s", src.Namespace, src.Name, dst.Namespace, dst.Name)
-
 	// ObjectMeta
 	dst.ObjectMeta = src.ObjectMeta
 
@@ -72,9 +67,6 @@ func (dst *K8s) ConvertFrom(srcRaw conversion.Hub) error {
 	if !ok {
 		return fmt.Errorf("expected *kubecloudscalercloudv1alpha3.K8s, got %T", srcRaw)
 	}
-	log.Debug().Msgf("ConvertFrom: Converting K8s from Hub version v1alpha3 to Spoke version v1alpha2;"+
-		"source: %s/%s, target: %s/%s", src.Namespace, src.Name, dst.Namespace, dst.Name)
-
 	// ObjectMeta
 	dst.ObjectMeta = src.ObjectMeta
 

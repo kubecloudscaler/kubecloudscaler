@@ -62,11 +62,12 @@ func TestFlowProcessorService_ProcessFlow_Simple(t *testing.T) {
 			return nil
 		}
 		mockResourceMapper.CreateResourceMappingsFunc = func(flow *kubecloudscalerv1alpha3.Flow, resourceNames map[string]bool) (map[string]types.ResourceInfo, error) {
+			k8sRes := kubecloudscalerv1alpha3.K8sResource{Name: "test-resource"}
 			return map[string]types.ResourceInfo{
 				"test-resource": {
-					Type:     "k8s",
-					Resource: kubecloudscalerv1alpha3.K8sResource{Name: "test-resource"},
-					Periods:  []types.PeriodWithDelay{},
+					Type:    "k8s",
+					K8sRes:  &k8sRes,
+					Periods: []types.PeriodWithDelay{},
 				},
 			}, nil
 		}

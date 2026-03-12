@@ -19,6 +19,7 @@ package gcp
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	"github.com/rs/zerolog"
@@ -37,15 +38,31 @@ import (
 // ScalerReconciler reconciles a Scaler object
 // It manages the lifecycle of GCP resources by scaling them up/down based on configured periods
 type ScalerReconciler struct {
-	client.Client                 // Kubernetes client for API operations
-	Scheme        *runtime.Scheme // Scheme for type conversion and serialization
-	Logger        *zerolog.Logger
-	chain         service.Handler // handler chain, initialized once
+	client.Client
+	Scheme    *runtime.Scheme
+	Logger    *zerolog.Logger
+	recorder  metrics.Recorder
+	chain     service.Handler
+	chainOnce sync.Once
+}
+
+// NewScalerReconciler creates a new GCP ScalerReconciler with proper dependency injection.
+func NewScalerReconciler(c client.Client, scheme *runtime.Scheme, logger *zerolog.Logger, rec metrics.Recorder) *ScalerReconciler {
+	if rec == nil {
+		rec = metrics.GetRecorder()
+	}
+	return &ScalerReconciler{
+		Client:   c,
+		Scheme:   scheme,
+		Logger:   logger,
+		recorder: rec,
+	}
 }
 
 // +kubebuilder:rbac:groups=kubecloudscaler.cloud,resources=gcps,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=kubecloudscaler.cloud,resources=gcps/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=kubecloudscaler.cloud,resources=gcps/finalizers,verbs=update
+// +kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -63,7 +80,10 @@ type ScalerReconciler struct {
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.18.4/pkg/reconcile
 func (r *ScalerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	start := time.Now()
-	rec := metrics.GetRecorder()
+	rec := r.recorder
+	if rec == nil {
+		rec = metrics.GetRecorder()
+	}
 
 	r.Logger.Info().
 		Str("name", req.Name).
@@ -79,13 +99,22 @@ func (r *ScalerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	}
 
 	// Initialize chain lazily if not set (e.g., in tests without SetupWithManager)
-	if r.chain == nil {
-		r.chain = r.initializeChain()
-	}
+	r.chainOnce.Do(func() {
+		if r.chain == nil {
+			r.chain = r.initializeChain()
+		}
+	})
 
 	// Execute the handler chain
 	err := r.chain.Execute(reconCtx)
 	duration := time.Since(start).Seconds()
+
+	// Close GCP client connections to prevent resource leaks
+	if reconCtx.GCPClient != nil {
+		if closeErr := reconCtx.GCPClient.Close(); closeErr != nil {
+			r.Logger.Warn().Err(closeErr).Msg("failed to close GCP client")
+		}
+	}
 
 	// Handle chain execution result with proper error classification
 	if err != nil {
@@ -103,7 +132,7 @@ func (r *ScalerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 			}
 			return ctrl.Result{RequeueAfter: requeue}, nil
 		}
-		rec.RecordReconcile(metrics.ControllerGcpScaler, metrics.ResultRecoverableError, duration)
+		rec.RecordReconcile(metrics.ControllerGcpScaler, metrics.ResultUnclassifiedError, duration)
 		r.Logger.Error().Err(err).Msg("unexpected error during reconciliation")
 		return ctrl.Result{RequeueAfter: utils.ReconcileErrorDuration}, nil
 	}

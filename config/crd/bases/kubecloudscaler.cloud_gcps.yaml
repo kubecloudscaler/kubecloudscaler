@@ -509,9 +509,11 @@ spec:
                 description: Wait for operation to complete
                 type: boolean
             required:
+            - defaultPeriodType
             - periods
             - projectId
             - resources
+            - restoreOnDelete
             type: object
           status:
             description: ScalerStatus defines the observed state of Scaler.
@@ -659,7 +661,9 @@ spec:
                     description: Wait for operation to complete
                     type: boolean
                 required:
+                - defaultPeriodType
                 - projectId
+                - restoreOnDelete
                 type: object
               dryRun:
                 description: dry-run mode

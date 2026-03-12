@@ -16,79 +16,15 @@ limitations under the License.
 
 package service
 
-import (
-	"errors"
-	"fmt"
+import "github.com/kubecloudscaler/kubecloudscaler/internal/controller/shared"
+
+// Type aliases for backward compatibility — all error logic lives in shared package.
+type CriticalError = shared.CriticalError
+type RecoverableError = shared.RecoverableError
+
+var (
+	NewCriticalError    = shared.NewCriticalError
+	NewRecoverableError = shared.NewRecoverableError
+	IsCriticalError     = shared.IsCriticalError
+	IsRecoverableError  = shared.IsRecoverableError
 )
-
-// CriticalError indicates an error that prevents further reconciliation and requires immediate stop.
-//
-// Usage:
-//   - Authentication failures
-//   - Invalid configuration
-//   - Resource not found (when required)
-//
-// Behavior:
-//   - Handler returns CriticalError and does not call next.Execute()
-//   - Chain execution stops immediately
-//   - Controller returns error to controller-runtime (no requeue)
-type CriticalError struct {
-	Err error
-}
-
-// Error returns the error message.
-func (e *CriticalError) Error() string {
-	return fmt.Sprintf("critical error: %v", e.Err)
-}
-
-// Unwrap returns the underlying error.
-func (e *CriticalError) Unwrap() error {
-	return e.Err
-}
-
-// NewCriticalError creates a new CriticalError wrapping the given error.
-func NewCriticalError(err error) error {
-	return &CriticalError{Err: err}
-}
-
-// RecoverableError indicates an error that may be resolved with a retry/requeue.
-//
-// Usage:
-//   - Temporary rate limits
-//   - Transient network issues
-//   - API update conflicts
-//
-// Behavior:
-//   - Handler returns RecoverableError and does not call next.Execute()
-//   - Chain execution stops
-//   - Controller returns ctrl.Result with requeue delay
-type RecoverableError struct {
-	Err error
-}
-
-// Error returns the error message.
-func (e *RecoverableError) Error() string {
-	return fmt.Sprintf("recoverable error: %v", e.Err)
-}
-
-// Unwrap returns the underlying error.
-func (e *RecoverableError) Unwrap() error {
-	return e.Err
-}
-
-// NewRecoverableError creates a new RecoverableError wrapping the given error.
-func NewRecoverableError(err error) error {
-	return &RecoverableError{Err: err}
-}
-
-// IsCriticalError checks if the given error is a CriticalError.
-func IsCriticalError(err error) bool {
-	var criticalErr *CriticalError
-	return errors.As(err, &criticalErr)
-}
-
-// IsRecoverableError checks if the given error is a RecoverableError.
-func IsRecoverableError(err error) bool {
-	var recoverableErr *RecoverableError
-	return errors.As(err, &recoverableErr)
-}

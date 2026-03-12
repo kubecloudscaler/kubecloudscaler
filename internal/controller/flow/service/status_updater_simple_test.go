@@ -27,7 +27,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	kubecloudscalerv1alpha3 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha3"
-	"github.com/kubecloudscaler/kubecloudscaler/internal/utils"
 )
 
 func TestStatusUpdaterService_UpdateFlowStatus_Simple(t *testing.T) {
@@ -64,10 +63,8 @@ func TestStatusUpdaterService_UpdateFlowStatus_Simple(t *testing.T) {
 			Message: "Flow processed successfully",
 		}
 
-		result, err := service.UpdateFlowStatus(context.Background(), flow, condition)
-
+		err = service.UpdateFlowStatus(context.Background(), flow, condition)
 		assert.NoError(t, err)
-		assert.Equal(t, utils.ReconcileSuccessDuration, result.RequeueAfter)
 	})
 
 	t.Run("error condition", func(t *testing.T) {
@@ -92,9 +89,7 @@ func TestStatusUpdaterService_UpdateFlowStatus_Simple(t *testing.T) {
 			Message: "Flow processing failed",
 		}
 
-		result, err := service.UpdateFlowStatus(context.Background(), flow, condition)
-
+		err = service.UpdateFlowStatus(context.Background(), flow, condition)
 		assert.NoError(t, err)
-		assert.Equal(t, utils.ReconcileSuccessDuration, result.RequeueAfter)
 	})
 }

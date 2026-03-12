@@ -21,6 +21,7 @@ import (
 	"fmt"
 
 	actionsV1alpha1 "github.com/actions/actions-runner-controller/apis/actions.github.com/v1alpha1"
+	"github.com/rs/zerolog"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -62,6 +63,7 @@ func (r *runnerSetItem) SetAnnotations(annotations map[string]string) {
 // runnerSetLister implements ResourceLister for autoscaling runner sets.
 type runnerSetLister struct {
 	client dynamic.NamespaceableResourceInterface
+	logger *zerolog.Logger
 }
 
 func (l *runnerSetLister) List(ctx context.Context, namespace string, opts metaV1.ListOptions) ([]base.ResourceItem, error) {
@@ -75,7 +77,12 @@ func (l *runnerSetLister) List(ctx context.Context, namespace string, opts metaV
 		item := &list.Items[i]
 		runnerSet := &actionsV1alpha1.AutoscalingRunnerSet{}
 		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(item.Object, runnerSet); err != nil {
-			// Skip items that can't be converted
+			if l.logger != nil {
+				l.logger.Warn().Err(err).
+					Str("namespace", namespace).
+					Str("name", item.GetName()).
+					Msg("skipping ARS item due to conversion failure")
+			}
 			continue
 		}
 		items = append(items, &runnerSetItem{
@@ -117,7 +124,7 @@ type runnerSetUpdater struct {
 func (u *runnerSetUpdater) Update(ctx context.Context, namespace string, resource base.ResourceItem, opts metaV1.UpdateOptions) (base.ResourceItem, error) {
 	item, ok := resource.(*runnerSetItem)
 	if !ok {
-		return nil, &typeAssertionError{expected: "*runnerSetItem", got: resource}
+		return nil, base.NewTypeAssertionError("*runnerSetItem", resource)
 	}
 
 	// Set GVK before conversion
@@ -193,13 +200,4 @@ func int32PtrToIntPtr(value *int32) *int {
 func int32ToIntPtr(value int32) *int {
 	v := int(value)
 	return &v
-}
-
-type typeAssertionError struct {
-	expected string
-	got      interface{}
-}
-
-func (e *typeAssertionError) Error() string {
-	return fmt.Sprintf("type assertion failed: expected %s, got %T", e.expected, e.got)
 }

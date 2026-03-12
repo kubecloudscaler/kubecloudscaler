@@ -18,10 +18,14 @@ package utils
 
 import (
 	"testing"
+	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"k8s.io/utils/ptr"
+
+	"github.com/kubecloudscaler/kubecloudscaler/api/common"
+	periodPkg "github.com/kubecloudscaler/kubecloudscaler/pkg/period"
 )
 
 func TestAnnotationManagerOriginal(t *testing.T) {
@@ -32,16 +36,16 @@ func TestAnnotationManagerOriginal(t *testing.T) {
 var _ = Describe("AnnotationManager", func() {
 	var (
 		annotationMgr AnnotationManager
-		mockPeriod    *MockPeriod
+		mockPeriod    *periodPkg.Period
 	)
 
 	BeforeEach(func() {
 		annotationMgr = NewAnnotationManager()
-		mockPeriod = &MockPeriod{
-			Type:      "test-period",
-			StartTime: &mockTime{timeStr: "2024-01-01T00:00:00Z"},
-			EndTime:   &mockTime{timeStr: "2024-01-01T01:00:00Z"},
-			Timezone:  ptr.To("UTC"),
+		mockPeriod = &periodPkg.Period{
+			Type:         "test-period",
+			GetStartTime: time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
+			GetEndTime:   time.Date(2024, 1, 1, 1, 0, 0, 0, time.UTC),
+			Period:       &common.RecurringPeriod{Timezone: ptr.To("UTC")},
 		}
 	})
 
@@ -75,10 +79,10 @@ var _ = Describe("AnnotationManager", func() {
 			Expect(result).To(HaveKeyWithValue(AnnotationsPrefix+"/"+PeriodType, "test-period"))
 		})
 
-		It("should handle invalid period type", func() {
+		It("should handle nil period", func() {
 			annotations := make(map[string]string)
 
-			result := annotationMgr.AddAnnotations(annotations, "invalid-period")
+			result := annotationMgr.AddAnnotations(annotations, nil)
 
 			Expect(result).To(Equal(annotations))
 		})
@@ -330,35 +334,3 @@ var _ = Describe("AnnotationManager", func() {
 		})
 	})
 })
-
-// Mock types for testing
-type MockPeriod struct {
-	Type      string
-	StartTime interface{ String() string }
-	EndTime   interface{ String() string }
-	Timezone  *string
-}
-
-func (m *MockPeriod) GetType() string {
-	return m.Type
-}
-
-func (m *MockPeriod) GetStartTime() interface{ String() string } {
-	return m.StartTime
-}
-
-func (m *MockPeriod) GetEndTime() interface{ String() string } {
-	return m.EndTime
-}
-
-func (m *MockPeriod) GetTimezone() *string {
-	return m.Timezone
-}
-
-type mockTime struct {
-	timeStr string
-}
-
-func (m *mockTime) String() string {
-	return m.timeStr
-}

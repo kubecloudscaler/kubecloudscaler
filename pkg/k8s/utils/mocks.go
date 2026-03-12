@@ -22,6 +22,8 @@ import (
 
 	coreV1 "k8s.io/api/core/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	periodPkg "github.com/kubecloudscaler/kubecloudscaler/pkg/period"
 )
 
 // MockKubernetesClient is a mock implementation of KubernetesClient
@@ -71,7 +73,7 @@ type MockConfigProvider struct {
 	GetExcludeNamespacesFunc            func() []string
 	GetForceExcludeSystemNamespacesFunc func() bool
 	GetLabelSelectorFunc                func() *metaV1.LabelSelector
-	GetPeriodFunc                       func() interface{}
+	GetPeriodFunc                       func() *periodPkg.Period
 }
 
 // GetNamespaces returns mock namespaces.
@@ -107,7 +109,7 @@ func (m *MockConfigProvider) GetLabelSelector() *metaV1.LabelSelector {
 }
 
 // GetPeriod returns mock period.
-func (m *MockConfigProvider) GetPeriod() interface{} {
+func (m *MockConfigProvider) GetPeriod() *periodPkg.Period {
 	if m.GetPeriodFunc != nil {
 		return m.GetPeriodFunc()
 	}
@@ -118,18 +120,18 @@ func (m *MockConfigProvider) GetPeriod() interface{} {
 //
 //nolint:dupl,revive // This struct intentionally duplicates the interface structure for mocking, max parameter is clearer than renaming
 type MockAnnotationManager struct {
-	AddAnnotationsFunc           func(annotations map[string]string, period interface{}) map[string]string
+	AddAnnotationsFunc           func(annotations map[string]string, period *periodPkg.Period) map[string]string
 	RemoveAnnotationsFunc        func(annotations map[string]string) map[string]string
-	AddMinMaxAnnotationsFunc     func(annot map[string]string, curPeriod interface{}, minReplicas *int32, max int32) map[string]string
+	AddMinMaxAnnotationsFunc     func(annot map[string]string, curPeriod *periodPkg.Period, minReplicas *int32, max int32) map[string]string
 	RestoreMinMaxAnnotationsFunc func(annot map[string]string) (bool, *int32, int32, map[string]string, error)
-	AddBoolAnnotationsFunc       func(annot map[string]string, curPeriod interface{}, value bool) map[string]string
+	AddBoolAnnotationsFunc       func(annot map[string]string, curPeriod *periodPkg.Period, value bool) map[string]string
 	RestoreBoolAnnotationsFunc   func(annot map[string]string) (bool, *bool, map[string]string, error)
-	AddIntAnnotationsFunc        func(annot map[string]string, curPeriod interface{}, value *int32) map[string]string
+	AddIntAnnotationsFunc        func(annot map[string]string, curPeriod *periodPkg.Period, value *int32) map[string]string
 	RestoreIntAnnotationsFunc    func(annot map[string]string) (bool, *int32, map[string]string, error)
 }
 
 // AddAnnotations returns mock annotations with period information.
-func (m *MockAnnotationManager) AddAnnotations(annotations map[string]string, period interface{}) map[string]string {
+func (m *MockAnnotationManager) AddAnnotations(annotations map[string]string, period *periodPkg.Period) map[string]string {
 	if m.AddAnnotationsFunc != nil {
 		return m.AddAnnotationsFunc(annotations, period)
 	}
@@ -149,7 +151,7 @@ func (m *MockAnnotationManager) RemoveAnnotations(annotations map[string]string)
 //nolint:gocritic,revive // Mock function signature must match interface, max parameter is clearer
 func (m *MockAnnotationManager) AddMinMaxAnnotations(
 	annot map[string]string,
-	curPeriod interface{},
+	curPeriod *periodPkg.Period,
 	minReplicas *int32,
 	max int32,
 ) map[string]string {
@@ -170,7 +172,7 @@ func (m *MockAnnotationManager) RestoreMinMaxAnnotations(annot map[string]string
 }
 
 // AddBoolAnnotations returns mock annotations with boolean value information.
-func (m *MockAnnotationManager) AddBoolAnnotations(annot map[string]string, curPeriod interface{}, value bool) map[string]string {
+func (m *MockAnnotationManager) AddBoolAnnotations(annot map[string]string, curPeriod *periodPkg.Period, value bool) map[string]string {
 	if m.AddBoolAnnotationsFunc != nil {
 		return m.AddBoolAnnotationsFunc(annot, curPeriod, value)
 	}
@@ -188,7 +190,7 @@ func (m *MockAnnotationManager) RestoreBoolAnnotations(annot map[string]string) 
 }
 
 // AddIntAnnotations returns mock annotations with integer value information.
-func (m *MockAnnotationManager) AddIntAnnotations(annot map[string]string, curPeriod interface{}, value *int32) map[string]string {
+func (m *MockAnnotationManager) AddIntAnnotations(annot map[string]string, curPeriod *periodPkg.Period, value *int32) map[string]string {
 	if m.AddIntAnnotationsFunc != nil {
 		return m.AddIntAnnotationsFunc(annot, curPeriod, value)
 	}

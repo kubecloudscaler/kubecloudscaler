@@ -1,26 +1,23 @@
 // Package utils provides constants for GCP resource management in the kubecloudscaler project.
 package utils
 
-const (
-	// AnnotationsPrefix is the prefix for kubecloudscaler annotations.
-	AnnotationsPrefix = "kubecloudscaler.cloud"
-	// AnnotationsOrigValue is the annotation key for original values.
-	AnnotationsOrigValue = "original-value"
-	// AnnotationsMinOrigValue is the annotation key for minimum original values.
-	AnnotationsMinOrigValue = "min-original-value"
-	// AnnotationsMaxOrigValue is the annotation key for maximum original values.
-	AnnotationsMaxOrigValue = "max-original-value"
-	// PeriodType is the annotation key for period type.
-	PeriodType = "period-type"
-	// PeriodStartTime is the annotation key for period start time.
-	PeriodStartTime = "period-start-time"
-	// PeriodEndTime is the annotation key for period end time.
-	PeriodEndTime = "period-end-time"
-	// PeriodTimezone is the annotation key for period timezone.
-	PeriodTimezone = "period-timezone"
-	// FieldManager is the field manager name for Kubernetes resources.
-	FieldManager = "kubecloudscaler"
+import kubeconsts "github.com/kubecloudscaler/kubecloudscaler/pkg/consts"
 
+// Re-export shared constants for backward compatibility.
+const (
+	AnnotationsPrefix       = kubeconsts.AnnotationsPrefix
+	AnnotationsOrigValue    = kubeconsts.AnnotationsOrigValue
+	AnnotationsMinOrigValue = kubeconsts.AnnotationsMinOrigValue
+	AnnotationsMaxOrigValue = kubeconsts.AnnotationsMaxOrigValue
+	PeriodType              = kubeconsts.PeriodType
+	PeriodStartTime         = kubeconsts.PeriodStartTime
+	PeriodEndTime           = kubeconsts.PeriodEndTime
+	PeriodTimezone          = kubeconsts.PeriodTimezone
+	FieldManager            = kubeconsts.FieldManager
+)
+
+// GCP-specific constants.
+const (
 	// DefaultResource is the default GCP resource type for scaling.
 	DefaultResource = "vm-instances"
 	// InstanceRunning is the GCP instance running state.

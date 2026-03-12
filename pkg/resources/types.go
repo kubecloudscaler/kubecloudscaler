@@ -15,7 +15,7 @@ type Config struct {
 	GCP *gcpUtils.Config `json:"gcp,omitempty"`
 }
 
-// IResource defines the interface for resource management.
-type IResource interface {
+// Resource defines the interface for resource management.
+type Resource interface {
 	SetState(ctx context.Context) ([]common.ScalerStatusSuccess, []common.ScalerStatusFailed, error)
 }

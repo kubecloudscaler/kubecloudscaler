@@ -523,6 +523,7 @@ spec:
             required:
             - periods
             - resources
+            - restoreOnDelete
             type: object
           status:
             description: ScalerStatus defines the observed state of Scaler.
@@ -671,6 +672,9 @@ spec:
                     description: 'Restore resource state on CR deletion (default:
                       true)'
                     type: boolean
+                required:
+                - forceExcludeSystemNamespaces
+                - restoreOnDelete
                 type: object
               dryRun:
                 description: dry-run mode

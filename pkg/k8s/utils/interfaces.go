@@ -22,6 +22,8 @@ import (
 
 	coreV1 "k8s.io/api/core/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	periodPkg "github.com/kubecloudscaler/kubecloudscaler/pkg/period"
 )
 
 // NamespaceLister defines the interface for listing namespaces
@@ -45,7 +47,7 @@ type ConfigProvider interface {
 	GetExcludeNamespaces() []string
 	GetForceExcludeSystemNamespaces() bool
 	GetLabelSelector() *metaV1.LabelSelector
-	GetPeriod() interface{} // Using interface{} to avoid circular dependency
+	GetPeriod() *periodPkg.Period
 }
 
 // NamespaceManager defines the interface for namespace management operations
@@ -59,13 +61,13 @@ type NamespaceManager interface {
 //
 //nolint:dupl,revive // Mock implementation in mocks.go intentionally duplicates this interface structure, max parameter is clearer
 type AnnotationManager interface {
-	AddAnnotations(annotations map[string]string, period interface{}) map[string]string
+	AddAnnotations(annotations map[string]string, period *periodPkg.Period) map[string]string
 	RemoveAnnotations(annotations map[string]string) map[string]string
-	AddMinMaxAnnotations(annot map[string]string, curPeriod interface{}, minReplicas *int32, max int32) map[string]string
+	AddMinMaxAnnotations(annot map[string]string, curPeriod *periodPkg.Period, minReplicas *int32, max int32) map[string]string
 	RestoreMinMaxAnnotations(annot map[string]string) (bool, *int32, int32, map[string]string, error)
-	AddBoolAnnotations(annot map[string]string, curPeriod interface{}, value bool) map[string]string
+	AddBoolAnnotations(annot map[string]string, curPeriod *periodPkg.Period, value bool) map[string]string
 	RestoreBoolAnnotations(annot map[string]string) (bool, *bool, map[string]string, error)
-	AddIntAnnotations(annot map[string]string, curPeriod interface{}, value *int32) map[string]string
+	AddIntAnnotations(annot map[string]string, curPeriod *periodPkg.Period, value *int32) map[string]string
 	RestoreIntAnnotations(annot map[string]string) (bool, *int32, map[string]string, error)
 }
 

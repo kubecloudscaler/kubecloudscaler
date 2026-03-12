@@ -46,7 +46,7 @@ var _ = Describe("NamespaceManager", func() {
 		ctx = context.Background()
 		logger = zerolog.Nop()
 		mockClient = &MockKubernetesClient{}
-		namespaceMgr = NewNamespaceManager(mockClient, logger)
+		namespaceMgr = NewNamespaceManager(mockClient, logger, nil)
 		config = &Config{
 			ForceExcludeSystemNamespaces: true,
 		}

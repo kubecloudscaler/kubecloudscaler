@@ -18,6 +18,7 @@ package base
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"slices"
 
@@ -101,9 +102,14 @@ func (p *Processor) ProcessResources(ctx context.Context) ([]common.ScalerStatus
 		return scalerStatusSuccess, scalerStatusFailed, err
 	}
 
-	// Process each resource
+	// Process each resource. Propagate context cancellation/deadline errors;
+	// other errors are recorded in scalerStatusFailed and processing continues.
 	for _, item := range list {
-		_ = p.processResource(ctx, item, &scalerStatusSuccess, &scalerStatusFailed)
+		if err := p.processResource(ctx, item, &scalerStatusSuccess, &scalerStatusFailed); err != nil {
+			if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+				return scalerStatusSuccess, scalerStatusFailed, err
+			}
+		}
 	}
 
 	p.logger.Debug().

@@ -87,12 +87,14 @@ func (h *StatusHandler) Execute(ctx *service.ReconciliationContext) error {
 	}
 
 	// Single summary log per successful reconciliation (period + counts)
-	ctx.Logger.Info().
+	logEvent := ctx.Logger.Info().
 		Str("name", ctx.Scaler.Name).
-		Str("period", ctx.Period.Name).
 		Int("success", len(ctx.SuccessResults)).
-		Int("failed", len(ctx.FailedResults)).
-		Msg("reconciled")
+		Int("failed", len(ctx.FailedResults))
+	if ctx.Period != nil {
+		logEvent = logEvent.Str("period", ctx.Period.Name)
+	}
+	logEvent.Msg("reconciled")
 
 	// Set requeue for the next reconciliation cycle
 	if ctx.RequeueAfter == 0 {

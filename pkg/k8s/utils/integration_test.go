@@ -20,12 +20,15 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/rs/zerolog"
 	coreV1 "k8s.io/api/core/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	periodPkg "github.com/kubecloudscaler/kubecloudscaler/pkg/period"
 )
 
 func TestIntegrationOriginal(t *testing.T) {
@@ -46,7 +49,7 @@ var _ = Describe("Integration Tests", func() {
 		ctx = context.Background()
 		logger = zerolog.Nop()
 		client = NewFakeKubernetesClient()
-		namespaceMgr = NewNamespaceManager(client, logger)
+		namespaceMgr = NewNamespaceManager(client, logger, nil)
 		annotationMgr = NewAnnotationManager()
 	})
 
@@ -59,7 +62,7 @@ var _ = Describe("Integration Tests", func() {
 			client = NewFakeKubernetesClient(ns1, ns2, ns3)
 
 			// Create namespace manager with real client
-			namespaceMgr = NewNamespaceManager(client, logger)
+			namespaceMgr = NewNamespaceManager(client, logger, nil)
 
 			// Step 1: Configure and initialize
 			config := &Config{
@@ -87,11 +90,10 @@ var _ = Describe("Integration Tests", func() {
 			Expect(resource.ListOptions.LabelSelector).To(ContainSubstring("kubecloudscaler.cloud/ignore"))
 
 			// Step 5: Test annotation management
-			period := &MockPeriod{
-				Type:      "test-period",
-				StartTime: &mockTime{timeStr: "2024-01-01T00:00:00Z"},
-				EndTime:   &mockTime{timeStr: "2024-01-01T01:00:00Z"},
-				Timezone:  nil,
+			period := &periodPkg.Period{
+				Type:         "test-period",
+				GetStartTime: time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
+				GetEndTime:   time.Date(2024, 1, 1, 1, 0, 0, 0, time.UTC),
 			}
 
 			// Add annotations
@@ -118,7 +120,7 @@ var _ = Describe("Integration Tests", func() {
 
 		It("should handle complex namespace filtering scenarios", func() {
 			client = NewFakeKubernetesClient()
-			namespaceMgr = NewNamespaceManager(client, logger)
+			namespaceMgr = NewNamespaceManager(client, logger, nil)
 
 			config := &Config{
 				ForceExcludeSystemNamespaces: true,
@@ -135,11 +137,10 @@ var _ = Describe("Integration Tests", func() {
 
 		It("should handle annotation lifecycle management", func() {
 			// Test complete annotation lifecycle
-			period := &MockPeriod{
-				Type:      "scaling-period",
-				StartTime: &mockTime{timeStr: "2024-01-01T09:00:00Z"},
-				EndTime:   &mockTime{timeStr: "2024-01-01T17:00:00Z"},
-				Timezone:  nil,
+			period := &periodPkg.Period{
+				Type:         "scaling-period",
+				GetStartTime: time.Date(2024, 1, 1, 9, 0, 0, 0, time.UTC),
+				GetEndTime:   time.Date(2024, 1, 1, 17, 0, 0, 0, time.UTC),
 			}
 
 			// Initial state
@@ -192,7 +193,7 @@ var _ = Describe("Integration Tests", func() {
 				},
 			}
 
-			namespaceMgr = NewNamespaceManager(mockClient, logger)
+			namespaceMgr = NewNamespaceManager(mockClient, logger, nil)
 
 			config := &Config{
 				Namespaces: []string{}, // Force it to try to list from cluster

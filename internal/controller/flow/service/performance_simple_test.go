@@ -61,12 +61,13 @@ func TestFlowProcessorService_ProcessFlow_Performance(t *testing.T) {
 	mockValidator.ValidatePeriodTimingsFunc = func(flow *kubecloudscalerv1alpha3.Flow, periodNames map[string]bool) error {
 		return nil
 	}
+	k8sRes := kubecloudscalerv1alpha3.K8sResource{Name: "test-resource"}
 	mockResourceMapper.CreateResourceMappingsFunc = func(flow *kubecloudscalerv1alpha3.Flow, resourceNames map[string]bool) (map[string]types.ResourceInfo, error) {
 		return map[string]types.ResourceInfo{
 			"test-resource": {
-				Type:     "k8s",
-				Resource: kubecloudscalerv1alpha3.K8sResource{Name: "test-resource"},
-				Periods:  []types.PeriodWithDelay{},
+				Type:    "k8s",
+				K8sRes:  &k8sRes,
+				Periods: []types.PeriodWithDelay{},
 			},
 		}, nil
 	}

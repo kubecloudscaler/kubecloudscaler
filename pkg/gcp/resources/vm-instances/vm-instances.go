@@ -21,7 +21,7 @@ const (
 )
 
 // SetState scales instances based on the current period
-func (c *VMnstances) SetState(ctx context.Context) ([]common.ScalerStatusSuccess, []common.ScalerStatusFailed, error) {
+func (c *VMInstances) SetState(ctx context.Context) ([]common.ScalerStatusSuccess, []common.ScalerStatusFailed, error) {
 	success := make([]common.ScalerStatusSuccess, 0)
 	failed := make([]common.ScalerStatusFailed, 0)
 
@@ -95,7 +95,7 @@ func (c *VMnstances) SetState(ctx context.Context) ([]common.ScalerStatusSuccess
 // When the period type is "noaction" (e.g. during CR deletion with RestoreOnDelete=true),
 // defaultPeriodType is applied — not the pre-CR VM state. This means RestoreOnDelete
 // stops VMs by default ("down") unless defaultPeriodType is explicitly set to "up".
-func (c *VMnstances) getDesiredState() string {
+func (c *VMInstances) getDesiredState() string {
 	defaultPeriodType := gcpUtils.InstanceStopped
 	if c.Config.DefaultPeriodType == "up" {
 		defaultPeriodType = gcpUtils.InstanceRunning
@@ -116,13 +116,13 @@ func (c *VMnstances) getDesiredState() string {
 }
 
 // isInstanceInDesiredState checks if the instance is already in the desired state
-func (c *VMnstances) isInstanceInDesiredState(instance *computepb.Instance, desiredState string) bool {
+func (c *VMInstances) isInstanceInDesiredState(instance *computepb.Instance, desiredState string) bool {
 	currentState := gcpUtils.GetInstanceStatus(instance)
 	return currentState == desiredState
 }
 
 // applyInstanceState applies the desired state to the instance
-func (c *VMnstances) applyInstanceState(ctx context.Context, instance *computepb.Instance, desiredState string) error {
+func (c *VMInstances) applyInstanceState(ctx context.Context, instance *computepb.Instance, desiredState string) error {
 	zone := c.extractZoneFromInstance(instance)
 	if zone == "" {
 		return fmt.Errorf("cannot extract zone from instance %s", instance.GetName())
@@ -139,7 +139,7 @@ func (c *VMnstances) applyInstanceState(ctx context.Context, instance *computepb
 }
 
 // startInstance starts a stopped instance.
-func (c *VMnstances) startInstance(ctx context.Context, instance *computepb.Instance, zone string) error {
+func (c *VMInstances) startInstance(ctx context.Context, instance *computepb.Instance, zone string) error {
 	if gcpUtils.IsInstanceRunning(instance) {
 		return nil
 	}
@@ -158,7 +158,7 @@ func (c *VMnstances) startInstance(ctx context.Context, instance *computepb.Inst
 }
 
 // stopInstance stops a running instance.
-func (c *VMnstances) stopInstance(ctx context.Context, instance *computepb.Instance, zone string) error {
+func (c *VMInstances) stopInstance(ctx context.Context, instance *computepb.Instance, zone string) error {
 	if gcpUtils.IsInstanceStopped(instance) {
 		return nil
 	}
@@ -177,7 +177,7 @@ func (c *VMnstances) stopInstance(ctx context.Context, instance *computepb.Insta
 }
 
 // extractZoneFromInstance extracts the zone from the instance's self link
-func (c *VMnstances) extractZoneFromInstance(instance *computepb.Instance) string {
+func (c *VMInstances) extractZoneFromInstance(instance *computepb.Instance) string {
 	if instance.GetZone() == "" {
 		return ""
 	}
@@ -195,7 +195,7 @@ func (c *VMnstances) extractZoneFromInstance(instance *computepb.Instance) strin
 }
 
 // waitForOperation waits for a GCP operation to complete
-func (c *VMnstances) waitForOperation(ctx context.Context, operationName, zone string) error {
+func (c *VMInstances) waitForOperation(ctx context.Context, operationName, zone string) error {
 	// Set a timeout for the operation
 	timeout := time.After(OperationTimeoutMinutes * time.Minute)
 	ticker := time.NewTicker(OperationCheckIntervalSeconds * time.Second)

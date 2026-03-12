@@ -234,11 +234,10 @@ func (v *FlowCustomValidator) getPeriodDuration(period *common.ScalerPeriod) (ti
 			return 0, fmt.Errorf("failed to parse end time: %w", err)
 		}
 
-		// Handle case where end time is next day
-		if endTime.Before(startTime) {
-			return 0, fmt.Errorf("end time is before start time")
+		// Handle overnight recurring periods (e.g. 22:00 to 06:00): add 24h to end time
+		if endTime.Before(startTime) || endTime.Equal(startTime) {
+			endTime = endTime.Add(24 * time.Hour)
 		}
-
 		return endTime.Sub(startTime), nil
 	}
 
@@ -252,9 +251,9 @@ func (v *FlowCustomValidator) getPeriodDuration(period *common.ScalerPeriod) (ti
 			return 0, fmt.Errorf("failed to parse end time: %w", err)
 		}
 
-		// Handle case where end time is next day
-		if endTime.Before(startTime) {
-			return 0, fmt.Errorf("end time is before start time")
+		// Handle overnight periods: add 24h to end time when end < start
+		if endTime.Before(startTime) || endTime.Equal(startTime) {
+			endTime = endTime.Add(24 * time.Hour)
 		}
 
 		return endTime.Sub(startTime), nil

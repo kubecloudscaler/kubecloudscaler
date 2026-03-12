@@ -14,7 +14,7 @@ import (
 func New(ctx context.Context, config *utils.Config) (*Deployments, error) {
 	logger := zerolog.Ctx(ctx)
 	clientAdapter := utils.NewKubernetesClientAdapter(config.Client)
-	namespaceMgr := utils.NewNamespaceManager(clientAdapter, *logger)
+	namespaceMgr := utils.NewNamespaceManager(clientAdapter, *logger, nil)
 
 	k8sResource, err := namespaceMgr.InitConfig(ctx, config)
 	if err != nil {

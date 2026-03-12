@@ -95,15 +95,19 @@ func (h *StatusHandler) Execute(ctx *service.ReconciliationContext) error {
 		return service.NewRecoverableError(fmt.Errorf("update scaler status: %w", err))
 	}
 
-	ctx.Logger.Info().
+	logEvent := ctx.Logger.Info().
 		Str("name", scaler.Name).
-		Str("period", ctx.Period.Name).
 		Int("success", len(ctx.SuccessResults)).
-		Int("failed", len(ctx.FailedResults)).
-		Msg("reconciled")
+		Int("failed", len(ctx.FailedResults))
+	if ctx.Period != nil {
+		logEvent = logEvent.Str("period", ctx.Period.Name)
+	}
+	logEvent.Msg("reconciled")
 
-	// Requeue for the next reconciliation cycle
-	ctx.RequeueAfter = utils.ReconcileSuccessDuration
+	// Requeue for the next reconciliation cycle (first-write-wins, like K8s)
+	if ctx.RequeueAfter == 0 {
+		ctx.RequeueAfter = utils.ReconcileSuccessDuration
+	}
 	return nil
 }
 

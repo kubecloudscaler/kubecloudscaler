@@ -88,7 +88,7 @@ type statefulSetUpdater struct {
 func (u *statefulSetUpdater) Update(ctx context.Context, namespace string, resource base.ResourceItem, opts metaV1.UpdateOptions) (base.ResourceItem, error) {
 	item, ok := resource.(*statefulSetItem)
 	if !ok {
-		return nil, &typeAssertionError{expected: "*statefulSetItem", got: resource}
+		return nil, base.NewTypeAssertionError("*statefulSetItem", resource)
 	}
 
 	updated, err := u.client.StatefulSets(namespace).Update(ctx, item.StatefulSet, opts)
@@ -115,13 +115,4 @@ func setReplicas(item base.ResourceItem, replicas *int32) {
 		return
 	}
 	s.StatefulSet.Spec.Replicas = replicas
-}
-
-type typeAssertionError struct {
-	expected string
-	got      interface{}
-}
-
-func (e *typeAssertionError) Error() string {
-	return "type assertion failed"
 }

@@ -88,7 +88,7 @@ type hpaUpdater struct {
 func (u *hpaUpdater) Update(ctx context.Context, namespace string, resource base.ResourceItem, opts metaV1.UpdateOptions) (base.ResourceItem, error) {
 	item, ok := resource.(*hpaItem)
 	if !ok {
-		return nil, &typeAssertionError{expected: "*hpaItem", got: resource}
+		return nil, base.NewTypeAssertionError("*hpaItem", resource)
 	}
 
 	updated, err := u.client.HorizontalPodAutoscalers(namespace).Update(ctx, item.HorizontalPodAutoscaler, opts)
@@ -118,13 +118,4 @@ func setMinMaxReplicas(item base.ResourceItem, minReplicas *int32, maxReplicas *
 	if maxReplicas != nil {
 		h.HorizontalPodAutoscaler.Spec.MaxReplicas = *maxReplicas
 	}
-}
-
-type typeAssertionError struct {
-	expected string
-	got      interface{}
-}
-
-func (e *typeAssertionError) Error() string {
-	return "type assertion failed"
 }

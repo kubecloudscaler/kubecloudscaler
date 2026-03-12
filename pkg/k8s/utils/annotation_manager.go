@@ -37,31 +37,20 @@ func NewAnnotationManager() AnnotationManager {
 }
 
 // AddAnnotations adds period annotations to the annotations map
-func (am *annotationManager) AddAnnotations(annotations map[string]string, period interface{}) map[string]string {
+func (am *annotationManager) AddAnnotations(annotations map[string]string, period *periodPkg.Period) map[string]string {
 	if annotations == nil {
 		annotations = make(map[string]string)
 	}
 
-	switch p := period.(type) {
-	case *periodPkg.Period:
-		annotations[AnnotationsPrefix+"/"+PeriodType] = p.Type
-		annotations[AnnotationsPrefix+"/"+PeriodStartTime] = p.GetStartTime.Format(time.RFC3339)
-		annotations[AnnotationsPrefix+"/"+PeriodEndTime] = p.GetEndTime.Format(time.RFC3339)
-		if p.Period != nil && p.Period.Timezone != nil {
-			annotations[AnnotationsPrefix+"/"+PeriodTimezone] = *p.Period.Timezone
-		}
-	case interface {
-		GetType() string
-		GetStartTime() interface{ String() string }
-		GetEndTime() interface{ String() string }
-		GetTimezone() *string
-	}:
-		annotations[AnnotationsPrefix+"/"+PeriodType] = p.GetType()
-		annotations[AnnotationsPrefix+"/"+PeriodStartTime] = p.GetStartTime().String()
-		annotations[AnnotationsPrefix+"/"+PeriodEndTime] = p.GetEndTime().String()
-		if timezone := p.GetTimezone(); timezone != nil {
-			annotations[AnnotationsPrefix+"/"+PeriodTimezone] = *timezone
-		}
+	if period == nil {
+		return annotations
+	}
+
+	annotations[AnnotationsPrefix+"/"+PeriodType] = period.Type
+	annotations[AnnotationsPrefix+"/"+PeriodStartTime] = period.GetStartTime.Format(time.RFC3339)
+	annotations[AnnotationsPrefix+"/"+PeriodEndTime] = period.GetEndTime.Format(time.RFC3339)
+	if period.Period != nil && period.Period.Timezone != nil {
+		annotations[AnnotationsPrefix+"/"+PeriodTimezone] = *period.Period.Timezone
 	}
 
 	return annotations
@@ -82,7 +71,7 @@ func (am *annotationManager) RemoveAnnotations(annotations map[string]string) ma
 //nolint:revive,gocritic // maxReplicas parameter name is clearer than renaming to avoid builtin 'max'
 func (am *annotationManager) AddMinMaxAnnotations(
 	annot map[string]string,
-	curPeriod interface{},
+	curPeriod *periodPkg.Period,
 	minReplicas *int32,
 	max int32,
 ) map[string]string {
@@ -141,7 +130,7 @@ func (am *annotationManager) RestoreMinMaxAnnotations(annot map[string]string) (
 }
 
 // AddBoolAnnotations adds bool annotation with original value
-func (am *annotationManager) AddBoolAnnotations(annot map[string]string, curPeriod interface{}, value bool) map[string]string {
+func (am *annotationManager) AddBoolAnnotations(annot map[string]string, curPeriod *periodPkg.Period, value bool) map[string]string {
 	annotations := am.AddAnnotations(annot, curPeriod)
 
 	_, isExists := annotations[AnnotationsPrefix+"/"+AnnotationsOrigValue]
@@ -178,7 +167,7 @@ func (am *annotationManager) RestoreBoolAnnotations(annot map[string]string) (bo
 }
 
 // AddIntAnnotations adds int annotation with original value
-func (am *annotationManager) AddIntAnnotations(annot map[string]string, curPeriod interface{}, value *int32) map[string]string {
+func (am *annotationManager) AddIntAnnotations(annot map[string]string, curPeriod *periodPkg.Period, value *int32) map[string]string {
 	annotations := am.AddAnnotations(annot, curPeriod)
 
 	_, isExists := annotations[AnnotationsPrefix+"/"+AnnotationsOrigValue]

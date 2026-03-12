@@ -254,19 +254,15 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (&k8sController.ScalerReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-		Logger: &logger,
-	}).SetupWithManager(mgr); err != nil {
+	if err = k8sController.NewScalerReconciler(
+		mgr.GetClient(), mgr.GetScheme(), &logger, nil,
+	).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "K8sScaler")
 		os.Exit(1)
 	}
-	if err = (&gcpController.ScalerReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-		Logger: &logger,
-	}).SetupWithManager(mgr); err != nil {
+	if err = gcpController.NewScalerReconciler(
+		mgr.GetClient(), mgr.GetScheme(), &logger, nil,
+	).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "GcpScaler")
 		os.Exit(1)
 	}

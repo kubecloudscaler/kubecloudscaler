@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"os"
 	"slices"
+	"sync"
 	"time"
 
 	"github.com/rs/zerolog"
@@ -30,21 +31,41 @@ import (
 
 const namespaceCacheTTL = 5 * time.Minute
 
+// EnvProvider provides environment variable access (injectable for testability).
+// clients.EnvironmentProvider from pkg/k8s/utils/client implements this interface.
+type EnvProvider interface {
+	GetEnv(key string) string
+}
+
+// defaultEnvProvider uses os.Getenv for production use.
+type defaultEnvProvider struct{}
+
+func (defaultEnvProvider) GetEnv(key string) string {
+	return os.Getenv(key)
+}
+
 // namespaceManager implements NamespaceManager interface
 type namespaceManager struct {
 	client       KubernetesClient
 	logger       zerolog.Logger
+	envProvider  EnvProvider
+	mu           sync.RWMutex
 	cachedNsList []string
 	cacheExpiry  time.Time
 }
 
-// NewNamespaceManager creates a new namespace manager
+// NewNamespaceManager creates a new namespace manager.
+// If envProvider is nil, a default provider using os.Getenv is used.
 //
 //nolint:gocritic // zerolog.Logger is designed to be passed by value
-func NewNamespaceManager(client KubernetesClient, logger zerolog.Logger) NamespaceManager {
+func NewNamespaceManager(client KubernetesClient, logger zerolog.Logger, envProvider EnvProvider) NamespaceManager {
+	if envProvider == nil {
+		envProvider = defaultEnvProvider{}
+	}
 	return &namespaceManager{
-		client: client,
-		logger: logger,
+		client:      client,
+		logger:      logger,
+		envProvider: envProvider,
 	}
 }
 
@@ -52,51 +73,70 @@ func NewNamespaceManager(client KubernetesClient, logger zerolog.Logger) Namespa
 func (nm *namespaceManager) SetNamespaceList(ctx context.Context, config *Config) ([]string, error) {
 	nsList := []string{}
 
-	// get the list of namespaces
 	if len(config.Namespaces) > 0 {
 		nsList = config.Namespaces
-	} else if time.Now().Before(nm.cacheExpiry) && nm.cachedNsList != nil {
-		// use cached namespace list (copy to avoid mutation)
-		nsList = make([]string, 0, len(nm.cachedNsList))
-		for _, ns := range nm.cachedNsList {
-			if slices.Contains(config.ExcludeNamespaces, ns) {
-				continue
-			}
-			nsList = append(nsList, ns)
-		}
+	} else if cached := nm.readCachedNamespaces(config.ExcludeNamespaces); cached != nil {
+		nsList = cached
 	} else {
-		// get all namespaces from the cluster
-		nsListItems, err := nm.client.CoreV1().Namespaces().List(ctx, metaV1.ListOptions{})
+		var err error
+		nsList, err = nm.refreshNamespaceCache(ctx, config.ExcludeNamespaces)
 		if err != nil {
-			nm.logger.Debug().Msg("error listing namespaces")
-			return []string{}, fmt.Errorf("error listing namespaces: %w", err)
-		}
-
-		// cache all namespace names before filtering
-		allNames := make([]string, 0, len(nsListItems.Items))
-		//nolint:gocritic // Range iteration of struct is acceptable, using index would reduce readability
-		for _, ns := range nsListItems.Items {
-			allNames = append(allNames, ns.Name)
-		}
-		nm.cachedNsList = allNames
-		nm.cacheExpiry = time.Now().Add(namespaceCacheTTL)
-
-		for _, ns := range allNames {
-			if slices.Contains(config.ExcludeNamespaces, ns) {
-				continue
-			}
-			nsList = append(nsList, ns)
+			return []string{}, err
 		}
 	}
 
-	// force exclude system namespaces
 	if config.ForceExcludeSystemNamespaces {
 		nsList = nm.excludeSystemNamespaces(nsList)
 	}
 
-	// force always exclude my own namespace
 	nsList = nm.excludeOwnNamespace(nsList)
 
+	return nsList, nil
+}
+
+func (nm *namespaceManager) readCachedNamespaces(excludeNamespaces []string) []string {
+	nm.mu.RLock()
+	defer nm.mu.RUnlock()
+
+	if nm.cachedNsList == nil || !time.Now().Before(nm.cacheExpiry) {
+		return nil
+	}
+
+	nsList := make([]string, 0, len(nm.cachedNsList))
+	for _, ns := range nm.cachedNsList {
+		if slices.Contains(excludeNamespaces, ns) {
+			continue
+		}
+		nsList = append(nsList, ns)
+	}
+	return nsList
+}
+
+func (nm *namespaceManager) refreshNamespaceCache(ctx context.Context, excludeNamespaces []string) ([]string, error) {
+	nsListItems, err := nm.client.CoreV1().Namespaces().List(ctx, metaV1.ListOptions{})
+	if err != nil {
+		nm.logger.Debug().Msg("error listing namespaces")
+		return nil, fmt.Errorf("error listing namespaces: %w", err)
+	}
+
+	allNames := make([]string, 0, len(nsListItems.Items))
+	//nolint:gocritic // Range iteration of struct is acceptable, using index would reduce readability
+	for _, ns := range nsListItems.Items {
+		allNames = append(allNames, ns.Name)
+	}
+
+	nm.mu.Lock()
+	nm.cachedNsList = allNames
+	nm.cacheExpiry = time.Now().Add(namespaceCacheTTL)
+	nm.mu.Unlock()
+
+	nsList := make([]string, 0, len(allNames))
+	for _, ns := range allNames {
+		if slices.Contains(excludeNamespaces, ns) {
+			continue
+		}
+		nsList = append(nsList, ns)
+	}
 	return nsList, nil
 }
 
@@ -158,7 +198,7 @@ func (nm *namespaceManager) excludeSystemNamespaces(nsList []string) []string {
 
 // excludeOwnNamespace removes the own namespace from the list
 func (nm *namespaceManager) excludeOwnNamespace(nsList []string) []string {
-	ownNamespace := os.Getenv("POD_NAMESPACE")
+	ownNamespace := nm.envProvider.GetEnv("POD_NAMESPACE")
 	if ownNamespace == "" {
 		return nsList
 	}
