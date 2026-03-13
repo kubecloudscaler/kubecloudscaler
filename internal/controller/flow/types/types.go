@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"github.com/kubecloudscaler/kubecloudscaler/api/common"
+	kubecloudscalerv1alpha3 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha3"
 )
 
 // PeriodWithDelay contains period information with calculated delay
@@ -31,9 +32,11 @@ type PeriodWithDelay struct {
 	EndTime        time.Time
 }
 
-// ResourceInfo contains information about a resource and its associated periods
+// ResourceInfo contains information about a resource and its associated periods.
+// Exactly one of K8sRes or GcpRes is set, determined by Type.
 type ResourceInfo struct {
-	Type     string            // "k8s" or "gcp"
-	Resource interface{}       // K8sResource or GcpResource
-	Periods  []PeriodWithDelay // Associated periods with delays
+	Type    string                               // "k8s" or "gcp"
+	K8sRes  *kubecloudscalerv1alpha3.K8sResource // Set when Type == "k8s"
+	GcpRes  *kubecloudscalerv1alpha3.GcpResource // Set when Type == "gcp"
+	Periods []PeriodWithDelay                    // Associated periods with delays
 }

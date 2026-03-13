@@ -30,6 +30,7 @@ import (
 
 	"github.com/kubecloudscaler/kubecloudscaler/api/common"
 	kubecloudscalerv1alpha3 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha3"
+	"github.com/kubecloudscaler/kubecloudscaler/internal/controller/gcp/service"
 )
 
 var _ = Describe("Scaler Controller", func() {
@@ -49,8 +50,8 @@ var _ = Describe("Scaler Controller", func() {
 						Type: "down",
 						Time: common.TimePeriod{
 							Recurring: &common.RecurringPeriod{
-								Days: []string{
-									"all",
+								Days: []common.DayOfWeek{
+									common.DayAll,
 								},
 								StartTime: "00:00",
 								EndTime:   "00:00",
@@ -72,12 +73,15 @@ var _ = Describe("Scaler Controller", func() {
 						Namespace: "default",
 					},
 					Spec: kubecloudscalerv1alpha3.GcpSpec{
+						Config: kubecloudscalerv1alpha3.GcpConfig{
+							DefaultPeriodType: "down",
+						},
 						Periods: []common.ScalerPeriod{
 							{
 								Type: "down",
 								Time: common.TimePeriod{
 									Recurring: &common.RecurringPeriod{
-										Days: []string{
+										Days: []common.DayOfWeek{
 											"all",
 										},
 										StartTime: "00:00",
@@ -97,13 +101,16 @@ var _ = Describe("Scaler Controller", func() {
 			// TODO(user): Cleanup logic after each test, like removing the resource instance.
 			resource := &kubecloudscalerv1alpha3.Gcp{
 				Spec: kubecloudscalerv1alpha3.GcpSpec{
+					Config: kubecloudscalerv1alpha3.GcpConfig{
+						DefaultPeriodType: "down",
+					},
 					Periods: []common.ScalerPeriod{
 						{
 							Type: "down",
 							Time: common.TimePeriod{
 								Recurring: &common.RecurringPeriod{
-									Days: []string{
-										"all",
+									Days: []common.DayOfWeek{
+										common.DayAll,
 									},
 									StartTime: "00:00",
 									EndTime:   "00:00",
@@ -132,18 +139,10 @@ var _ = Describe("Scaler Controller", func() {
 				NamespacedName: typeNamespacedName,
 			})
 
-			// In test environment without GCP credentials, authentication will fail
-			// The refactored controller correctly returns a critical error (improved behavior)
-			// Original controller logged error but returned nil - this is now properly surfaced
+			// GCP auth may or may not fail depending on credentials availability in the test environment.
 			if err != nil {
-				// Verify error is related to authentication (expected in test environment)
-				Expect(err.Error()).To(ContainSubstring("credentials"))
-				Expect(result.RequeueAfter).To(BeNumerically(">", 0))
-				By("Verified: Controller properly handles authentication failure with critical error")
-			} else {
-				// If GCP credentials are available, reconciliation should succeed
-				Expect(result.Requeue || result.RequeueAfter > 0).To(BeTrue())
-				By("Verified: Controller successfully reconciled with available credentials")
+				Expect(service.IsCriticalError(err)).To(BeTrue())
+				Expect(result.RequeueAfter).To(BeZero())
 			}
 		})
 	})

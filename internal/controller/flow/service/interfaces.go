@@ -25,7 +25,6 @@ import (
 	kubecloudscalerv1alpha3 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha3"
 	"github.com/kubecloudscaler/kubecloudscaler/internal/controller/flow/types"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 // FlowProcessor defines the interface for processing flow resources
@@ -72,11 +71,12 @@ type ResourceMapper interface {
 	) (map[string]types.ResourceInfo, error)
 }
 
-// StatusUpdater defines the interface for updating flow status
+// StatusUpdater defines the interface for updating flow status.
+// Returns error only; caller is responsible for requeue timing.
 type StatusUpdater interface {
 	UpdateFlowStatus(
 		ctx context.Context,
 		flow *kubecloudscalerv1alpha3.Flow,
 		condition metav1.Condition,
-	) (ctrl.Result, error)
+	) error
 }

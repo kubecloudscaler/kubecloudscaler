@@ -23,11 +23,9 @@ import (
 	"github.com/rs/zerolog"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/util/retry"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	kubecloudscalerv1alpha3 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha3"
-	"github.com/kubecloudscaler/kubecloudscaler/internal/utils"
 )
 
 // StatusUpdaterService handles updating flow status
@@ -44,12 +42,13 @@ func NewStatusUpdaterService(client client.Client, logger *zerolog.Logger) *Stat
 	}
 }
 
-// UpdateFlowStatus updates the flow status with the given condition
+// UpdateFlowStatus updates the flow status with the given condition.
+// Returns error only; caller sets RequeueAfter for reconciliation timing.
 func (s *StatusUpdaterService) UpdateFlowStatus(
 	ctx context.Context,
 	flow *kubecloudscalerv1alpha3.Flow,
 	condition metav1.Condition,
-) (ctrl.Result, error) {
+) error {
 	condition.LastTransitionTime = metav1.NewTime(time.Now())
 	flowKey := client.ObjectKeyFromObject(flow)
 
@@ -62,7 +61,7 @@ func (s *StatusUpdaterService) UpdateFlowStatus(
 		return s.client.Status().Update(ctx, flow)
 	}); err != nil {
 		s.logger.Error().Err(err).Msg("unable to update flow status")
-		return ctrl.Result{RequeueAfter: utils.ReconcileErrorDuration}, err
+		return err
 	}
 
 	s.logger.Info().
@@ -71,7 +70,7 @@ func (s *StatusUpdaterService) UpdateFlowStatus(
 		Str("status", string(condition.Status)).
 		Msg("flow status updated")
 
-	return ctrl.Result{RequeueAfter: utils.ReconcileSuccessDuration}, nil
+	return nil
 }
 
 // updateConditionInFlow updates or adds a condition to the flow

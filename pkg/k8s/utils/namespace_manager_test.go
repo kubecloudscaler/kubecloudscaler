@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package utils
+package utils_test
 
 import (
 	"context"
@@ -26,6 +26,9 @@ import (
 	"github.com/rs/zerolog"
 	coreV1 "k8s.io/api/core/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/kubecloudscaler/kubecloudscaler/pkg/k8s/utils"
+	"github.com/kubecloudscaler/kubecloudscaler/pkg/k8s/utils/testutil"
 )
 
 func TestNamespaceManagerOriginal(t *testing.T) {
@@ -37,17 +40,17 @@ var _ = Describe("NamespaceManager", func() {
 	var (
 		ctx          context.Context
 		logger       zerolog.Logger
-		namespaceMgr NamespaceManager
-		mockClient   *MockKubernetesClient
-		config       *Config
+		namespaceMgr utils.NamespaceManager
+		mockClient   *testutil.MockKubernetesClient
+		config       *utils.Config
 	)
 
 	BeforeEach(func() {
 		ctx = context.Background()
 		logger = zerolog.Nop()
-		mockClient = &MockKubernetesClient{}
-		namespaceMgr = NewNamespaceManager(mockClient, logger)
-		config = &Config{
+		mockClient = &testutil.MockKubernetesClient{}
+		namespaceMgr = utils.NewNamespaceManager(mockClient, logger, nil)
+		config = &utils.Config{
 			ForceExcludeSystemNamespaces: true,
 		}
 	})
@@ -64,10 +67,10 @@ var _ = Describe("NamespaceManager", func() {
 
 		It("should return namespaces from cluster when no namespaces specified", func() {
 			config.Namespaces = []string{}
-			mockClient.CoreV1Func = func() CoreV1Interface {
-				return &MockCoreV1Interface{
-					NamespacesFunc: func() NamespaceLister {
-						return &MockNamespaceLister{
+			mockClient.CoreV1Func = func() utils.CoreV1Interface {
+				return &testutil.MockCoreV1Interface{
+					NamespacesFunc: func() utils.NamespaceLister {
+						return &testutil.MockNamespaceLister{
 							ListFunc: func(ctx context.Context, opts metaV1.ListOptions) (*coreV1.NamespaceList, error) {
 								return &coreV1.NamespaceList{
 									Items: []coreV1.Namespace{
@@ -92,10 +95,10 @@ var _ = Describe("NamespaceManager", func() {
 		It("should exclude specified namespaces", func() {
 			config.Namespaces = []string{}
 			config.ExcludeNamespaces = []string{"exclude-ns"}
-			mockClient.CoreV1Func = func() CoreV1Interface {
-				return &MockCoreV1Interface{
-					NamespacesFunc: func() NamespaceLister {
-						return &MockNamespaceLister{
+			mockClient.CoreV1Func = func() utils.CoreV1Interface {
+				return &testutil.MockCoreV1Interface{
+					NamespacesFunc: func() utils.NamespaceLister {
+						return &testutil.MockNamespaceLister{
 							ListFunc: func(ctx context.Context, opts metaV1.ListOptions) (*coreV1.NamespaceList, error) {
 								return &coreV1.NamespaceList{
 									Items: []coreV1.Namespace{
@@ -119,10 +122,10 @@ var _ = Describe("NamespaceManager", func() {
 
 		It("should return error when client fails to list namespaces", func() {
 			config.Namespaces = []string{}
-			mockClient.CoreV1Func = func() CoreV1Interface {
-				return &MockCoreV1Interface{
-					NamespacesFunc: func() NamespaceLister {
-						return &MockNamespaceLister{
+			mockClient.CoreV1Func = func() utils.CoreV1Interface {
+				return &testutil.MockCoreV1Interface{
+					NamespacesFunc: func() utils.NamespaceLister {
+						return &testutil.MockNamespaceLister{
 							ListFunc: func(ctx context.Context, opts metaV1.ListOptions) (*coreV1.NamespaceList, error) {
 								return nil, errors.New("mock error")
 							},
@@ -142,10 +145,10 @@ var _ = Describe("NamespaceManager", func() {
 	Context("PrepareSearch", func() {
 		It("should prepare search with default label selector", func() {
 			config.Namespaces = []string{"test-ns"}
-			mockClient.CoreV1Func = func() CoreV1Interface {
-				return &MockCoreV1Interface{
-					NamespacesFunc: func() NamespaceLister {
-						return &MockNamespaceLister{
+			mockClient.CoreV1Func = func() utils.CoreV1Interface {
+				return &testutil.MockCoreV1Interface{
+					NamespacesFunc: func() utils.NamespaceLister {
+						return &testutil.MockNamespaceLister{
 							ListFunc: func(ctx context.Context, opts metaV1.ListOptions) (*coreV1.NamespaceList, error) {
 								return &coreV1.NamespaceList{
 									Items: []coreV1.Namespace{
@@ -193,10 +196,10 @@ var _ = Describe("NamespaceManager", func() {
 	Context("InitConfig", func() {
 		It("should initialize K8sResource successfully", func() {
 			config.Namespaces = []string{"test-ns"}
-			mockClient.CoreV1Func = func() CoreV1Interface {
-				return &MockCoreV1Interface{
-					NamespacesFunc: func() NamespaceLister {
-						return &MockNamespaceLister{
+			mockClient.CoreV1Func = func() utils.CoreV1Interface {
+				return &testutil.MockCoreV1Interface{
+					NamespacesFunc: func() utils.NamespaceLister {
+						return &testutil.MockNamespaceLister{
 							ListFunc: func(ctx context.Context, opts metaV1.ListOptions) (*coreV1.NamespaceList, error) {
 								return &coreV1.NamespaceList{
 									Items: []coreV1.Namespace{

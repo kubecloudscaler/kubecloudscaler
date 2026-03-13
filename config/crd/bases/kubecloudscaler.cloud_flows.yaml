@@ -134,6 +134,8 @@ spec:
                           properties:
                             days:
                               items:
+                                description: DayOfWeek represents a day of the week
+                                  for recurring periods.
                                 type: string
                               type: array
                             endTime:
@@ -160,6 +162,7 @@ spec:
                           type: object
                       type: object
                     type:
+                      description: PeriodType represents the type of a scaling period.
                       enum:
                       - down
                       - up
@@ -209,7 +212,9 @@ spec:
                               description: Wait for operation to complete
                               type: boolean
                           required:
+                          - defaultPeriodType
                           - projectId
+                          - restoreOnDelete
                           type: object
                         name:
                           type: string
@@ -274,6 +279,8 @@ spec:
                                 K8s: deployments, statefulsets, ... (default: deployments)
                                 GCP: VM-instances, ... (default: vm-instances)
                               items:
+                                description: ResourceKind represents a type of scalable
+                                  resource.
                                 type: string
                               type: array
                           type: object
@@ -320,6 +327,9 @@ spec:
                               description: 'Restore resource state on CR deletion
                                 (default: true)'
                               type: boolean
+                          required:
+                          - forceExcludeSystemNamespaces
+                          - restoreOnDelete
                           type: object
                         name:
                           type: string
@@ -384,6 +394,8 @@ spec:
                                 K8s: deployments, statefulsets, ... (default: deployments)
                                 GCP: VM-instances, ... (default: vm-instances)
                               items:
+                                description: ResourceKind represents a type of scalable
+                                  resource.
                                 type: string
                               type: array
                           type: object

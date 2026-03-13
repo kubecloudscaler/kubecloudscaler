@@ -17,62 +17,200 @@ limitations under the License.
 package v1alpha3
 
 import (
+	"context"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
+	"github.com/kubecloudscaler/kubecloudscaler/api/common"
 	kubecloudscalerv1alpha3 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha3"
-	// TODO (user): Add any additional imports if needed
 )
 
-var _ = Describe("Gcp Webhook", func() {
+var _ = Describe("Gcp Webhook Validation", func() {
 	var (
-		obj    *kubecloudscalerv1alpha3.Gcp
-		oldObj *kubecloudscalerv1alpha3.Gcp
+		validator *GcpCustomValidator
+		ctx       context.Context
 	)
 
 	BeforeEach(func() {
-		obj = &kubecloudscalerv1alpha3.Gcp{}
-		oldObj = &kubecloudscalerv1alpha3.Gcp{}
-		Expect(oldObj).NotTo(BeNil(), "Expected oldObj to be initialized")
-		Expect(obj).NotTo(BeNil(), "Expected obj to be initialized")
-		// TODO (user): Add any setup logic common to all tests
+		validator = &GcpCustomValidator{}
+		ctx = context.Background()
 	})
 
-	AfterEach(func() {
-		// TODO (user): Add any teardown logic common to all tests
+	Context("When validating Gcp creation", func() {
+		It("should accept valid minimal spec", func() {
+			gcp := &kubecloudscalerv1alpha3.Gcp{
+				Spec: kubecloudscalerv1alpha3.GcpSpec{
+					Config: kubecloudscalerv1alpha3.GcpConfig{
+						ProjectID: "my-project",
+					},
+					Periods: []common.ScalerPeriod{
+						{
+							Type: common.PeriodTypeUp,
+							Time: common.TimePeriod{
+								Recurring: &common.RecurringPeriod{
+									Days:      []common.DayOfWeek{common.DayMonday, common.DayTuesday},
+									StartTime: "09:00",
+									EndTime:   "17:00",
+								},
+							},
+						},
+					},
+					Resources: common.Resources{
+						Types: []common.ResourceKind{common.ResourceVMInstances},
+					},
+				},
+			}
+
+			warnings, err := validator.ValidateCreate(ctx, gcp)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(warnings).To(BeNil())
+		})
+
+		It("should reject empty projectId", func() {
+			gcp := &kubecloudscalerv1alpha3.Gcp{
+				Spec: kubecloudscalerv1alpha3.GcpSpec{
+					Config: kubecloudscalerv1alpha3.GcpConfig{
+						ProjectID: "",
+					},
+					Periods: []common.ScalerPeriod{
+						{
+							Type: common.PeriodTypeUp,
+							Time: common.TimePeriod{
+								Recurring: &common.RecurringPeriod{
+									Days:      []common.DayOfWeek{common.DayMonday},
+									StartTime: "09:00",
+									EndTime:   "17:00",
+								},
+							},
+						},
+					},
+				},
+			}
+
+			warnings, err := validator.ValidateCreate(ctx, gcp)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("config.projectId is required"))
+			Expect(warnings).To(BeNil())
+		})
+
+		It("should reject empty periods", func() {
+			gcp := &kubecloudscalerv1alpha3.Gcp{
+				Spec: kubecloudscalerv1alpha3.GcpSpec{
+					Config: kubecloudscalerv1alpha3.GcpConfig{
+						ProjectID: "my-project",
+					},
+					Periods: []common.ScalerPeriod{},
+				},
+			}
+
+			warnings, err := validator.ValidateCreate(ctx, gcp)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("at least one period is required"))
+			Expect(warnings).To(BeNil())
+		})
+
+		It("should reject invalid period type", func() {
+			gcp := &kubecloudscalerv1alpha3.Gcp{
+				Spec: kubecloudscalerv1alpha3.GcpSpec{
+					Config: kubecloudscalerv1alpha3.GcpConfig{
+						ProjectID: "my-project",
+					},
+					Periods: []common.ScalerPeriod{
+						{
+							Type: "invalid",
+							Time: common.TimePeriod{
+								Recurring: &common.RecurringPeriod{
+									Days:      []common.DayOfWeek{common.DayMonday},
+									StartTime: "09:00",
+									EndTime:   "17:00",
+								},
+							},
+						},
+					},
+				},
+			}
+
+			warnings, err := validator.ValidateCreate(ctx, gcp)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("type must be 'up' or 'down'"))
+			Expect(warnings).To(BeNil())
+		})
 	})
 
-	Context("When creating or updating Gcp under Validating Webhook", func() {
-		// TODO (user): Add logic for validating webhooks
-		// Example:
-		// It("Should deny creation if a required field is missing", func() {
-		//     By("simulating an invalid creation scenario")
-		//     obj.SomeRequiredField = ""
-		//     Expect(validator.ValidateCreate(ctx, obj)).Error().To(HaveOccurred())
-		// })
-		//
-		// It("Should admit creation if all required fields are present", func() {
-		//     By("simulating an invalid creation scenario")
-		//     obj.SomeRequiredField = "valid_value"
-		//     Expect(validator.ValidateCreate(ctx, obj)).To(BeNil())
-		// })
-		//
-		// It("Should validate updates correctly", func() {
-		//     By("simulating a valid update scenario")
-		//     oldObj.SomeRequiredField = "updated_value"
-		//     obj.SomeRequiredField = "updated_value"
-		//     Expect(validator.ValidateUpdate(ctx, oldObj, obj)).To(BeNil())
-		// })
+	Context("When validating Gcp updates", func() {
+		It("should accept valid spec on update", func() {
+			oldGcp := &kubecloudscalerv1alpha3.Gcp{
+				Spec: kubecloudscalerv1alpha3.GcpSpec{
+					Config: kubecloudscalerv1alpha3.GcpConfig{
+						ProjectID: "my-project",
+					},
+					Periods: []common.ScalerPeriod{
+						{
+							Type: common.PeriodTypeUp,
+							Time: common.TimePeriod{
+								Recurring: &common.RecurringPeriod{
+									Days:      []common.DayOfWeek{common.DayMonday},
+									StartTime: "09:00",
+									EndTime:   "17:00",
+								},
+							},
+						},
+					},
+				},
+			}
+
+			newGcp := &kubecloudscalerv1alpha3.Gcp{
+				Spec: kubecloudscalerv1alpha3.GcpSpec{
+					Config: kubecloudscalerv1alpha3.GcpConfig{
+						ProjectID: "my-project",
+					},
+					Periods: []common.ScalerPeriod{
+						{
+							Type: common.PeriodTypeDown,
+							Time: common.TimePeriod{
+								Recurring: &common.RecurringPeriod{
+									Days:      []common.DayOfWeek{common.DayMonday, common.DayFriday},
+									StartTime: "18:00",
+									EndTime:   "08:00",
+								},
+							},
+						},
+					},
+				},
+			}
+
+			warnings, err := validator.ValidateUpdate(ctx, oldGcp, newGcp)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(warnings).To(BeNil())
+		})
 	})
 
-	Context("When creating Gcp under Conversion Webhook", func() {
-		// TODO (user): Add logic to convert the object to the desired version and verify the conversion
-		// Example:
-		// It("Should convert the object correctly", func() {
-		//     convertedObj := &kubecloudscalerv1alpha3.Gcp{}
-		//     Expect(obj.ConvertTo(convertedObj)).To(Succeed())
-		//     Expect(convertedObj).ToNot(BeNil())
-		// })
-	})
+	Context("When validating Gcp deletion", func() {
+		It("should always allow deletion", func() {
+			gcp := &kubecloudscalerv1alpha3.Gcp{
+				Spec: kubecloudscalerv1alpha3.GcpSpec{
+					Config: kubecloudscalerv1alpha3.GcpConfig{
+						ProjectID: "my-project",
+					},
+					Periods: []common.ScalerPeriod{
+						{
+							Type: common.PeriodTypeUp,
+							Time: common.TimePeriod{
+								Recurring: &common.RecurringPeriod{
+									Days:      []common.DayOfWeek{common.DayMonday},
+									StartTime: "09:00",
+									EndTime:   "17:00",
+								},
+							},
+						},
+					},
+				},
+			}
 
+			warnings, err := validator.ValidateDelete(ctx, gcp)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(warnings).To(BeNil())
+		})
+	})
 })

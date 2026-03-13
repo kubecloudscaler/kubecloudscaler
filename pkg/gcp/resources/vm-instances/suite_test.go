@@ -7,7 +7,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func TestVMnstances(t *testing.T) {
+func TestVMInstances(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "VMnstances Suite")
+	RunSpecs(t, "VMInstances Suite")
 }

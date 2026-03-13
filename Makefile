@@ -61,8 +61,10 @@ vet: ## Run go vet against code.
 test: manifests generate fmt vet setup-envtest ## Run tests.
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" go test $$(go list ./... | grep -v /e2e) -coverprofile cover.out
 
+COVERAGE_THRESHOLD ?= 80
+
 .PHONY: test-coverage
-test-coverage: setup-envtest ## Run tests with coverage analysis and generate reports.
+test-coverage: setup-envtest ## Run tests with coverage analysis and generate reports. Fails if below COVERAGE_THRESHOLD (default 80%).
 	@echo "Running tests with coverage analysis..."
 	@KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" go test $$(go list ./... | grep -v /e2e) -coverprofile=coverage.out -covermode=atomic
 	@echo ""
@@ -72,6 +74,8 @@ test-coverage: setup-envtest ## Run tests with coverage analysis and generate re
 	@echo "=== Per-Package Coverage ==="
 	@go tool cover -func=coverage.out | grep -v "total:" | awk '{print $$1 " " $$3}' | column -t
 	@echo ""
+	@go tool cover -func=coverage.out | tail -1 | awk -v thresh=$(COVERAGE_THRESHOLD) \
+		'{gsub(/%/,"",$$3); c=$$3+0; if(c>0 && c<thresh){printf "ERROR: Coverage %.1f%% below threshold %d%%\n", c, thresh; exit 1}}'
 	@echo "Generating HTML coverage report..."
 	@go tool cover -html=coverage.out -o coverage.html
 	@echo "✓ HTML report generated: coverage.html"

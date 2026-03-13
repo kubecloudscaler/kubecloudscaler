@@ -27,3 +27,43 @@ webhooks:
     resources:
     - flows
   sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: '{{ include "helm.fullname" . }}-webhook-service'
+      namespace: '{{ .Release.Namespace }}'
+      path: /validate-kubecloudscaler-cloud-v1alpha3-gcp
+  failurePolicy: Fail
+  name: vgcp-v1alpha3.kb.io
+  rules:
+  - apiGroups:
+    - kubecloudscaler.cloud
+    apiVersions:
+    - v1alpha3
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - gcps
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: '{{ include "helm.fullname" . }}-webhook-service'
+      namespace: '{{ .Release.Namespace }}'
+      path: /validate-kubecloudscaler-cloud-v1alpha3-k8s
+  failurePolicy: Fail
+  name: vk8s-v1alpha3.kb.io
+  rules:
+  - apiGroups:
+    - kubecloudscaler.cloud
+    apiVersions:
+    - v1alpha3
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - k8s
+  sideEffects: None

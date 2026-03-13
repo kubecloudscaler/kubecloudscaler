@@ -219,7 +219,7 @@ func main() {
 			filepath.Join(metricsCertPath, metricsCertKey),
 		)
 		if err != nil {
-			setupLog.Error(err, "to initialize metrics certificate watcher", "error", err)
+			setupLog.Error(err, "Failed to initialize metrics certificate watcher")
 			os.Exit(1)
 		}
 
@@ -254,24 +254,20 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (&k8sController.ScalerReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-		Logger: &logger,
-	}).SetupWithManager(mgr); err != nil {
+	if err = k8sController.NewScalerReconciler(
+		mgr.GetClient(), mgr.GetScheme(), &logger, nil,
+	).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "K8sScaler")
 		os.Exit(1)
 	}
-	if err = (&gcpController.ScalerReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-		Logger: &logger,
-	}).SetupWithManager(mgr); err != nil {
+	if err = gcpController.NewScalerReconciler(
+		mgr.GetClient(), mgr.GetScheme(), &logger, nil,
+	).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "GcpScaler")
 		os.Exit(1)
 	}
 
-	flowReconciler := flowController.NewFlowReconciler(mgr.GetClient(), mgr.GetScheme(), &logger)
+	flowReconciler := flowController.NewFlowReconciler(mgr.GetClient(), mgr.GetScheme(), &logger, nil)
 	if err := flowReconciler.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Flow")
 		os.Exit(1)

@@ -47,7 +47,7 @@ type K8sConfig struct {
 	ExcludeNamespaces []string `json:"excludeNamespaces,omitempty"`
 	// Force exclude system namespaces
 	// +kubebuilder:default:=true
-	ForceExcludeSystemNamespaces bool `json:"forceExcludeSystemNamespaces,omitempty"`
+	ForceExcludeSystemNamespaces bool `json:"forceExcludeSystemNamespaces"`
 	// Deployment time annotation
 	DeploymentTimeAnnotation string `json:"deploymentTimeAnnotation,omitempty"`
 	// Disable events
@@ -56,7 +56,7 @@ type K8sConfig struct {
 	AuthSecret *string `json:"authSecret,omitempty"`
 	// Restore resource state on CR deletion (default: true)
 	// +kubebuilder:default:=true
-	RestoreOnDelete bool `json:"restoreOnDelete,omitempty"`
+	RestoreOnDelete bool `json:"restoreOnDelete"`
 }
 
 // +kubebuilder:object:root=true

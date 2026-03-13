@@ -44,14 +44,14 @@ var _ = Describe("Deployments", func() {
 
 		BeforeEach(func() {
 			mockPeriod = &period.Period{
-				Type:         "down",
-				MinReplicas:  1,
-				MaxReplicas:  5,
-				IsActive:     true,
-				GetStartTime: time.Now(),
-				GetEndTime:   time.Now(),
-				Period: &common.RecurringPeriod{
-					Days:      []string{"all"},
+				Type:        common.PeriodTypeDown,
+				MinReplicas: 1,
+				MaxReplicas: 5,
+				IsActive:    true,
+				StartTime:   time.Now(),
+				EndTime:     time.Now(),
+				Spec: &common.RecurringPeriod{
+					Days:      []common.DayOfWeek{common.DayAll},
 					StartTime: "00:00",
 					EndTime:   "23:59",
 				},
@@ -72,7 +72,7 @@ var _ = Describe("Deployments", func() {
 
 		Context("when scaling down deployments", func() {
 			BeforeEach(func() {
-				mockPeriod.Type = "down"
+				mockPeriod.Type = common.PeriodTypeDown
 				mockPeriod.MinReplicas = 0
 
 				// Create a test deployment
@@ -121,7 +121,7 @@ var _ = Describe("Deployments", func() {
 
 		Context("when scaling up deployments", func() {
 			BeforeEach(func() {
-				mockPeriod.Type = "up"
+				mockPeriod.Type = common.PeriodTypeUp
 				mockPeriod.MaxReplicas = 5
 
 				// Create a test deployment
@@ -327,7 +327,7 @@ var _ = Describe("Deployments", func() {
 
 		Context("with multiple deployments", func() {
 			BeforeEach(func() {
-				mockPeriod.Type = "down"
+				mockPeriod.Type = common.PeriodTypeDown
 				mockPeriod.MinReplicas = 1
 
 				// Create multiple test deployments
@@ -386,7 +386,7 @@ var _ = Describe("Deployments", func() {
 			var secondNamespace = "second-namespace"
 
 			BeforeEach(func() {
-				mockPeriod.Type = "down"
+				mockPeriod.Type = common.PeriodTypeDown
 				mockPeriod.MinReplicas = 1
 
 				// Add second namespace
@@ -427,7 +427,7 @@ var _ = Describe("Deployments", func() {
 
 		Context("edge cases", func() {
 			It("should handle deployment with nil replicas", func() {
-				mockPeriod.Type = "down"
+				mockPeriod.Type = common.PeriodTypeDown
 				mockPeriod.MinReplicas = 1
 
 				// Create a deployment with nil replicas (defaults to 1)
@@ -457,7 +457,7 @@ var _ = Describe("Deployments", func() {
 			})
 
 			It("should handle deployment with zero replicas", func() {
-				mockPeriod.Type = "up"
+				mockPeriod.Type = common.PeriodTypeUp
 				mockPeriod.MaxReplicas = 5
 
 				// Create a deployment with zero replicas

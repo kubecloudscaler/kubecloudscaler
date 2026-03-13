@@ -19,9 +19,12 @@ package utils
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/rs/zerolog"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	periodPkg "github.com/kubecloudscaler/kubecloudscaler/pkg/period"
 )
 
 // BenchmarkSetNamespaceList benchmarks the SetNamespaceList function
@@ -36,7 +39,7 @@ func BenchmarkSetNamespaceList(b *testing.B) {
 	}
 
 	client := NewFakeKubernetesClient()
-	namespaceMgr := NewNamespaceManager(client, logger)
+	namespaceMgr := NewNamespaceManager(client, logger, nil)
 
 	config := &Config{
 		Namespaces:                   namespaces,
@@ -56,11 +59,10 @@ func BenchmarkSetNamespaceList(b *testing.B) {
 func BenchmarkAddAnnotations(b *testing.B) {
 	annotationMgr := NewAnnotationManager()
 
-	period := &MockPeriod{
+	period := &periodPkg.Period{
 		Type:      "test-period",
-		StartTime: &mockTime{timeStr: "2024-01-01T00:00:00Z"},
-		EndTime:   &mockTime{timeStr: "2024-01-01T01:00:00Z"},
-		Timezone:  nil,
+		StartTime: time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
+		EndTime:   time.Date(2024, 1, 1, 1, 0, 0, 0, time.UTC),
 	}
 
 	b.ResetTimer()
@@ -96,11 +98,10 @@ func BenchmarkRemoveAnnotations(b *testing.B) {
 func BenchmarkAddMinMaxAnnotations(b *testing.B) {
 	annotationMgr := NewAnnotationManager()
 
-	period := &MockPeriod{
+	period := &periodPkg.Period{
 		Type:      "test-period",
-		StartTime: &mockTime{timeStr: "2024-01-01T00:00:00Z"},
-		EndTime:   &mockTime{timeStr: "2024-01-01T01:00:00Z"},
-		Timezone:  nil,
+		StartTime: time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
+		EndTime:   time.Date(2024, 1, 1, 1, 0, 0, 0, time.UTC),
 	}
 
 	min := int32(2)
@@ -142,7 +143,7 @@ func BenchmarkPrepareSearch(b *testing.B) {
 	logger := zerolog.Nop()
 
 	client := NewFakeKubernetesClient()
-	namespaceMgr := NewNamespaceManager(client, logger)
+	namespaceMgr := NewNamespaceManager(client, logger, nil)
 
 	config := &Config{
 		Namespaces:                   []string{"test-ns-1", "test-ns-2", "test-ns-3"},
@@ -169,7 +170,7 @@ func BenchmarkInitConfig(b *testing.B) {
 	logger := zerolog.Nop()
 
 	client := NewFakeKubernetesClient()
-	namespaceMgr := NewNamespaceManager(client, logger)
+	namespaceMgr := NewNamespaceManager(client, logger, nil)
 
 	config := &Config{
 		Namespaces:                   []string{"test-ns-1", "test-ns-2", "test-ns-3"},

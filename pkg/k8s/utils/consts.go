@@ -1,25 +1,20 @@
 //nolint:nolintlint,revive // package name 'utils' is acceptable for K8s utility functions
 package utils
 
+import kubeconsts "github.com/kubecloudscaler/kubecloudscaler/pkg/consts"
+
+// Re-export shared constants for backward compatibility.
 const (
-	// AnnotationsPrefix is the prefix for kubecloudscaler annotations.
-	AnnotationsPrefix = "kubecloudscaler.cloud"
-	// AnnotationsOrigValue is the annotation key for original values.
-	AnnotationsOrigValue = "original-value"
-	// AnnotationsMinOrigValue is the annotation key for minimum original values.
-	AnnotationsMinOrigValue = "min-original-value"
-	// AnnotationsMaxOrigValue is the annotation key for maximum original values.
-	AnnotationsMaxOrigValue = "max-original-value"
-	// AnnotationIgnore is the annotation key for ignoring the resource.
+	AnnotationsPrefix       = kubeconsts.AnnotationsPrefix
+	AnnotationsOrigValue    = kubeconsts.AnnotationsOrigValue
+	AnnotationsMinOrigValue = kubeconsts.AnnotationsMinOrigValue
+	AnnotationsMaxOrigValue = kubeconsts.AnnotationsMaxOrigValue
+	PeriodType              = kubeconsts.PeriodType
+	PeriodStartTime         = kubeconsts.PeriodStartTime
+	PeriodEndTime           = kubeconsts.PeriodEndTime
+	PeriodTimezone          = kubeconsts.PeriodTimezone
+	FieldManager            = kubeconsts.FieldManager
+
+	// AnnotationIgnore is the annotation key for ignoring the resource (K8s-specific).
 	AnnotationIgnore = "ignore"
-	// PeriodType is the annotation key for period type.
-	PeriodType = "period-type"
-	// PeriodStartTime is the annotation key for period start time.
-	PeriodStartTime = "period-start-time"
-	// PeriodEndTime is the annotation key for period end time.
-	PeriodEndTime = "period-end-time"
-	// PeriodTimezone is the annotation key for period timezone.
-	PeriodTimezone = "period-timezone"
-	// FieldManager is the field manager name for Kubernetes resources.
-	FieldManager = "kubecloudscaler"
 )

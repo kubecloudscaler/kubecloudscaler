@@ -56,16 +56,16 @@ var _ = Describe("ScalingHandler", func() {
 		scaler.SetNamespace("default")
 		scaler.Spec.Config.ProjectID = "test-project"
 		scaler.Spec.Config.Region = "us-central1"
-		scaler.Spec.Resources.Types = []string{"instance"}
+		scaler.Spec.Resources.Types = []common.ResourceKind{common.ResourceVMInstances}
 		scaler.Spec.Resources.Names = []string{"test-instance-1"}
 
 		// Create a mock period
 		scalerPeriod := &common.ScalerPeriod{
 			Name: "down",
-			Type: "down",
+			Type: common.PeriodTypeDown,
 			Time: common.TimePeriod{
 				Recurring: &common.RecurringPeriod{
-					Days:      []string{"all"},
+					Days:      []common.DayOfWeek{common.DayAll},
 					StartTime: "00:00",
 					EndTime:   "23:59",
 					Once:      ptr.To(false),
@@ -119,14 +119,11 @@ var _ = Describe("ScalingHandler", func() {
 			// Note: Empty slices may be represented as nil in Go, which is valid
 		})
 
-		It("should complete in under 100ms", func() {
-			_ = scalingHandler.Execute(reconCtx)
-		})
 	})
 
 	Context("When no resource types are specified", func() {
 		BeforeEach(func() {
-			scaler.Spec.Resources.Types = []string{}
+			scaler.Spec.Resources.Types = []common.ResourceKind{}
 
 			k8sClient := fake.NewClientBuilder().
 				WithScheme(scheme).
@@ -164,7 +161,7 @@ var _ = Describe("ScalingHandler", func() {
 
 	Context("When multiple resource types are specified", func() {
 		BeforeEach(func() {
-			scaler.Spec.Resources.Types = []string{"instance", "disk", "snapshot"}
+			scaler.Spec.Resources.Types = []common.ResourceKind{common.ResourceVMInstances, common.ResourceVMInstances}
 
 			k8sClient := fake.NewClientBuilder().
 				WithScheme(scheme).
@@ -204,7 +201,7 @@ var _ = Describe("ScalingHandler", func() {
 
 	Context("When resource handler creation fails", func() {
 		BeforeEach(func() {
-			scaler.Spec.Resources.Types = []string{"invalid-resource-type"}
+			scaler.Spec.Resources.Types = []common.ResourceKind{"invalid-resource-type"}
 
 			k8sClient := fake.NewClientBuilder().
 				WithScheme(scheme).

@@ -90,10 +90,6 @@ var _ = Describe("AuthHandler", func() {
 			}
 		})
 
-		It("should complete in under 100ms", func() {
-			_ = authHandler.Execute(reconCtx)
-			// Test execution time is implicitly tested by Ginkgo's timeout mechanisms
-		})
 	})
 
 	Context("When auth secret is specified and exists", func() {

@@ -1,18 +1,26 @@
 // Package resources provides variables and constants for resource management.
 package resources
 
-import "errors"
+import (
+	"errors"
+	"slices"
+)
 
 var (
-	// AvailableResources contains the list of available resource types for scaling.
-	AvailableResources = []string{
-		"deployments",
-		"statefulsets",
-		"cronjobs",
-		"github-ars",
-		// "horizontalpodautoscalers",
-		// "hpa",
-	}
 	// ErrResourceNotFound is returned when a requested resource is not found.
 	ErrResourceNotFound = errors.New("resource not found")
 )
+
+// availableResources is the backing list of resource types. Use GetAvailableResources() for immutable access.
+var availableResources = []string{
+	"deployments",
+	"statefulsets",
+	"cronjobs",
+	"github-ars",
+}
+
+// GetAvailableResources returns a copy of the available resource types for scaling.
+// Callers cannot mutate the returned slice.
+func GetAvailableResources() []string {
+	return slices.Clone(availableResources)
+}

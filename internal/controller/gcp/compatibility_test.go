@@ -29,6 +29,7 @@ import (
 
 	"github.com/kubecloudscaler/kubecloudscaler/api/common"
 	kubecloudscalerv1alpha3 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha3"
+	"github.com/kubecloudscaler/kubecloudscaler/internal/controller/gcp/service"
 )
 
 var _ = Describe("Backward Compatibility", func() {
@@ -57,17 +58,11 @@ var _ = Describe("Backward Compatibility", func() {
 
 			result, err := reconciler.Reconcile(ctx, req)
 
-			// IMPROVED BEHAVIOR: Refactored controller properly surfaces not-found as error
-			// Original controller used client.IgnoreNotFound which suppressed the error
-			// New controller returns error for better observability
-			// Both behaviors are acceptable - error is ignored by controller-runtime if needed
-			if err != nil {
-				By("Verified: Not-found errors are properly surfaced (improved error handling)")
-			} else {
-				By("Verified: Not-found errors are ignored (original behavior)")
-			}
-			// Result should have requeue behavior
-			_ = result
+			// FetchHandler returns CriticalError when resource is not found.
+			// The controller wraps with client.IgnoreNotFound, which suppresses
+			// K8s NotFound errors — so the reconcile returns no error.
+			Expect(err).ToNot(HaveOccurred())
+			Expect(result).To(Equal(ctrl.Result{}))
 		})
 
 		It("should handle missing required fields correctly", func() {
@@ -79,14 +74,15 @@ var _ = Describe("Backward Compatibility", func() {
 				Spec: kubecloudscalerv1alpha3.GcpSpec{
 					// Minimal configuration with required periods field
 					Config: kubecloudscalerv1alpha3.GcpConfig{
-						ProjectID: "test-project",
+						ProjectID:         "test-project",
+						DefaultPeriodType: "down",
 					},
 					Periods: []common.ScalerPeriod{
 						{
 							Type: "down",
 							Time: common.TimePeriod{
 								Recurring: &common.RecurringPeriod{
-									Days:      []string{"all"},
+									Days:      []common.DayOfWeek{common.DayAll},
 									StartTime: "00:00",
 									EndTime:   "23:59",
 									Once:      ptr.To(false),
@@ -109,10 +105,11 @@ var _ = Describe("Backward Compatibility", func() {
 
 			result, err := reconciler.Reconcile(ctx, req)
 
-			// Should handle gracefully (may return auth error in test environment)
-			Expect(result).ToNot(BeZero())
-			_ = err // Error handling depends on environment
-			By("Verified: CRD validation enforces required fields (backward compatible)")
+			// AuthHandler may or may not fail depending on GCP credentials availability.
+			if err != nil {
+				Expect(service.IsCriticalError(err)).To(BeTrue())
+				Expect(result).To(Equal(ctrl.Result{}))
+			}
 		})
 
 		It("should maintain CRD structure compatibility", func() {
@@ -123,8 +120,9 @@ var _ = Describe("Backward Compatibility", func() {
 				},
 				Spec: kubecloudscalerv1alpha3.GcpSpec{
 					Config: kubecloudscalerv1alpha3.GcpConfig{
-						ProjectID: "test-project",
-						Region:    "us-central1",
+						ProjectID:         "test-project",
+						Region:            "us-central1",
+						DefaultPeriodType: "down",
 					},
 					Periods: []common.ScalerPeriod{
 						{
@@ -132,7 +130,7 @@ var _ = Describe("Backward Compatibility", func() {
 							Type: "down",
 							Time: common.TimePeriod{
 								Recurring: &common.RecurringPeriod{
-									Days:      []string{"all"},
+									Days:      []common.DayOfWeek{common.DayAll},
 									StartTime: "00:00",
 									EndTime:   "23:59",
 									Once:      ptr.To(false),
@@ -158,14 +156,15 @@ var _ = Describe("Backward Compatibility", func() {
 				},
 				Spec: kubecloudscalerv1alpha3.GcpSpec{
 					Config: kubecloudscalerv1alpha3.GcpConfig{
-						ProjectID: "test-project",
+						ProjectID:         "test-project",
+						DefaultPeriodType: "down",
 					},
 					Periods: []common.ScalerPeriod{
 						{
 							Type: "down",
 							Time: common.TimePeriod{
 								Recurring: &common.RecurringPeriod{
-									Days:      []string{"all"},
+									Days:      []common.DayOfWeek{common.DayAll},
 									StartTime: "00:00",
 									EndTime:   "23:59",
 									Once:      ptr.To(false),
@@ -186,23 +185,18 @@ var _ = Describe("Backward Compatibility", func() {
 				},
 			}
 
-			// First reconciliation should add finalizer
+			// First reconciliation adds finalizer; auth may or may not fail depending on env
 			_, err := reconciler.Reconcile(ctx, req)
-			_ = err // May error on auth, but finalizer handling should work
+			_ = err // error is environment-dependent (GCP credentials may or may not be available)
 
-			// Verify finalizer was added (behavior matches original)
+			// Verify finalizer was added before the auth handler failed
 			updatedScaler := &kubecloudscalerv1alpha3.Gcp{}
 			err = k8sClient.Get(ctx, types.NamespacedName{
 				Name:      scaler.Name,
 				Namespace: scaler.Namespace,
 			}, updatedScaler)
 			Expect(err).ToNot(HaveOccurred())
-
-			// Finalizer should be present
-			if len(updatedScaler.Finalizers) > 0 {
-				Expect(updatedScaler.Finalizers).To(ContainElement("kubecloudscaler.cloud/finalizer"))
-				By("Verified: Finalizer added successfully (backward compatible)")
-			}
+			Expect(updatedScaler.Finalizers).To(ContainElement("kubecloudscaler.cloud/finalizer"))
 		})
 	})
 
@@ -215,14 +209,15 @@ var _ = Describe("Backward Compatibility", func() {
 				},
 				Spec: kubecloudscalerv1alpha3.GcpSpec{
 					Config: kubecloudscalerv1alpha3.GcpConfig{
-						ProjectID: "test-project",
+						ProjectID:         "test-project",
+						DefaultPeriodType: "down",
 					},
 					Periods: []common.ScalerPeriod{
 						{
 							Type: "down",
 							Time: common.TimePeriod{
 								Recurring: &common.RecurringPeriod{
-									Days:      []string{"all"},
+									Days:      []common.DayOfWeek{common.DayAll},
 									StartTime: "00:00",
 									EndTime:   "23:59",
 									Once:      ptr.To(false),
@@ -245,14 +240,10 @@ var _ = Describe("Backward Compatibility", func() {
 
 			result, err := reconciler.Reconcile(ctx, req)
 
-			// IMPROVED BEHAVIOR: Refactored controller properly surfaces critical errors
-			// Original controller logged errors but returned nil
-			// New controller returns errors for better observability and debugging
+			// AuthHandler may or may not fail depending on GCP credentials availability in the test environment.
 			if err != nil {
-				By("Verified: Critical errors are properly surfaced (improved error handling)")
-				Expect(result.RequeueAfter).To(BeNumerically(">", 0))
-			} else {
-				By("Verified: Reconciliation succeeded with available credentials")
+				Expect(service.IsCriticalError(err)).To(BeTrue())
+				Expect(result).To(Equal(ctrl.Result{}))
 			}
 		})
 	})

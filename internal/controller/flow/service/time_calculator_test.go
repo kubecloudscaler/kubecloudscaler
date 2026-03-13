@@ -17,49 +17,59 @@ limitations under the License.
 package service
 
 import (
-	"testing"
 	"time"
 
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 	"github.com/rs/zerolog"
-	"github.com/stretchr/testify/assert"
 
 	"github.com/kubecloudscaler/kubecloudscaler/api/common"
 )
 
-func TestTimeCalculatorService_GetPeriodDuration(t *testing.T) {
-	logger := zerolog.Nop()
-	service := NewTimeCalculatorService(&logger)
+var _ = Describe("TimeCalculatorService", func() {
+	var (
+		logger zerolog.Logger
+		svc    *TimeCalculatorService
+	)
 
-	period := &common.ScalerPeriod{
-		Time: common.TimePeriod{
-			Recurring: &common.RecurringPeriod{
-				StartTime: "09:00",
-				EndTime:   "17:00",
-			},
-		},
-	}
+	BeforeEach(func() {
+		logger = zerolog.Nop()
+		svc = NewTimeCalculatorService(&logger)
+	})
 
-	duration, err := service.GetPeriodDuration(period)
+	Describe("GetPeriodDuration", func() {
+		It("should return the correct duration for a recurring period", func() {
+			period := &common.ScalerPeriod{
+				Time: common.TimePeriod{
+					Recurring: &common.RecurringPeriod{
+						StartTime: "09:00",
+						EndTime:   "17:00",
+					},
+				},
+			}
 
-	assert.NoError(t, err)
-	assert.Equal(t, 8*time.Hour, duration)
-}
+			duration, err := svc.GetPeriodDuration(period)
 
-func TestTimeCalculatorService_CalculatePeriodStartTime(t *testing.T) {
-	logger := zerolog.Nop()
-	service := NewTimeCalculatorService(&logger)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(duration).To(Equal(8 * time.Hour))
+		})
+	})
 
-	period := &common.ScalerPeriod{
-		Time: common.TimePeriod{
-			Recurring: &common.RecurringPeriod{
-				StartTime: "09:00",
-			},
-		},
-	}
+	Describe("CalculatePeriodStartTime", func() {
+		It("should return the start time offset by the given delay", func() {
+			period := &common.ScalerPeriod{
+				Time: common.TimePeriod{
+					Recurring: &common.RecurringPeriod{
+						StartTime: "09:00",
+					},
+				},
+			}
 
-	startTime, err := service.CalculatePeriodStartTime(period, 1*time.Hour)
+			startTime, err := svc.CalculatePeriodStartTime(period, 1*time.Hour)
 
-	assert.NoError(t, err)
-	assert.Equal(t, 10, startTime.Hour())
-	assert.Equal(t, 0, startTime.Minute())
-}
+			Expect(err).ToNot(HaveOccurred())
+			Expect(startTime.Hour()).To(Equal(10))
+			Expect(startTime.Minute()).To(Equal(0))
+		})
+	})
+})

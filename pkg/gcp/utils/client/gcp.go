@@ -15,15 +15,13 @@ import (
 
 // GetClient creates a GCP Compute Engine client
 // It supports authentication via service account key from Kubernetes secret or default credentials
-func GetClient(secret *corev1.Secret, _ string) (*gcpUtils.ClientSet, error) {
+func GetClient(ctx context.Context, secret *corev1.Secret) (*gcpUtils.ClientSet, error) {
 	var (
 		instancesClient      *compute.InstancesClient
 		regionsClient        *compute.RegionsClient
 		zoneOperationsClient *compute.ZoneOperationsClient
 		err                  error
 	)
-
-	ctx := context.Background()
 
 	if secret != nil {
 		// Use service account key from Kubernetes secret

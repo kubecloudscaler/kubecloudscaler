@@ -90,7 +90,7 @@ type deploymentUpdater struct {
 func (u *deploymentUpdater) Update(ctx context.Context, namespace string, resource base.ResourceItem, opts metaV1.UpdateOptions) (base.ResourceItem, error) {
 	item, ok := resource.(*deploymentItem)
 	if !ok {
-		return nil, &typeAssertionError{expected: "*deploymentItem", got: resource}
+		return nil, base.NewTypeAssertionError("*deploymentItem", resource)
 	}
 
 	updated, err := u.client.Deployments(namespace).Update(ctx, item.Deployment, opts)
@@ -117,13 +117,4 @@ func setReplicas(item base.ResourceItem, replicas *int32) {
 		return
 	}
 	d.Deployment.Spec.Replicas = replicas
-}
-
-type typeAssertionError struct {
-	expected string
-	got      interface{}
-}
-
-func (e *typeAssertionError) Error() string {
-	return "type assertion failed"
 }

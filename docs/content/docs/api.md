@@ -20,7 +20,7 @@ _Appears in:_
 
 | Field | Description | Default | Validation |
 | --- | --- | --- | --- |
-| `type` _string_ |   |   | Enum: [down up] |
+| `type` _[common.PeriodType](#commonperiodtype)_ |   |   |   |
 | `time` _[common.TimePeriod](#commontimeperiod)_ |   |   |   |
 | `minReplicas` _integer_ | Minimum replicas |   |   |
 | `maxReplicas` _integer_ | Maximum replicas |   |   |
@@ -53,7 +53,7 @@ _Appears in:_
 
 | Field | Description | Default | Validation |
 | --- | --- | --- | --- |
-| `days` _string array_ |   |   |   |
+| `days` _[common.DayOfWeek](#commondayofweek) array_ |   |   |   |
 | `startTime` _string_ |   |   | Pattern: `^([0-1]?[0-9]\|2[0-3]):[0-5][0-9]$` |
 | `endTime` _string_ |   |   | Pattern: `^([0-1]?[0-9]\|2[0-3]):[0-5][0-9]$` |
 | `timezone` _string_ |   |   |   |
@@ -156,7 +156,7 @@ _Appears in:_
 
 | Field | Description | Default | Validation |
 | --- | --- | --- | --- |
-| `types` _string array_ | Types of resources K8s: deployments, statefulsets, ... (default: deployments) GCP: VM-instances, ... (default: vm-instances) |   |   |
+| `types` _[common.ResourceKind](#commonresourcekind) array_ | Types of resources K8s: deployments, statefulsets, ... (default: deployments) GCP: VM-instances, ... (default: vm-instances) |   |   |
 | `names` _string array_ | Names of resources to manage |   |   |
 | `labelSelector` _[LabelSelector](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.33/#labelselector-v1-meta)_ | Labels selectors |   |   |
 

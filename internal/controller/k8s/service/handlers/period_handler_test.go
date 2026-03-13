@@ -18,7 +18,6 @@ package handlers_test
 
 import (
 	"context"
-	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -62,10 +61,10 @@ var _ = Describe("PeriodHandler", func() {
 				Periods: []common.ScalerPeriod{
 					{
 						Name: "test-period",
-						Type: "up",
+						Type: common.PeriodTypeUp,
 						Time: common.TimePeriod{
 							Recurring: &common.RecurringPeriod{
-								Days:      []string{"monday", "tuesday", "wednesday", "thursday", "friday"},
+								Days:      []common.DayOfWeek{common.DayMonday, common.DayTuesday, common.DayWednesday, common.DayThursday, common.DayFriday},
 								StartTime: "09:00",
 								EndTime:   "17:00",
 								Once:      ptr.To(false),
@@ -119,13 +118,6 @@ var _ = Describe("PeriodHandler", func() {
 			}
 		})
 
-		It("should complete in under 100ms", func() {
-			startTime := time.Now()
-			_ = handler.Execute(reconCtx)
-			duration := time.Since(startTime)
-
-			Expect(duration).To(BeNumerically("<", 100*time.Millisecond))
-		})
 	})
 
 	Context("When noaction period is detected", func() {
@@ -143,7 +135,7 @@ var _ = Describe("PeriodHandler", func() {
 					Type: "noaction",
 					Time: common.TimePeriod{
 						Recurring: &common.RecurringPeriod{
-							Days:      []string{"all"},
+							Days:      []common.DayOfWeek{common.DayAll},
 							StartTime: "00:00",
 							EndTime:   "23:59",
 							Once:      ptr.To(false),

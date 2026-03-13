@@ -33,9 +33,10 @@ const (
 	ControllerFlow      = "flow"
 
 	// Result label values for reconciliation.
-	ResultSuccess          = "success"
-	ResultCriticalError    = "critical_error"
-	ResultRecoverableError = "recoverable_error"
+	ResultSuccess           = "success"
+	ResultCriticalError     = "critical_error"
+	ResultRecoverableError  = "recoverable_error"
+	ResultUnclassifiedError = "unclassified_error"
 
 	// Result label values for scaling operations.
 	ScalingSuccess = "success"

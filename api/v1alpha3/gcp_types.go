@@ -55,13 +55,13 @@ type GcpConfig struct {
 	// value (default: "down"), meaning VMs will be stopped on deletion unless defaultPeriodType
 	// is set to "up". To restore VMs to their original state, set defaultPeriodType accordingly.
 	// +kubebuilder:default:=true
-	RestoreOnDelete bool `json:"restoreOnDelete,omitempty"`
+	RestoreOnDelete bool `json:"restoreOnDelete"`
 	// Wait for operation to complete
 	WaitForOperation bool `json:"waitForOperation,omitempty"`
 	// Default status for resources
 	// +kubebuilder:validation:Enum=down;up
 	// +kubebuilder:default:=down
-	DefaultPeriodType string `json:"defaultPeriodType,omitempty"`
+	DefaultPeriodType string `json:"defaultPeriodType"`
 }
 
 // +kubebuilder:object:root=true

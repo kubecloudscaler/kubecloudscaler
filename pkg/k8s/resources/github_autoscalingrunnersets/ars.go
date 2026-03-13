@@ -27,7 +27,7 @@ func (h *GithubAutoscalingRunnersets) init(client dynamic.Interface) {
 // SetState sets the state of Github Autoscaling Runnersets resources based on the current period.
 func (h *GithubAutoscalingRunnersets) SetState(ctx context.Context) ([]common.ScalerStatusSuccess, []common.ScalerStatusFailed, error) {
 	// Create adapters
-	lister := &runnerSetLister{client: h.Client}
+	lister := &runnerSetLister{client: h.Client, logger: h.Logger}
 	getter := &runnerSetGetter{client: h.Client}
 	updater := &runnerSetUpdater{client: h.Client}
 

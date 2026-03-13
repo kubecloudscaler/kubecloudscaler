@@ -20,11 +20,11 @@ var _ = Describe("Period", func() {
 
 			BeforeEach(func() {
 				periodRecurring = &common.ScalerPeriod{
-					Type: "down",
+					Type: common.PeriodTypeDown,
 					Time: common.TimePeriod{
 						Recurring: &common.RecurringPeriod{
-							Days: []string{
-								"all",
+							Days: []common.DayOfWeek{
+								common.DayAll,
 							},
 							StartTime:   "08:00",
 							EndTime:     "18:00",
@@ -42,30 +42,30 @@ var _ = Describe("Period", func() {
 
 				Expect(err).ToNot(HaveOccurred())
 				Expect(result).ToNot(BeNil())
-				Expect(result.Type).To(Equal("down"))
+				Expect(result.Type).To(Equal(common.PeriodTypeDown))
 				Expect(result.MinReplicas).To(Equal(int32(1)))
 				Expect(result.MaxReplicas).To(Equal(int32(5)))
-				Expect(result.Period).ToNot(BeNil())
+				Expect(result.Spec).ToNot(BeNil())
 				Expect(result.Hash).ToNot(BeEmpty())
 				Expect(result.GracePeriod).To(Equal(5 * time.Minute))
 			})
 
 			It("should handle specific days", func() {
-				periodRecurring.Time.Recurring.Days = []string{"mon", "wed", "fri"}
+				periodRecurring.Time.Recurring.Days = []common.DayOfWeek{common.DayMonday, common.DayWednesday, common.DayFriday}
 				result, err := period.New(periodRecurring)
 
 				Expect(err).ToNot(HaveOccurred())
 				Expect(result).ToNot(BeNil())
-				Expect(result.Period.Days).To(Equal([]string{"mon", "wed", "fri"}))
+				Expect(result.Spec.Days).To(Equal([]common.DayOfWeek{common.DayMonday, common.DayWednesday, common.DayFriday}))
 			})
 
 			It("should handle single day", func() {
-				periodRecurring.Time.Recurring.Days = []string{"tue"}
+				periodRecurring.Time.Recurring.Days = []common.DayOfWeek{common.DayTuesday}
 				result, err := period.New(periodRecurring)
 
 				Expect(err).ToNot(HaveOccurred())
 				Expect(result).ToNot(BeNil())
-				Expect(result.Period.Days).To(Equal([]string{"tue"}))
+				Expect(result.Spec.Days).To(Equal([]common.DayOfWeek{common.DayTuesday}))
 			})
 
 			It("should handle timezone", func() {
@@ -74,7 +74,7 @@ var _ = Describe("Period", func() {
 
 				Expect(err).ToNot(HaveOccurred())
 				Expect(result).ToNot(BeNil())
-				Expect(result.Period.Timezone).To(Equal(ptr.To("America/New_York")))
+				Expect(result.Spec.Timezone).To(Equal(ptr.To("America/New_York")))
 			})
 
 			It("should handle reverse logic", func() {
@@ -83,7 +83,7 @@ var _ = Describe("Period", func() {
 
 				Expect(err).ToNot(HaveOccurred())
 				Expect(result).ToNot(BeNil())
-				Expect(*result.Period.Reverse).To(BeTrue())
+				Expect(*result.Spec.Reverse).To(BeTrue())
 			})
 
 			It("should handle once flag", func() {
@@ -92,7 +92,7 @@ var _ = Describe("Period", func() {
 
 				Expect(err).ToNot(HaveOccurred())
 				Expect(result).ToNot(BeNil())
-				Expect(*result.Period.Once).To(BeTrue())
+				Expect(*result.Spec.Once).To(BeTrue())
 			})
 		})
 
@@ -103,7 +103,7 @@ var _ = Describe("Period", func() {
 
 			BeforeEach(func() {
 				periodFixed = &common.ScalerPeriod{
-					Type: "up",
+					Type: common.PeriodTypeUp,
 					Time: common.TimePeriod{
 						Fixed: &common.FixedPeriod{
 							StartTime:   "2024-10-10 08:00:00",
@@ -122,10 +122,10 @@ var _ = Describe("Period", func() {
 
 				Expect(err).ToNot(HaveOccurred())
 				Expect(result).ToNot(BeNil())
-				Expect(result.Type).To(Equal("up"))
+				Expect(result.Type).To(Equal(common.PeriodTypeUp))
 				Expect(result.MinReplicas).To(Equal(int32(3)))
 				Expect(result.MaxReplicas).To(Equal(int32(10)))
-				Expect(result.Period).ToNot(BeNil())
+				Expect(result.Spec).ToNot(BeNil())
 				Expect(result.Hash).ToNot(BeEmpty())
 				Expect(result.GracePeriod).To(Equal(10 * time.Minute))
 			})
@@ -134,9 +134,9 @@ var _ = Describe("Period", func() {
 				result, err := period.New(periodFixed)
 
 				Expect(err).ToNot(HaveOccurred())
-				Expect(result.Period.Days).To(ContainElement("all"))
-				Expect(result.Period.StartTime).To(Equal("2024-10-10 08:00:00"))
-				Expect(result.Period.EndTime).To(Equal("2024-10-10 18:00:00"))
+				Expect(result.Spec.Days).To(ContainElement(common.DayAll))
+				Expect(result.Spec.StartTime).To(Equal("2024-10-10 08:00:00"))
+				Expect(result.Spec.EndTime).To(Equal("2024-10-10 18:00:00"))
 			})
 
 			It("should handle timezone", func() {
@@ -145,17 +145,17 @@ var _ = Describe("Period", func() {
 
 				Expect(err).ToNot(HaveOccurred())
 				Expect(result).ToNot(BeNil())
-				Expect(result.Period.Timezone).To(Equal(ptr.To("Europe/London")))
+				Expect(result.Spec.Timezone).To(Equal(ptr.To("Europe/London")))
 			})
 		})
 
 		Context("with invalid configurations", func() {
 			It("should error on minReplicas greater than maxReplicas", func() {
 				invalidPeriod := &common.ScalerPeriod{
-					Type: "down",
+					Type: common.PeriodTypeDown,
 					Time: common.TimePeriod{
 						Recurring: &common.RecurringPeriod{
-							Days:      []string{"all"},
+							Days:      []common.DayOfWeek{common.DayAll},
 							StartTime: "08:00",
 							EndTime:   "18:00",
 						},
@@ -172,10 +172,10 @@ var _ = Describe("Period", func() {
 
 			It("should error on invalid day notation", func() {
 				invalidPeriod := &common.ScalerPeriod{
-					Type: "down",
+					Type: common.PeriodTypeDown,
 					Time: common.TimePeriod{
 						Recurring: &common.RecurringPeriod{
-							Days:      []string{"invalid"},
+							Days:      []common.DayOfWeek{"invalid"},
 							StartTime: "08:00",
 							EndTime:   "18:00",
 						},
@@ -193,10 +193,10 @@ var _ = Describe("Period", func() {
 
 			It("should error on invalid recurring time format", func() {
 				invalidPeriod := &common.ScalerPeriod{
-					Type: "down",
+					Type: common.PeriodTypeDown,
 					Time: common.TimePeriod{
 						Recurring: &common.RecurringPeriod{
-							Days:      []string{"all"},
+							Days:      []common.DayOfWeek{common.DayAll},
 							StartTime: "invalid-time",
 							EndTime:   "18:00",
 						},
@@ -213,7 +213,7 @@ var _ = Describe("Period", func() {
 
 			It("should error on invalid fixed time format", func() {
 				invalidPeriod := &common.ScalerPeriod{
-					Type: "down",
+					Type: common.PeriodTypeDown,
 					Time: common.TimePeriod{
 						Fixed: &common.FixedPeriod{
 							StartTime: "invalid-datetime",
@@ -232,10 +232,10 @@ var _ = Describe("Period", func() {
 
 			It("should error on start time after end time", func() {
 				invalidPeriod := &common.ScalerPeriod{
-					Type: "down",
+					Type: common.PeriodTypeDown,
 					Time: common.TimePeriod{
 						Recurring: &common.RecurringPeriod{
-							Days:      []string{"all"},
+							Days:      []common.DayOfWeek{common.DayAll},
 							StartTime: "18:00",
 							EndTime:   "08:00",
 						},
@@ -252,10 +252,10 @@ var _ = Describe("Period", func() {
 
 			It("should error on invalid timezone", func() {
 				invalidPeriod := &common.ScalerPeriod{
-					Type: "down",
+					Type: common.PeriodTypeDown,
 					Time: common.TimePeriod{
 						Recurring: &common.RecurringPeriod{
-							Days:      []string{"all"},
+							Days:      []common.DayOfWeek{common.DayAll},
 							StartTime: "08:00",
 							EndTime:   "18:00",
 							Timezone:  ptr.To("Invalid/Timezone"),
@@ -274,10 +274,10 @@ var _ = Describe("Period", func() {
 
 			It("should error on invalid grace period", func() {
 				invalidPeriod := &common.ScalerPeriod{
-					Type: "down",
+					Type: common.PeriodTypeDown,
 					Time: common.TimePeriod{
 						Recurring: &common.RecurringPeriod{
-							Days:        []string{"all"},
+							Days:        []common.DayOfWeek{common.DayAll},
 							StartTime:   "08:00",
 							EndTime:     "18:00",
 							GracePeriod: ptr.To("invalid-duration"),
@@ -298,10 +298,10 @@ var _ = Describe("Period", func() {
 		Context("with edge cases", func() {
 			It("should handle nil minReplicas (defaults to 1)", func() {
 				periodWithNilMin := &common.ScalerPeriod{
-					Type: "down",
+					Type: common.PeriodTypeDown,
 					Time: common.TimePeriod{
 						Recurring: &common.RecurringPeriod{
-							Days:      []string{"all"},
+							Days:      []common.DayOfWeek{common.DayAll},
 							StartTime: "08:00",
 							EndTime:   "18:00",
 						},
@@ -318,10 +318,10 @@ var _ = Describe("Period", func() {
 
 			It("should handle nil maxReplicas (defaults to minReplicas)", func() {
 				periodWithNilMax := &common.ScalerPeriod{
-					Type: "down",
+					Type: common.PeriodTypeDown,
 					Time: common.TimePeriod{
 						Recurring: &common.RecurringPeriod{
-							Days:      []string{"all"},
+							Days:      []common.DayOfWeek{common.DayAll},
 							StartTime: "08:00",
 							EndTime:   "18:00",
 						},
@@ -338,10 +338,10 @@ var _ = Describe("Period", func() {
 
 			It("should handle nil grace period (defaults to 0s)", func() {
 				periodWithNilGrace := &common.ScalerPeriod{
-					Type: "down",
+					Type: common.PeriodTypeDown,
 					Time: common.TimePeriod{
 						Recurring: &common.RecurringPeriod{
-							Days:        []string{"all"},
+							Days:        []common.DayOfWeek{common.DayAll},
 							StartTime:   "08:00",
 							EndTime:     "18:00",
 							GracePeriod: nil,
@@ -359,10 +359,10 @@ var _ = Describe("Period", func() {
 
 			It("should handle end time 00:00 (treats as 23:59 internally without mutating input)", func() {
 				periodWithZeroEnd := &common.ScalerPeriod{
-					Type: "down",
+					Type: common.PeriodTypeDown,
 					Time: common.TimePeriod{
 						Recurring: &common.RecurringPeriod{
-							Days:      []string{"all"},
+							Days:      []common.DayOfWeek{common.DayAll},
 							StartTime: "08:00",
 							EndTime:   "00:00",
 						},
@@ -375,15 +375,15 @@ var _ = Describe("Period", func() {
 
 				Expect(err).ToNot(HaveOccurred())
 				// The original period should NOT be mutated (fix for issue #006)
-				Expect(result.Period.EndTime).To(Equal("00:00"))
+				Expect(result.Spec.EndTime).To(Equal("00:00"))
 			})
 
 			It("should handle single day with short notation", func() {
 				periodWithShortDay := &common.ScalerPeriod{
-					Type: "down",
+					Type: common.PeriodTypeDown,
 					Time: common.TimePeriod{
 						Recurring: &common.RecurringPeriod{
-							Days:      []string{"mon"},
+							Days:      []common.DayOfWeek{common.DayMonday},
 							StartTime: "08:00",
 							EndTime:   "18:00",
 						},
@@ -395,15 +395,15 @@ var _ = Describe("Period", func() {
 				result, err := period.New(periodWithShortDay)
 
 				Expect(err).ToNot(HaveOccurred())
-				Expect(result.Period.Days).To(Equal([]string{"mon"}))
+				Expect(result.Spec.Days).To(Equal([]common.DayOfWeek{common.DayMonday}))
 			})
 
 			It("should handle day with 3 characters", func() {
 				periodWithThreeCharDay := &common.ScalerPeriod{
-					Type: "down",
+					Type: common.PeriodTypeDown,
 					Time: common.TimePeriod{
 						Recurring: &common.RecurringPeriod{
-							Days:      []string{"tue"},
+							Days:      []common.DayOfWeek{common.DayTuesday},
 							StartTime: "08:00",
 							EndTime:   "18:00",
 						},
@@ -415,17 +415,17 @@ var _ = Describe("Period", func() {
 				result, err := period.New(periodWithThreeCharDay)
 
 				Expect(err).ToNot(HaveOccurred())
-				Expect(result.Period.Days).To(Equal([]string{"tue"}))
+				Expect(result.Spec.Days).To(Equal([]common.DayOfWeek{common.DayTuesday}))
 			})
 		})
 
 		Context("with different period types", func() {
 			It("should handle restore type", func() {
 				restorePeriod := &common.ScalerPeriod{
-					Type: "restore",
+					Type: common.PeriodType("restore"),
 					Time: common.TimePeriod{
 						Recurring: &common.RecurringPeriod{
-							Days:      []string{"all"},
+							Days:      []common.DayOfWeek{common.DayAll},
 							StartTime: "08:00",
 							EndTime:   "18:00",
 						},
@@ -437,15 +437,15 @@ var _ = Describe("Period", func() {
 				result, err := period.New(restorePeriod)
 
 				Expect(err).ToNot(HaveOccurred())
-				Expect(result.Type).To(Equal("restore"))
+				Expect(result.Type).To(Equal(common.PeriodType("restore")))
 			})
 
 			It("should handle up type", func() {
 				upPeriod := &common.ScalerPeriod{
-					Type: "up",
+					Type: common.PeriodTypeUp,
 					Time: common.TimePeriod{
 						Recurring: &common.RecurringPeriod{
-							Days:      []string{"all"},
+							Days:      []common.DayOfWeek{common.DayAll},
 							StartTime: "08:00",
 							EndTime:   "18:00",
 						},
@@ -457,15 +457,15 @@ var _ = Describe("Period", func() {
 				result, err := period.New(upPeriod)
 
 				Expect(err).ToNot(HaveOccurred())
-				Expect(result.Type).To(Equal("up"))
+				Expect(result.Type).To(Equal(common.PeriodTypeUp))
 			})
 
 			It("should handle down type", func() {
 				downPeriod := &common.ScalerPeriod{
-					Type: "down",
+					Type: common.PeriodTypeDown,
 					Time: common.TimePeriod{
 						Recurring: &common.RecurringPeriod{
-							Days:      []string{"all"},
+							Days:      []common.DayOfWeek{common.DayAll},
 							StartTime: "08:00",
 							EndTime:   "18:00",
 						},
@@ -477,17 +477,17 @@ var _ = Describe("Period", func() {
 				result, err := period.New(downPeriod)
 
 				Expect(err).ToNot(HaveOccurred())
-				Expect(result.Type).To(Equal("down"))
+				Expect(result.Type).To(Equal(common.PeriodTypeDown))
 			})
 		})
 
 		Context("with complex day configurations", func() {
 			It("should handle multiple days", func() {
 				multiDayPeriod := &common.ScalerPeriod{
-					Type: "down",
+					Type: common.PeriodTypeDown,
 					Time: common.TimePeriod{
 						Recurring: &common.RecurringPeriod{
-							Days:      []string{"mon", "wed", "fri", "sun"},
+							Days:      []common.DayOfWeek{common.DayMonday, common.DayWednesday, common.DayFriday, common.DaySunday},
 							StartTime: "08:00",
 							EndTime:   "18:00",
 						},
@@ -499,16 +499,16 @@ var _ = Describe("Period", func() {
 				result, err := period.New(multiDayPeriod)
 
 				Expect(err).ToNot(HaveOccurred())
-				Expect(result.Period.Days).To(HaveLen(4))
-				Expect(result.Period.Days).To(ContainElements("mon", "wed", "fri", "sun"))
+				Expect(result.Spec.Days).To(HaveLen(4))
+				Expect(result.Spec.Days).To(ContainElements(common.DayMonday, common.DayWednesday, common.DayFriday, common.DaySunday))
 			})
 
 			It("should handle all days", func() {
 				allDaysPeriod := &common.ScalerPeriod{
-					Type: "down",
+					Type: common.PeriodTypeDown,
 					Time: common.TimePeriod{
 						Recurring: &common.RecurringPeriod{
-							Days:      []string{"all"},
+							Days:      []common.DayOfWeek{common.DayAll},
 							StartTime: "08:00",
 							EndTime:   "18:00",
 						},
@@ -520,17 +520,17 @@ var _ = Describe("Period", func() {
 				result, err := period.New(allDaysPeriod)
 
 				Expect(err).ToNot(HaveOccurred())
-				Expect(result.Period.Days).To(Equal([]string{"all"}))
+				Expect(result.Spec.Days).To(Equal([]common.DayOfWeek{common.DayAll}))
 			})
 		})
 
 		Context("with time parsing edge cases", func() {
 			It("should handle time with minutes", func() {
 				timeWithMinutes := &common.ScalerPeriod{
-					Type: "down",
+					Type: common.PeriodTypeDown,
 					Time: common.TimePeriod{
 						Recurring: &common.RecurringPeriod{
-							Days:      []string{"all"},
+							Days:      []common.DayOfWeek{common.DayAll},
 							StartTime: "08:30",
 							EndTime:   "18:15",
 						},
@@ -542,16 +542,16 @@ var _ = Describe("Period", func() {
 				result, err := period.New(timeWithMinutes)
 
 				Expect(err).ToNot(HaveOccurred())
-				Expect(result.Period.StartTime).To(Equal("08:30"))
-				Expect(result.Period.EndTime).To(Equal("18:15"))
+				Expect(result.Spec.StartTime).To(Equal("08:30"))
+				Expect(result.Spec.EndTime).To(Equal("18:15"))
 			})
 
 			It("should handle midnight times", func() {
 				midnightPeriod := &common.ScalerPeriod{
-					Type: "down",
+					Type: common.PeriodTypeDown,
 					Time: common.TimePeriod{
 						Recurring: &common.RecurringPeriod{
-							Days:      []string{"all"},
+							Days:      []common.DayOfWeek{common.DayAll},
 							StartTime: "00:00",
 							EndTime:   "23:59",
 						},
@@ -563,8 +563,8 @@ var _ = Describe("Period", func() {
 				result, err := period.New(midnightPeriod)
 
 				Expect(err).ToNot(HaveOccurred())
-				Expect(result.Period.StartTime).To(Equal("00:00"))
-				Expect(result.Period.EndTime).To(Equal("23:59"))
+				Expect(result.Spec.StartTime).To(Equal("00:00"))
+				Expect(result.Spec.EndTime).To(Equal("23:59"))
 			})
 		})
 	})

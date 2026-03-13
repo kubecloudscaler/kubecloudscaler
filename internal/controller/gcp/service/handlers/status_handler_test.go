@@ -18,6 +18,8 @@ package handlers_test
 
 import (
 	"context"
+	"fmt"
+	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -25,12 +27,15 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 
 	"github.com/kubecloudscaler/kubecloudscaler/api/common"
 	kubecloudscalerv1alpha3 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha3"
 	"github.com/kubecloudscaler/kubecloudscaler/internal/controller/gcp/service"
 	"github.com/kubecloudscaler/kubecloudscaler/internal/controller/gcp/service/handlers"
+	"github.com/kubecloudscaler/kubecloudscaler/internal/utils"
 )
 
 var _ = Describe("StatusHandler", func() {
@@ -79,12 +84,9 @@ var _ = Describe("StatusHandler", func() {
 			err := statusHandler.Execute(reconCtx)
 
 			Expect(err).ToNot(HaveOccurred())
-			Expect(reconCtx.RequeueAfter).To(BeNumerically(">", 0))
+			Expect(reconCtx.RequeueAfter).To(Equal(utils.ReconcileSuccessDuration))
 		})
 
-		It("should complete in under 100ms", func() {
-			_ = statusHandler.Execute(reconCtx)
-		})
 	})
 
 	Context("When updating status with failed results", func() {
@@ -112,7 +114,7 @@ var _ = Describe("StatusHandler", func() {
 			err := statusHandler.Execute(reconCtx)
 
 			Expect(err).ToNot(HaveOccurred())
-			Expect(reconCtx.RequeueAfter).To(BeNumerically(">", 0))
+			Expect(reconCtx.RequeueAfter).To(Equal(utils.ReconcileSuccessDuration))
 		})
 	})
 
@@ -143,12 +145,61 @@ var _ = Describe("StatusHandler", func() {
 		})
 	})
 
-	Context("When status update fails", func() {
+	Context("When client Update fails during finalizer removal", func() {
 		BeforeEach(func() {
-			// Create client without status subresource to simulate failure
+			scaler.SetFinalizers([]string{handlers.ScalerFinalizer})
+
 			k8sClient := fake.NewClientBuilder().
 				WithScheme(scheme).
 				WithObjects(scaler).
+				WithInterceptorFuncs(interceptor.Funcs{
+					Update: func(
+						ctx context.Context,
+						c client.WithWatch,
+						obj client.Object,
+						opts ...client.UpdateOption,
+					) error {
+						return fmt.Errorf("update conflict")
+					},
+				}).
+				Build()
+
+			reconCtx = &service.ReconciliationContext{
+				Ctx:            context.Background(),
+				Request:        ctrl.Request{NamespacedName: types.NamespacedName{Name: "test-scaler", Namespace: "default"}},
+				Client:         k8sClient,
+				Logger:         &logger,
+				Scaler:         scaler,
+				ShouldFinalize: true,
+			}
+		})
+
+		It("should return a recoverable error and set RequeueAfter", func() {
+			err := statusHandler.Execute(reconCtx)
+
+			Expect(err).To(HaveOccurred())
+			Expect(service.IsRecoverableError(err)).To(BeTrue())
+			Expect(reconCtx.RequeueAfter).To(Equal(5 * time.Second))
+		})
+	})
+
+	Context("When client Status Update fails", func() {
+		BeforeEach(func() {
+			k8sClient := fake.NewClientBuilder().
+				WithScheme(scheme).
+				WithObjects(scaler).
+				WithStatusSubresource(scaler).
+				WithInterceptorFuncs(interceptor.Funcs{
+					SubResourceUpdate: func(
+						ctx context.Context,
+						c client.Client,
+						subResourceName string,
+						obj client.Object,
+						opts ...client.SubResourceUpdateOption,
+					) error {
+						return fmt.Errorf("status update failure")
+					},
+				}).
 				Build()
 
 			reconCtx = &service.ReconciliationContext{
@@ -162,12 +213,12 @@ var _ = Describe("StatusHandler", func() {
 			}
 		})
 
-		It("should return recoverable error with requeue", func() {
+		It("should return a recoverable error and set RequeueAfter", func() {
 			err := statusHandler.Execute(reconCtx)
 
-			// Status update may fail without status subresource
-			// Handler should handle this gracefully
-			_ = err // Error handling depends on implementation
+			Expect(err).To(HaveOccurred())
+			Expect(service.IsRecoverableError(err)).To(BeTrue())
+			Expect(reconCtx.RequeueAfter).To(Equal(5 * time.Second))
 		})
 	})
 
@@ -199,7 +250,7 @@ var _ = Describe("StatusHandler", func() {
 			err := statusHandler.Execute(reconCtx)
 
 			Expect(err).ToNot(HaveOccurred())
-			Expect(reconCtx.RequeueAfter).To(BeNumerically(">", 0))
+			Expect(reconCtx.RequeueAfter).To(Equal(utils.ReconcileSuccessDuration))
 		})
 	})
 })

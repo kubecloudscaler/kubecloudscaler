@@ -14,18 +14,23 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package utils
+package utils_test
 
 import (
 	"context"
 	"errors"
 	"testing"
+	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/rs/zerolog"
 	coreV1 "k8s.io/api/core/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/kubecloudscaler/kubecloudscaler/pkg/k8s/utils"
+	"github.com/kubecloudscaler/kubecloudscaler/pkg/k8s/utils/testutil"
+	periodPkg "github.com/kubecloudscaler/kubecloudscaler/pkg/period"
 )
 
 func TestIntegrationOriginal(t *testing.T) {
@@ -37,17 +42,17 @@ var _ = Describe("Integration Tests", func() {
 	var (
 		ctx           context.Context
 		logger        zerolog.Logger
-		client        KubernetesClient
-		namespaceMgr  NamespaceManager
-		annotationMgr AnnotationManager
+		client        utils.KubernetesClient
+		namespaceMgr  utils.NamespaceManager
+		annotationMgr utils.AnnotationManager
 	)
 
 	BeforeEach(func() {
 		ctx = context.Background()
 		logger = zerolog.Nop()
-		client = NewFakeKubernetesClient()
-		namespaceMgr = NewNamespaceManager(client, logger)
-		annotationMgr = NewAnnotationManager()
+		client = utils.NewFakeKubernetesClient()
+		namespaceMgr = utils.NewNamespaceManager(client, logger, nil)
+		annotationMgr = utils.NewAnnotationManager()
 	})
 
 	Context("End-to-End Workflow", func() {
@@ -56,13 +61,13 @@ var _ = Describe("Integration Tests", func() {
 			ns1 := &coreV1.Namespace{ObjectMeta: metaV1.ObjectMeta{Name: "test-ns-1"}}
 			ns2 := &coreV1.Namespace{ObjectMeta: metaV1.ObjectMeta{Name: "test-ns-2"}}
 			ns3 := &coreV1.Namespace{ObjectMeta: metaV1.ObjectMeta{Name: "kube-system"}}
-			client = NewFakeKubernetesClient(ns1, ns2, ns3)
+			client = utils.NewFakeKubernetesClient(ns1, ns2, ns3)
 
 			// Create namespace manager with real client
-			namespaceMgr = NewNamespaceManager(client, logger)
+			namespaceMgr = utils.NewNamespaceManager(client, logger, nil)
 
 			// Step 1: Configure and initialize
-			config := &Config{
+			config := &utils.Config{
 				ForceExcludeSystemNamespaces: true,
 				ExcludeNamespaces:            []string{"test-ns-2"},
 				LabelSelector: &metaV1.LabelSelector{
@@ -87,24 +92,23 @@ var _ = Describe("Integration Tests", func() {
 			Expect(resource.ListOptions.LabelSelector).To(ContainSubstring("kubecloudscaler.cloud/ignore"))
 
 			// Step 5: Test annotation management
-			period := &MockPeriod{
+			period := &periodPkg.Period{
 				Type:      "test-period",
-				StartTime: &mockTime{timeStr: "2024-01-01T00:00:00Z"},
-				EndTime:   &mockTime{timeStr: "2024-01-01T01:00:00Z"},
-				Timezone:  nil,
+				StartTime: time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
+				EndTime:   time.Date(2024, 1, 1, 1, 0, 0, 0, time.UTC),
 			}
 
 			// Add annotations
 			annotations := make(map[string]string)
 			annotations = annotationMgr.AddAnnotations(annotations, period)
-			Expect(annotations).To(HaveKeyWithValue(AnnotationsPrefix+"/"+PeriodType, "test-period"))
+			Expect(annotations).To(HaveKeyWithValue(utils.AnnotationsPrefix+"/"+utils.PeriodType, "test-period"))
 
 			// Add min/max annotations
 			min := int32(2)
 			max := int32(10)
 			annotations = annotationMgr.AddMinMaxAnnotations(annotations, period, &min, max)
-			Expect(annotations).To(HaveKeyWithValue(AnnotationsPrefix+"/"+AnnotationsMinOrigValue, "2"))
-			Expect(annotations).To(HaveKeyWithValue(AnnotationsPrefix+"/"+AnnotationsMaxOrigValue, "10"))
+			Expect(annotations).To(HaveKeyWithValue(utils.AnnotationsPrefix+"/"+utils.AnnotationsMinOrigValue, "2"))
+			Expect(annotations).To(HaveKeyWithValue(utils.AnnotationsPrefix+"/"+utils.AnnotationsMaxOrigValue, "10"))
 
 			// Restore min/max annotations
 			isRestored, restoredMin, restoredMax, cleanedAnnotations, err := annotationMgr.RestoreMinMaxAnnotations(annotations)
@@ -112,15 +116,15 @@ var _ = Describe("Integration Tests", func() {
 			Expect(isRestored).To(BeFalse())
 			Expect(*restoredMin).To(Equal(int32(2)))
 			Expect(restoredMax).To(Equal(int32(10)))
-			Expect(cleanedAnnotations).ToNot(HaveKey(AnnotationsPrefix + "/" + AnnotationsMinOrigValue))
-			Expect(cleanedAnnotations).ToNot(HaveKey(AnnotationsPrefix + "/" + AnnotationsMaxOrigValue))
+			Expect(cleanedAnnotations).ToNot(HaveKey(utils.AnnotationsPrefix + "/" + utils.AnnotationsMinOrigValue))
+			Expect(cleanedAnnotations).ToNot(HaveKey(utils.AnnotationsPrefix + "/" + utils.AnnotationsMaxOrigValue))
 		})
 
 		It("should handle complex namespace filtering scenarios", func() {
-			client = NewFakeKubernetesClient()
-			namespaceMgr = NewNamespaceManager(client, logger)
+			client = utils.NewFakeKubernetesClient()
+			namespaceMgr = utils.NewNamespaceManager(client, logger, nil)
 
-			config := &Config{
+			config := &utils.Config{
 				ForceExcludeSystemNamespaces: true,
 				ExcludeNamespaces:            []string{"exclude-this", "monitoring"},
 			}
@@ -135,11 +139,10 @@ var _ = Describe("Integration Tests", func() {
 
 		It("should handle annotation lifecycle management", func() {
 			// Test complete annotation lifecycle
-			period := &MockPeriod{
+			period := &periodPkg.Period{
 				Type:      "scaling-period",
-				StartTime: &mockTime{timeStr: "2024-01-01T09:00:00Z"},
-				EndTime:   &mockTime{timeStr: "2024-01-01T17:00:00Z"},
-				Timezone:  nil,
+				StartTime: time.Date(2024, 1, 1, 9, 0, 0, 0, time.UTC),
+				EndTime:   time.Date(2024, 1, 1, 17, 0, 0, 0, time.UTC),
 			}
 
 			// Initial state
@@ -149,40 +152,40 @@ var _ = Describe("Integration Tests", func() {
 			// Add period annotations
 			annotations = annotationMgr.AddAnnotations(annotations, period)
 			Expect(annotations).To(HaveKeyWithValue("existing-key", "existing-value"))
-			Expect(annotations).To(HaveKeyWithValue(AnnotationsPrefix+"/"+PeriodType, "scaling-period"))
+			Expect(annotations).To(HaveKeyWithValue(utils.AnnotationsPrefix+"/"+utils.PeriodType, "scaling-period"))
 
 			// Add bool annotation
 			annotations = annotationMgr.AddBoolAnnotations(annotations, period, true)
-			Expect(annotations).To(HaveKeyWithValue(AnnotationsPrefix+"/"+AnnotationsOrigValue, "true"))
+			Expect(annotations).To(HaveKeyWithValue(utils.AnnotationsPrefix+"/"+utils.AnnotationsOrigValue, "true"))
 
 			// Add int annotation
 			replicas := int32(5)
 			annotations = annotationMgr.AddIntAnnotations(annotations, period, &replicas)
 			// Should not overwrite existing original value
-			Expect(annotations).To(HaveKeyWithValue(AnnotationsPrefix+"/"+AnnotationsOrigValue, "true"))
+			Expect(annotations).To(HaveKeyWithValue(utils.AnnotationsPrefix+"/"+utils.AnnotationsOrigValue, "true"))
 
 			// Restore bool annotation
 			isRestored, value, cleanedAnnotations, err := annotationMgr.RestoreBoolAnnotations(annotations)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(isRestored).To(BeFalse())
 			Expect(*value).To(BeTrue())
-			Expect(cleanedAnnotations).ToNot(HaveKey(AnnotationsPrefix + "/" + AnnotationsOrigValue))
+			Expect(cleanedAnnotations).ToNot(HaveKey(utils.AnnotationsPrefix + "/" + utils.AnnotationsOrigValue))
 
 			// Remove all kubecloudscaler annotations
 			finalAnnotations := annotationMgr.RemoveAnnotations(cleanedAnnotations)
 			Expect(finalAnnotations).To(HaveKeyWithValue("existing-key", "existing-value"))
-			Expect(finalAnnotations).ToNot(HaveKey(AnnotationsPrefix + "/" + PeriodType))
+			Expect(finalAnnotations).ToNot(HaveKey(utils.AnnotationsPrefix + "/" + utils.PeriodType))
 		})
 	})
 
 	Context("Error Handling Integration", func() {
 		It("should handle client errors gracefully", func() {
 			// Create a client that will fail
-			mockClient := &MockKubernetesClient{
-				CoreV1Func: func() CoreV1Interface {
-					return &MockCoreV1Interface{
-						NamespacesFunc: func() NamespaceLister {
-							return &MockNamespaceLister{
+			mockClient := &testutil.MockKubernetesClient{
+				CoreV1Func: func() utils.CoreV1Interface {
+					return &testutil.MockCoreV1Interface{
+						NamespacesFunc: func() utils.NamespaceLister {
+							return &testutil.MockNamespaceLister{
 								ListFunc: func(ctx context.Context, opts metaV1.ListOptions) (*coreV1.NamespaceList, error) {
 									return nil, errors.New("network error")
 								},
@@ -192,9 +195,9 @@ var _ = Describe("Integration Tests", func() {
 				},
 			}
 
-			namespaceMgr = NewNamespaceManager(mockClient, logger)
+			namespaceMgr = utils.NewNamespaceManager(mockClient, logger, nil)
 
-			config := &Config{
+			config := &utils.Config{
 				Namespaces: []string{}, // Force it to try to list from cluster
 			}
 
@@ -206,7 +209,7 @@ var _ = Describe("Integration Tests", func() {
 		It("should handle annotation parsing errors gracefully", func() {
 			// Test with invalid annotation values
 			invalidAnnotations := map[string]string{
-				AnnotationsPrefix + "/" + AnnotationsOrigValue: "not-a-bool",
+				utils.AnnotationsPrefix + "/" + utils.AnnotationsOrigValue: "not-a-bool",
 			}
 
 			_, _, _, err := annotationMgr.RestoreBoolAnnotations(invalidAnnotations)

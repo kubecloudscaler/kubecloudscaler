@@ -14,7 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package service
+// Package testutil provides mock implementations for testing flow service components.
+package testutil
 
 import (
 	"context"

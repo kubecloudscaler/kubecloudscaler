@@ -187,6 +187,8 @@ spec:
                           properties:
                             days:
                               items:
+                                description: DayOfWeek represents a day of the week
+                                  for recurring periods.
                                 type: string
                               type: array
                             endTime:
@@ -213,6 +215,7 @@ spec:
                           type: object
                       type: object
                     type:
+                      description: PeriodType represents the type of a scaling period.
                       enum:
                       - down
                       - up
@@ -266,6 +269,8 @@ spec:
                     properties:
                       days:
                         items:
+                          description: DayOfWeek represents a day of the week for recurring
+                            periods.
                           type: string
                         type: array
                       endTime:
@@ -430,6 +435,8 @@ spec:
                           properties:
                             days:
                               items:
+                                description: DayOfWeek represents a day of the week
+                                  for recurring periods.
                                 type: string
                               type: array
                             endTime:
@@ -456,6 +463,7 @@ spec:
                           type: object
                       type: object
                     type:
+                      description: PeriodType represents the type of a scaling period.
                       enum:
                       - down
                       - up
@@ -525,6 +533,7 @@ spec:
                       K8s: deployments, statefulsets, ... (default: deployments)
                       GCP: VM-instances, ... (default: vm-instances)
                     items:
+                      description: ResourceKind represents a type of scalable resource.
                       type: string
                     type: array
                 type: object
@@ -535,6 +544,7 @@ spec:
             required:
             - periods
             - resources
+            - restoreOnDelete
             type: object
           status:
             description: ScalerStatus defines the observed state of Scaler.
@@ -569,6 +579,8 @@ spec:
                     properties:
                       days:
                         items:
+                          description: DayOfWeek represents a day of the week for recurring
+                            periods.
                           type: string
                         type: array
                       endTime:
@@ -681,6 +693,9 @@ spec:
                     default: true
                     description: 'Restore resource state on CR deletion (default: true)'
                     type: boolean
+                required:
+                - forceExcludeSystemNamespaces
+                - restoreOnDelete
                 type: object
               dryRun:
                 description: dry-run mode
@@ -742,6 +757,8 @@ spec:
                           properties:
                             days:
                               items:
+                                description: DayOfWeek represents a day of the week
+                                  for recurring periods.
                                 type: string
                               type: array
                             endTime:
@@ -768,6 +785,7 @@ spec:
                           type: object
                       type: object
                     type:
+                      description: PeriodType represents the type of a scaling period.
                       enum:
                       - down
                       - up
@@ -837,6 +855,7 @@ spec:
                       K8s: deployments, statefulsets, ... (default: deployments)
                       GCP: VM-instances, ... (default: vm-instances)
                     items:
+                      description: ResourceKind represents a type of scalable resource.
                       type: string
                     type: array
                 type: object
@@ -877,6 +896,8 @@ spec:
                     properties:
                       days:
                         items:
+                          description: DayOfWeek represents a day of the week for recurring
+                            periods.
                           type: string
                         type: array
                       endTime:

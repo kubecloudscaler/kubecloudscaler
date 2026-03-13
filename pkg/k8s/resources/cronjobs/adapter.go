@@ -91,7 +91,7 @@ type cronJobUpdater struct {
 func (u *cronJobUpdater) Update(ctx context.Context, namespace string, resource base.ResourceItem, opts metaV1.UpdateOptions) (base.ResourceItem, error) {
 	item, ok := resource.(*cronJobItem)
 	if !ok {
-		return nil, &typeAssertionError{expected: "*cronJobItem", got: resource}
+		return nil, base.NewTypeAssertionError("*cronJobItem", resource)
 	}
 
 	updated, err := u.client.CronJobs(namespace).Update(ctx, item.CronJob, opts)
@@ -123,13 +123,4 @@ func setSuspend(item base.ResourceItem, suspend *bool) {
 // onUpError returns an error when trying to scale up a cronjob (not supported).
 func onUpError(item base.ResourceItem) error {
 	return fmt.Errorf("cronjob can only be scaled down")
-}
-
-type typeAssertionError struct {
-	expected string
-	got      interface{}
-}
-
-func (e *typeAssertionError) Error() string {
-	return fmt.Sprintf("type assertion failed: expected %s, got %T", e.expected, e.got)
 }

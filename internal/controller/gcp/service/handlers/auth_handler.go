@@ -74,7 +74,7 @@ func (h *AuthHandler) Execute(ctx *service.ReconciliationContext) error {
 	}
 
 	// Initialize GCP client
-	client, err := gcpClient.GetClient(secret, scaler.Spec.Config.ProjectID)
+	client, err := gcpClient.GetClient(ctx.Ctx, secret)
 	if err != nil {
 		ctx.Logger.Error().Err(err).Msg("unable to create GCP client")
 		return service.NewCriticalError(fmt.Errorf("create GCP client: %w", err))

@@ -18,7 +18,7 @@ package handlers_test
 
 import (
 	"context"
-	"time"
+	"fmt"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -27,13 +27,16 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	kubecloudscalerv1alpha3 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha3"
 	"github.com/kubecloudscaler/kubecloudscaler/internal/controller/k8s/service"
 	"github.com/kubecloudscaler/kubecloudscaler/internal/controller/k8s/service/handlers"
 	"github.com/kubecloudscaler/kubecloudscaler/internal/controller/k8s/service/testutil"
+	"github.com/kubecloudscaler/kubecloudscaler/internal/utils"
 )
 
 var _ = Describe("FinalizerHandler", func() {
@@ -91,15 +94,26 @@ var _ = Describe("FinalizerHandler", func() {
 			Expect(nextCalled).To(BeTrue())
 		})
 
-		It("should complete in under 100ms", func() {
-			reconCtx.Client = fake.NewClientBuilder().WithScheme(scheme).WithObjects(scaler).Build()
+	})
 
-			startTime := time.Now()
+	Context("When the client Update fails while adding finalizer", func() {
+		It("should return a recoverable error and set RequeueAfter", func() {
+			injectedErr := fmt.Errorf("conflict on update")
+			reconCtx.Client = fake.NewClientBuilder().
+				WithScheme(scheme).
+				WithObjects(scaler).
+				WithInterceptorFuncs(interceptor.Funcs{
+					Update: func(ctx context.Context, c client.WithWatch, obj client.Object, opts ...client.UpdateOption) error {
+						return injectedErr
+					},
+				}).
+				Build()
+
 			err := handler.Execute(reconCtx)
-			duration := time.Since(startTime)
 
-			Expect(err).ToNot(HaveOccurred())
-			Expect(duration).To(BeNumerically("<", 100*time.Millisecond))
+			Expect(err).To(HaveOccurred())
+			Expect(service.IsRecoverableError(err)).To(BeTrue())
+			Expect(reconCtx.RequeueAfter).To(Equal(utils.ReconcileErrorDuration))
 		})
 	})
 

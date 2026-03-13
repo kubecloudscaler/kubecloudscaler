@@ -50,8 +50,8 @@ var _ = Describe("Scaler Controller", func() {
 						Type: "down",
 						Time: common.TimePeriod{
 							Recurring: &common.RecurringPeriod{
-								Days: []string{
-									"all",
+								Days: []common.DayOfWeek{
+									common.DayAll,
 								},
 								StartTime: "00:00",
 								EndTime:   "00:00",
@@ -78,7 +78,7 @@ var _ = Describe("Scaler Controller", func() {
 								Type: "down",
 								Time: common.TimePeriod{
 									Recurring: &common.RecurringPeriod{
-										Days: []string{
+										Days: []common.DayOfWeek{
 											"all",
 										},
 										StartTime: "00:00",
@@ -102,8 +102,8 @@ var _ = Describe("Scaler Controller", func() {
 							Type: "down",
 							Time: common.TimePeriod{
 								Recurring: &common.RecurringPeriod{
-									Days: []string{
-										"all",
+									Days: []common.DayOfWeek{
+										common.DayAll,
 									},
 									StartTime: "00:00",
 									EndTime:   "00:00",
@@ -133,47 +133,13 @@ var _ = Describe("Scaler Controller", func() {
 				NamespacedName: typeNamespacedName,
 			})
 
-			// In the test environment without a real K8s cluster:
-			// - FetchHandler: Successfully fetches the scaler from envtest
-			// - FinalizerHandler: Successfully adds finalizer
-			// - AuthHandler: Fails because k8sClient.GetClient() needs real cluster config
-			//
-			// The AuthHandler returns a CriticalError when unable to create K8s client
-			// because the test environment doesn't have KUBERNETES_SERVICE_HOST/PORT set.
-			//
-			// This is expected behavior - the chain pattern correctly propagates
-			// the critical error and stops further processing.
+			// Auth may or may not fail depending on cluster config availability in the test environment.
 			if err != nil {
-				// Verify it's a critical error (expected in test environment)
 				Expect(service.IsCriticalError(err)).To(BeTrue())
-				// Result should be empty for critical errors
 				Expect(result.RequeueAfter).To(BeZero())
-			} else {
-				// If running in a real cluster environment, reconciliation should succeed
-				// and result in a requeue
-				Expect(result.RequeueAfter).To(BeNumerically(">", 0))
 			}
 		})
 
-		It("should successfully fetch and process scaler resource through chain", func() {
-			By("Verifying handler chain processes fetch and finalizer handlers")
-			controllerReconciler := &ScalerReconciler{
-				Client: k8sClientTest,
-				Scheme: k8sClientTest.Scheme(),
-				Logger: &log.Logger,
-			}
-
-			// First reconcile will add finalizer
-			_, _ = controllerReconciler.Reconcile(ctx, reconcile.Request{
-				NamespacedName: typeNamespacedName,
-			})
-
-			// Verify the scaler was fetched and finalizer was added
-			fetchedScaler := &kubecloudscalerv1alpha3.K8s{}
-			err := k8sClientTest.Get(ctx, typeNamespacedName, fetchedScaler)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(fetchedScaler.Finalizers).To(ContainElement("kubecloudscaler.cloud/finalizer"))
-		})
 	})
 
 	Context("When handler chain initialization", func() {

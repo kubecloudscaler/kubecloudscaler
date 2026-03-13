@@ -64,7 +64,7 @@ func (in *RecurringPeriod) DeepCopyInto(out *RecurringPeriod) {
 	*out = *in
 	if in.Days != nil {
 		in, out := &in.Days, &out.Days
-		*out = make([]string, len(*in))
+		*out = make([]DayOfWeek, len(*in))
 		copy(*out, *in)
 	}
 	if in.Timezone != nil {
@@ -104,7 +104,7 @@ func (in *Resources) DeepCopyInto(out *Resources) {
 	*out = *in
 	if in.Types != nil {
 		in, out := &in.Types, &out.Types
-		*out = make([]string, len(*in))
+		*out = make([]ResourceKind, len(*in))
 		copy(*out, *in)
 	}
 	if in.Names != nil {

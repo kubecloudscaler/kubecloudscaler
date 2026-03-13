@@ -19,47 +19,57 @@ package controller
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	"github.com/rs/zerolog"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	kubecloudscalerv1alpha3 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha3"
 	"github.com/kubecloudscaler/kubecloudscaler/internal/controller/flow/service"
+	"github.com/kubecloudscaler/kubecloudscaler/internal/controller/flow/service/handlers"
+	"github.com/kubecloudscaler/kubecloudscaler/internal/controller/shared"
 	"github.com/kubecloudscaler/kubecloudscaler/internal/metrics"
 	"github.com/kubecloudscaler/kubecloudscaler/internal/utils"
 )
 
-const flowFinalizer = "kubecloudscaler.cloud/flow-finalizer"
-
-// FlowReconciler reconciles a Flow object
+// FlowReconciler reconciles a Flow object.
 // It manages the lifecycle of K8s and GCP resources by creating and deploying them
-// based on configured periods and flow definitions with timing delays
+// based on configured periods and flow definitions with timing delays.
+//
+// This controller uses the Chain of Responsibility pattern following the classic
+// refactoring.guru Go pattern where handlers have Execute() and SetNext() methods.
 type FlowReconciler struct {
 	client.Client
-	Scheme *runtime.Scheme
-	Logger *zerolog.Logger
+	Scheme   *runtime.Scheme
+	Logger   *zerolog.Logger
+	recorder metrics.Recorder
 
-	// Services for clean architecture
+	chain     service.Handler
+	chainOnce sync.Once
+
 	flowProcessor service.FlowProcessor
 	statusUpdater service.StatusUpdater
 }
 
-// NewFlowReconciler creates a new FlowReconciler with all required services
+// NewFlowReconciler creates a new FlowReconciler with all required services.
 func NewFlowReconciler(
 	client client.Client,
 	scheme *runtime.Scheme,
 	logger *zerolog.Logger,
+	rec metrics.Recorder,
 ) *FlowReconciler {
 	if logger == nil {
 		nopLogger := zerolog.Nop()
 		logger = &nopLogger
 	}
-	// Create services
+
+	if rec == nil {
+		rec = metrics.GetRecorder()
+	}
+
 	timeCalculator := service.NewTimeCalculatorService(logger)
 	flowValidator := service.NewFlowValidatorService(timeCalculator, logger)
 	resourceMapper := service.NewResourceMapperService(timeCalculator, logger)
@@ -71,6 +81,7 @@ func NewFlowReconciler(
 		Client:        client,
 		Scheme:        scheme,
 		Logger:        logger,
+		recorder:      rec,
 		flowProcessor: flowProcessor,
 		statusUpdater: statusUpdater,
 	}
@@ -82,124 +93,85 @@ func NewFlowReconciler(
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
-// This function handles the creation and deployment of K8s and GCP resources
-// based on flow definitions with timing delays.
 //
-// The reconciliation process:
-// 1. Fetches the Flow object from the cluster
-// 2. Manages finalizers for proper cleanup
-// 3. Validates flow definitions and timing constraints
-// 4. Creates K8s and GCP objects with owner references
-// 5. Deploys the created objects
-// 6. Updates the status with results
-//
-// For more details, check Reconcile and its Result here:
-// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.22.1/pkg/reconcile
+// The reconciliation process is implemented as a Chain of Responsibility:
+// 1. FetchHandler: Fetches the Flow object from the cluster
+// 2. FinalizerHandler: Manages finalizers for proper cleanup
+// 3. ProcessingHandler: Validates flow and creates K8s/GCP child resources
+// 4. StatusHandler: Updates the status with results
 func (r *FlowReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	start := time.Now()
-	rec := metrics.GetRecorder()
+	rec := r.recorder
 
-	flow, err := r.fetchFlow(ctx, req)
-	if err != nil {
-		rec.RecordReconcile(metrics.ControllerFlow, metrics.ResultCriticalError, time.Since(start).Seconds())
-		return ctrl.Result{}, err
+	reconCtx := &service.FlowReconciliationContext{
+		Ctx:     ctx,
+		Request: req,
+		Client:  r.Client,
+		Logger:  r.Logger,
 	}
 
-	r.Logger.Info().
-		Str("name", flow.Name).
-		Str("kind", flow.Kind).
-		Str("apiVersion", flow.APIVersion).
-		Msg("reconciling flow")
-
-	// Handle finalizer management
-	if stop, result, err := r.handleFinalizers(ctx, flow); stop {
-		resultLabel := metrics.ResultSuccess
-		if err != nil {
-			resultLabel = metrics.ResultRecoverableError
+	r.chainOnce.Do(func() {
+		if r.chain == nil {
+			r.chain = r.initializeChain()
 		}
-		rec.RecordReconcile(metrics.ControllerFlow, resultLabel, time.Since(start).Seconds())
-		return result, err
-	}
-
-	// Process flow and create resources
-	if err := r.flowProcessor.ProcessFlow(ctx, flow); err != nil {
-		rec.RecordReconcile(metrics.ControllerFlow, metrics.ResultRecoverableError, time.Since(start).Seconds())
-		return r.handleProcessingError(ctx, flow, err)
-	}
-
-	// Update status to indicate successful processing
-	result, err := r.statusUpdater.UpdateFlowStatus(ctx, flow, metav1.Condition{
-		Type:    "Processed",
-		Status:  metav1.ConditionTrue,
-		Reason:  "ProcessingSucceeded",
-		Message: "Flow processed successfully",
 	})
-	resultLabel := metrics.ResultSuccess
+
+	err := r.chain.Execute(reconCtx)
+	duration := time.Since(start).Seconds()
+
 	if err != nil {
-		resultLabel = metrics.ResultRecoverableError
-	}
-	rec.RecordReconcile(metrics.ControllerFlow, resultLabel, time.Since(start).Seconds())
-	return result, err
-}
-
-// fetchFlow fetches the Flow object from the Kubernetes API
-func (r *FlowReconciler) fetchFlow(ctx context.Context, req ctrl.Request) (*kubecloudscalerv1alpha3.Flow, error) {
-	flow := &kubecloudscalerv1alpha3.Flow{}
-	if err := r.Get(ctx, req.NamespacedName, flow); err != nil {
-		r.Logger.Error().Err(err).Msg("unable to fetch Flow")
-		return nil, client.IgnoreNotFound(err)
-	}
-	return flow, nil
-}
-
-// handleFinalizers handles finalizer management for proper cleanup.
-// Returns (stop bool, result ctrl.Result, err error).
-// stop=true means the caller should return immediately with the given result and error.
-func (r *FlowReconciler) handleFinalizers(ctx context.Context, flow *kubecloudscalerv1alpha3.Flow) (bool, ctrl.Result, error) {
-	if flow.DeletionTimestamp.IsZero() {
-		// Object is not being deleted - ensure finalizer is present
-		if !controllerutil.ContainsFinalizer(flow, flowFinalizer) {
-			r.Logger.Info().Msg("adding finalizer")
-			controllerutil.AddFinalizer(flow, flowFinalizer)
-			if err := r.Update(ctx, flow); err != nil {
-				r.Logger.Error().Err(err).Msg("failed to add finalizer")
-				return true, ctrl.Result{RequeueAfter: utils.ReconcileErrorDuration}, err
+		if shared.IsCriticalError(err) {
+			rec.RecordReconcile(metrics.ControllerFlow, metrics.ResultCriticalError, duration)
+			r.Logger.Error().Err(err).Msg("critical error during reconciliation")
+			return ctrl.Result{}, client.IgnoreNotFound(err)
+		}
+		if shared.IsRecoverableError(err) {
+			rec.RecordReconcile(metrics.ControllerFlow, metrics.ResultRecoverableError, duration)
+			r.Logger.Warn().Err(err).Msg("recoverable error during reconciliation, will requeue")
+			requeue := utils.ReconcileErrorDuration
+			if reconCtx.RequeueAfter > 0 {
+				requeue = reconCtx.RequeueAfter
 			}
+			return ctrl.Result{RequeueAfter: requeue}, nil
 		}
-		return false, ctrl.Result{}, nil
+		rec.RecordReconcile(metrics.ControllerFlow, metrics.ResultRecoverableError, duration)
+		r.Logger.Error().Err(err).Msg("unexpected error during reconciliation")
+		return ctrl.Result{RequeueAfter: utils.ReconcileErrorDuration}, nil
 	}
 
-	// Object is being deleted - handle finalizer cleanup
-	if controllerutil.ContainsFinalizer(flow, flowFinalizer) {
-		r.Logger.Info().Msg("deleting flow with finalizer")
-		r.Logger.Info().Msg("removing finalizer")
-		controllerutil.RemoveFinalizer(flow, flowFinalizer)
-		if err := r.Update(ctx, flow); err != nil {
-			r.Logger.Error().Err(err).Msg("failed to remove finalizer")
-			return true, ctrl.Result{RequeueAfter: utils.ReconcileErrorDuration}, err
-		}
-		return true, ctrl.Result{}, nil
-	}
+	rec.RecordReconcile(metrics.ControllerFlow, metrics.ResultSuccess, duration)
 
-	// Finalizer already removed, stop reconciliation
-	return true, ctrl.Result{}, nil
+	if reconCtx.RequeueAfter > 0 {
+		return ctrl.Result{RequeueAfter: reconCtx.RequeueAfter}, nil
+	}
+	return ctrl.Result{}, nil
 }
 
-// handleProcessingError handles processing errors and updates flow status accordingly.
-func (r *FlowReconciler) handleProcessingError(ctx context.Context, flow *kubecloudscalerv1alpha3.Flow, err error) (ctrl.Result, error) {
-	r.Logger.Error().Err(err).Msg("flow processing failed")
-	return r.statusUpdater.UpdateFlowStatus(ctx, flow, metav1.Condition{
-		Type:    "Processed",
-		Status:  metav1.ConditionFalse,
-		Reason:  "ProcessingFailed",
-		Message: err.Error(),
-	})
+// initializeChain creates and links the handler chain in fixed order.
+//
+// Handler Order:
+// 1. FetchHandler → 2. FinalizerHandler → 3. ProcessingHandler → 4. StatusHandler
+func (r *FlowReconciler) initializeChain() service.Handler {
+	fetchHandler := handlers.NewFetchHandler()
+	finalizerHandler := handlers.NewFinalizerHandler()
+	processingHandler := handlers.NewProcessingHandler(r.flowProcessor)
+	statusHandler := handlers.NewStatusHandler(r.statusUpdater)
+
+	fetchHandler.SetNext(finalizerHandler)
+	finalizerHandler.SetNext(processingHandler)
+	processingHandler.SetNext(statusHandler)
+
+	return fetchHandler
 }
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *FlowReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	r.chain = r.initializeChain()
+
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&kubecloudscalerv1alpha3.Flow{}).
+		Owns(&kubecloudscalerv1alpha3.K8s{}).
+		Owns(&kubecloudscalerv1alpha3.Gcp{}).
 		WithEventFilter(utils.IgnoreDeletionPredicate()).
 		Named("flow").
 		Complete(r)

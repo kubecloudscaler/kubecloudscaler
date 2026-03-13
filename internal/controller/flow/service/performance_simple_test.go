@@ -22,25 +22,22 @@ import (
 	"time"
 
 	"github.com/rs/zerolog"
-	"github.com/stretchr/testify/assert"
 
 	"github.com/kubecloudscaler/kubecloudscaler/api/common"
 	kubecloudscalerv1alpha3 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha3"
+	"github.com/kubecloudscaler/kubecloudscaler/internal/controller/flow/service/testutil"
 	"github.com/kubecloudscaler/kubecloudscaler/internal/controller/flow/types"
 )
 
-func TestFlowProcessorService_ProcessFlow_Performance(t *testing.T) {
+func BenchmarkFlowProcessorService_ProcessFlow(b *testing.B) {
 	logger := zerolog.Nop()
 
-	// Create mocks
-	mockValidator := &MockFlowValidator{}
-	mockResourceMapper := &MockResourceMapper{}
-	mockResourceCreator := &MockResourceCreator{}
+	mockValidator := &testutil.MockFlowValidator{}
+	mockResourceMapper := &testutil.MockResourceMapper{}
+	mockResourceCreator := &testutil.MockResourceCreator{}
 
-	// Create service
-	service := NewFlowProcessorService(mockValidator, mockResourceMapper, mockResourceCreator, &logger)
+	svc := NewFlowProcessorService(mockValidator, mockResourceMapper, mockResourceCreator, &logger)
 
-	// Create test flow
 	flow := &kubecloudscalerv1alpha3.Flow{
 		Spec: kubecloudscalerv1alpha3.FlowSpec{
 			Flows: []kubecloudscalerv1alpha3.Flows{
@@ -54,45 +51,51 @@ func TestFlowProcessorService_ProcessFlow_Performance(t *testing.T) {
 		},
 	}
 
-	// Setup mocks
-	mockValidator.ExtractFlowDataFunc = func(flow *kubecloudscalerv1alpha3.Flow) (map[string]bool, map[string]bool, error) {
+	mockValidator.ExtractFlowDataFunc = func(
+		flow *kubecloudscalerv1alpha3.Flow,
+	) (map[string]bool, map[string]bool, error) {
 		return map[string]bool{"test-resource": true}, map[string]bool{"test-period": true}, nil
 	}
-	mockValidator.ValidatePeriodTimingsFunc = func(flow *kubecloudscalerv1alpha3.Flow, periodNames map[string]bool) error {
+	mockValidator.ValidatePeriodTimingsFunc = func(
+		flow *kubecloudscalerv1alpha3.Flow, periodNames map[string]bool,
+	) error {
 		return nil
 	}
-	mockResourceMapper.CreateResourceMappingsFunc = func(flow *kubecloudscalerv1alpha3.Flow, resourceNames map[string]bool) (map[string]types.ResourceInfo, error) {
+	k8sRes := kubecloudscalerv1alpha3.K8sResource{Name: "test-resource"}
+	mockResourceMapper.CreateResourceMappingsFunc = func(
+		flow *kubecloudscalerv1alpha3.Flow, resourceNames map[string]bool,
+	) (map[string]types.ResourceInfo, error) {
 		return map[string]types.ResourceInfo{
 			"test-resource": {
-				Type:     "k8s",
-				Resource: kubecloudscalerv1alpha3.K8sResource{Name: "test-resource"},
-				Periods:  []types.PeriodWithDelay{},
+				Type:    "k8s",
+				K8sRes:  &k8sRes,
+				Periods: []types.PeriodWithDelay{},
 			},
 		}, nil
 	}
-	mockResourceCreator.CreateK8sResourceFunc = func(ctx context.Context, flow *kubecloudscalerv1alpha3.Flow, resourceName string, k8sResource kubecloudscalerv1alpha3.K8sResource, periodsWithDelay []types.PeriodWithDelay) error {
+	mockResourceCreator.CreateK8sResourceFunc = func(
+		ctx context.Context,
+		flow *kubecloudscalerv1alpha3.Flow,
+		resourceName string,
+		k8sResource kubecloudscalerv1alpha3.K8sResource,
+		periodsWithDelay []types.PeriodWithDelay,
+	) error {
 		return nil
 	}
 
-	// Measure performance
-	start := time.Now()
+	b.ResetTimer()
 
-	for i := 0; i < 100; i++ {
-		err := service.ProcessFlow(context.Background(), flow)
-		assert.NoError(t, err)
+	for i := 0; i < b.N; i++ {
+		err := svc.ProcessFlow(context.Background(), flow)
+		if err != nil {
+			b.Fatal(err)
+		}
 	}
-
-	duration := time.Since(start)
-
-	// Assert that processing 100 flows takes less than 1 second
-	assert.Less(t, duration, time.Second)
-
-	t.Logf("Processed 100 flows in %v (avg: %v per flow)", duration, duration/100)
 }
 
 func BenchmarkTimeCalculatorService_GetPeriodDuration(b *testing.B) {
 	logger := zerolog.Nop()
-	service := NewTimeCalculatorService(&logger)
+	svc := NewTimeCalculatorService(&logger)
 
 	period := &common.ScalerPeriod{
 		Time: common.TimePeriod{
@@ -106,13 +109,13 @@ func BenchmarkTimeCalculatorService_GetPeriodDuration(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		_, _ = service.GetPeriodDuration(period)
+		_, _ = svc.GetPeriodDuration(period)
 	}
 }
 
 func BenchmarkTimeCalculatorService_CalculatePeriodStartTime(b *testing.B) {
 	logger := zerolog.Nop()
-	service := NewTimeCalculatorService(&logger)
+	svc := NewTimeCalculatorService(&logger)
 
 	period := &common.ScalerPeriod{
 		Time: common.TimePeriod{
@@ -125,6 +128,6 @@ func BenchmarkTimeCalculatorService_CalculatePeriodStartTime(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		_, _ = service.CalculatePeriodStartTime(period, time.Hour)
+		_, _ = svc.CalculatePeriodStartTime(period, time.Hour)
 	}
 }

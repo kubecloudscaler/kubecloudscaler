@@ -1,10 +1,34 @@
 // +kubebuilder:object:generate=true
 package common
 
+// PeriodType represents the type of a scaling period.
+// +kubebuilder:validation:Enum=down;up
+type PeriodType string
+
+const (
+	// PeriodTypeDown scales resources down during the period.
+	PeriodTypeDown PeriodType = "down"
+	// PeriodTypeUp scales resources up during the period.
+	PeriodTypeUp PeriodType = "up"
+)
+
+// DayOfWeek represents a day of the week for recurring periods.
+type DayOfWeek string
+
+const (
+	DayMonday    DayOfWeek = "mon"
+	DayTuesday   DayOfWeek = "tue"
+	DayWednesday DayOfWeek = "wed"
+	DayThursday  DayOfWeek = "thu"
+	DayFriday    DayOfWeek = "fri"
+	DaySaturday  DayOfWeek = "sat"
+	DaySunday    DayOfWeek = "sun"
+	DayAll       DayOfWeek = "all"
+)
+
 // ScalerPeriod defines a scaling period with time constraints and replica limits.
 type ScalerPeriod struct {
-	// +kubebuilder:validation:Enum=down;up
-	Type string     `json:"type"`
+	Type PeriodType `json:"type"`
 	Time TimePeriod `json:"time"`
 	// Minimum replicas
 	MinReplicas *int32 `json:"minReplicas,omitempty"`
@@ -24,7 +48,7 @@ type TimePeriod struct {
 
 // RecurringPeriod defines a recurring time period for scaling operations.
 type RecurringPeriod struct {
-	Days []string `json:"days"`
+	Days []DayOfWeek `json:"days"`
 	// +kubebuilder:validation:Pattern=`^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$`
 	StartTime string `json:"startTime"`
 	// +kubebuilder:validation:Pattern=`^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$`

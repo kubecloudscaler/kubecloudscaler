@@ -2,8 +2,8 @@ version: "2"
 
 run:
   timeout: 5m
-  go: "1.21" # Minimum supported Go version
-  tests: false
+  go: "1.26"
+  tests: true
   modules-download-mode: readonly
 
 linters:
@@ -56,9 +56,9 @@ linters:
         logger:
           deny:
             - pkg: github.com/sirupsen/logrus
-              desc: "Use github.com/AgicapTech/sre-kernel-go-lib for logging"
+              desc: "Use github.com/rs/zerolog for logging"
             - pkg: go.uber.org/zap
-              desc: "Use github.com/AgicapTech/sre-kernel-go-lib for logging"
+              desc: "Use github.com/rs/zerolog for logging"
 
     # Dupl configuration for duplication detection
     dupl:
@@ -71,7 +71,7 @@ linters:
 
     # Funlen configuration
     funlen:
-      lines: 200 # Maximum 100 lines per function
+      lines: 200 # Maximum 200 lines per function
       statements: 50 # Maximum 50 statements per function
       ignore-comments: true
 

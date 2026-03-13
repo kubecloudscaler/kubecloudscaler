@@ -119,7 +119,14 @@ func (h *ScalingHandler) SetNext(next service.Handler) {
 // It ensures that only valid resource types are included and prevents mixing
 // of application resources (deployments, statefulsets) with HPA resources.
 func (h *ScalingHandler) validResourceList(ctx *service.ReconciliationContext) ([]string, error) {
-	resourceTypes := ctx.Scaler.Spec.Resources.Types
+	kinds := ctx.Scaler.Spec.Resources.Types
+
+	// Convert ResourceKind to string for internal processing
+	resourceTypes := make([]string, len(kinds))
+	for i, k := range kinds {
+		resourceTypes[i] = string(k)
+	}
+
 	if len(resourceTypes) == 0 {
 		resourceTypes = []string{resources.DefaultK8SResourceType}
 	}

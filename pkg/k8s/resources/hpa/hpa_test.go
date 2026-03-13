@@ -44,14 +44,14 @@ var _ = Describe("HPA", func() {
 
 		BeforeEach(func() {
 			mockPeriod = &period.Period{
-				Type:         "down",
-				MinReplicas:  1,
-				MaxReplicas:  5,
-				IsActive:     true,
-				GetStartTime: time.Now(),
-				GetEndTime:   time.Now(),
-				Period: &common.RecurringPeriod{
-					Days:      []string{"all"},
+				Type:        "down",
+				MinReplicas: 1,
+				MaxReplicas: 5,
+				IsActive:    true,
+				StartTime:   time.Now(),
+				EndTime:     time.Now(),
+				Spec: &common.RecurringPeriod{
+					Days:      []common.DayOfWeek{common.DayAll},
 					StartTime: "00:00",
 					EndTime:   "23:59",
 				},

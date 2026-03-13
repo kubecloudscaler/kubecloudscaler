@@ -80,7 +80,7 @@ func (m *ResourceMapperService) mapResource(
 	gcpResource := m.findGcpResource(flow, resourceName)
 
 	// Determine resource type and validate uniqueness
-	resourceType, resourceObj, err := m.determineResourceType(resourceName, k8sResource, gcpResource)
+	resourceType, k8sRes, gcpRes, err := m.determineResourceType(resourceName, k8sResource, gcpResource)
 	if err != nil {
 		return types.ResourceInfo{}, err
 	}
@@ -92,9 +92,10 @@ func (m *ResourceMapperService) mapResource(
 	}
 
 	return types.ResourceInfo{
-		Type:     resourceType,
-		Resource: resourceObj,
-		Periods:  periodsWithDelay,
+		Type:    resourceType,
+		K8sRes:  k8sRes,
+		GcpRes:  gcpRes,
+		Periods: periodsWithDelay,
 	}, nil
 }
 
@@ -118,25 +119,26 @@ func (m *ResourceMapperService) findGcpResource(flow *kubecloudscalerv1alpha3.Fl
 	return nil
 }
 
-// determineResourceType determines the resource type and validates uniqueness
+// determineResourceType determines the resource type and validates uniqueness.
+// Returns (type, k8sRes, gcpRes, error). Exactly one of k8sRes or gcpRes is non-nil.
 func (m *ResourceMapperService) determineResourceType(
 	resourceName string,
 	k8sResource *kubecloudscalerv1alpha3.K8sResource,
 	gcpResource *kubecloudscalerv1alpha3.GcpResource,
-) (string, interface{}, error) {
+) (string, *kubecloudscalerv1alpha3.K8sResource, *kubecloudscalerv1alpha3.GcpResource, error) {
 	if k8sResource != nil && gcpResource != nil {
-		return "", nil, fmt.Errorf("resource %s is defined in both K8s and GCP resources", resourceName)
+		return "", nil, nil, fmt.Errorf("resource %s is defined in both K8s and GCP resources", resourceName)
 	}
 
 	if k8sResource != nil {
-		return "k8s", *k8sResource, nil
+		return "k8s", k8sResource, nil, nil
 	}
 
 	if gcpResource != nil {
-		return "gcp", *gcpResource, nil
+		return "gcp", nil, gcpResource, nil
 	}
 
-	return "", nil, fmt.Errorf("resource %s referenced in flows but not defined in resources", resourceName)
+	return "", nil, nil, fmt.Errorf("resource %s referenced in flows but not defined in resources", resourceName)
 }
 
 // findAssociatedPeriods finds all periods associated with a resource

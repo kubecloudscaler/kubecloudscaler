@@ -157,46 +157,39 @@ func (c *ResourceCreatorService) buildPeriods(periodsWithDelay []types.PeriodWit
 	return allPeriods
 }
 
-// createOrUpdateResource creates or updates a resource
+// createOrUpdateResource creates or updates a resource using controllerutil.CreateOrUpdate
+// to avoid TOCTOU races between Get and Update.
 func (c *ResourceCreatorService) createOrUpdateResource(ctx context.Context, obj client.Object) error {
-	if err := c.client.Create(ctx, obj); err != nil {
-		if client.IgnoreAlreadyExists(err) != nil {
-			return err
+	desired := obj.DeepCopyObject().(client.Object)
+	_, err := controllerutil.CreateOrUpdate(ctx, c.client, obj, func() error {
+		// After Get, obj may have been overwritten with cluster state.
+		// Merge desired labels and annotations with existing ones (preserve existing, overlay desired).
+		mergedLabels := obj.GetLabels()
+		if mergedLabels == nil {
+			mergedLabels = make(map[string]string)
 		}
-		// Object already exists, get it first to preserve existing fields
-		existingObj := obj.DeepCopyObject().(client.Object)
-		if err := c.client.Get(ctx, client.ObjectKeyFromObject(obj), existingObj); err != nil {
-			return fmt.Errorf("failed to get existing resource: %w", err)
-		}
-
-		// Update the existing object with new spec while preserving metadata
-		obj.SetResourceVersion(existingObj.GetResourceVersion())
-		obj.SetUID(existingObj.GetUID())
-		obj.SetCreationTimestamp(existingObj.GetCreationTimestamp())
-		obj.SetOwnerReferences(existingObj.GetOwnerReferences())
-
-		// Merge labels: preserve existing and add new ones
-		mergedLabels := make(map[string]string)
-		for k, v := range existingObj.GetLabels() {
-			mergedLabels[k] = v
-		}
-		for k, v := range obj.GetLabels() {
+		for k, v := range desired.GetLabels() {
 			mergedLabels[k] = v
 		}
 		obj.SetLabels(mergedLabels)
 
-		// Merge annotations: preserve existing and add new ones
-		mergedAnnotations := make(map[string]string)
-		for k, v := range existingObj.GetAnnotations() {
-			mergedAnnotations[k] = v
+		mergedAnnotations := obj.GetAnnotations()
+		if mergedAnnotations == nil {
+			mergedAnnotations = make(map[string]string)
 		}
-		for k, v := range obj.GetAnnotations() {
+		for k, v := range desired.GetAnnotations() {
 			mergedAnnotations[k] = v
 		}
 		obj.SetAnnotations(mergedAnnotations)
-
-		// Update the resource
-		return c.client.Update(ctx, obj)
-	}
-	return nil
+		switch o := obj.(type) {
+		case *kubecloudscalerv1alpha3.K8s:
+			o.Spec = desired.(*kubecloudscalerv1alpha3.K8s).Spec
+		case *kubecloudscalerv1alpha3.Gcp:
+			o.Spec = desired.(*kubecloudscalerv1alpha3.Gcp).Spec
+		default:
+			return fmt.Errorf("unsupported object type %T", obj)
+		}
+		return nil
+	})
+	return err
 }

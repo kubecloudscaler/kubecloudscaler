@@ -95,17 +95,15 @@ func (s *FlowProcessorService) processResource(
 ) error {
 	switch resourceInfo.Type {
 	case "k8s":
-		k8sResource, ok := resourceInfo.Resource.(kubecloudscalerv1alpha3.K8sResource)
-		if !ok {
-			return fmt.Errorf("expected K8sResource, got %T", resourceInfo.Resource)
+		if resourceInfo.K8sRes == nil {
+			return fmt.Errorf("K8sRes is nil for resource %s", resourceName)
 		}
-		return s.resourceCreator.CreateK8sResource(ctx, flow, resourceName, k8sResource, resourceInfo.Periods)
+		return s.resourceCreator.CreateK8sResource(ctx, flow, resourceName, *resourceInfo.K8sRes, resourceInfo.Periods)
 	case "gcp":
-		gcpResource, ok := resourceInfo.Resource.(kubecloudscalerv1alpha3.GcpResource)
-		if !ok {
-			return fmt.Errorf("expected GcpResource, got %T", resourceInfo.Resource)
+		if resourceInfo.GcpRes == nil {
+			return fmt.Errorf("GcpRes is nil for resource %s", resourceName)
 		}
-		return s.resourceCreator.CreateGcpResource(ctx, flow, resourceName, gcpResource, resourceInfo.Periods)
+		return s.resourceCreator.CreateGcpResource(ctx, flow, resourceName, *resourceInfo.GcpRes, resourceInfo.Periods)
 	default:
 		return fmt.Errorf("unknown resource type: %s", resourceInfo.Type)
 	}

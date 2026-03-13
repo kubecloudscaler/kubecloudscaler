@@ -18,6 +18,8 @@ rules:
   - secrets
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - actions.github.com
   resources:

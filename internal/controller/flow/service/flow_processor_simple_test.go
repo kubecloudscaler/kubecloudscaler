@@ -19,84 +19,100 @@ package service
 import (
 	"context"
 	"errors"
-	"testing"
 
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 	"github.com/rs/zerolog"
-	"github.com/stretchr/testify/assert"
 
 	kubecloudscalerv1alpha3 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha3"
+	"github.com/kubecloudscaler/kubecloudscaler/internal/controller/flow/service/testutil"
 	"github.com/kubecloudscaler/kubecloudscaler/internal/controller/flow/types"
 )
 
-func TestFlowProcessorService_ProcessFlow_Simple(t *testing.T) {
-	logger := zerolog.Nop()
+var _ = Describe("FlowProcessorService", func() {
+	var (
+		logger              zerolog.Logger
+		mockValidator       *testutil.MockFlowValidator
+		mockResourceMapper  *testutil.MockResourceMapper
+		mockResourceCreator *testutil.MockResourceCreator
+		svc                 *FlowProcessorService
+	)
 
-	t.Run("successful processing", func(t *testing.T) {
-		// Create mocks
-		mockValidator := &MockFlowValidator{}
-		mockResourceMapper := &MockResourceMapper{}
-		mockResourceCreator := &MockResourceCreator{}
+	BeforeEach(func() {
+		logger = zerolog.Nop()
+		mockValidator = &testutil.MockFlowValidator{}
+		mockResourceMapper = &testutil.MockResourceMapper{}
+		mockResourceCreator = &testutil.MockResourceCreator{}
+		svc = NewFlowProcessorService(mockValidator, mockResourceMapper, mockResourceCreator, &logger)
+	})
 
-		// Create service
-		service := NewFlowProcessorService(mockValidator, mockResourceMapper, mockResourceCreator, &logger)
-
-		// Create test flow
-		flow := &kubecloudscalerv1alpha3.Flow{
-			Spec: kubecloudscalerv1alpha3.FlowSpec{
-				Flows: []kubecloudscalerv1alpha3.Flows{
-					{
-						PeriodName: "test-period",
-						Resources: []kubecloudscalerv1alpha3.FlowResource{
-							{Name: "test-resource"},
+	Describe("ProcessFlow", func() {
+		Context("when processing succeeds", func() {
+			It("should process the flow without error", func() {
+				flow := &kubecloudscalerv1alpha3.Flow{
+					Spec: kubecloudscalerv1alpha3.FlowSpec{
+						Flows: []kubecloudscalerv1alpha3.Flows{
+							{
+								PeriodName: "test-period",
+								Resources: []kubecloudscalerv1alpha3.FlowResource{
+									{Name: "test-resource"},
+								},
+							},
 						},
 					},
-				},
-			},
-		}
+				}
 
-		// Setup mocks
-		mockValidator.ExtractFlowDataFunc = func(flow *kubecloudscalerv1alpha3.Flow) (map[string]bool, map[string]bool, error) {
-			return map[string]bool{"test-resource": true}, map[string]bool{"test-period": true}, nil
-		}
-		mockValidator.ValidatePeriodTimingsFunc = func(flow *kubecloudscalerv1alpha3.Flow, periodNames map[string]bool) error {
-			return nil
-		}
-		mockResourceMapper.CreateResourceMappingsFunc = func(flow *kubecloudscalerv1alpha3.Flow, resourceNames map[string]bool) (map[string]types.ResourceInfo, error) {
-			return map[string]types.ResourceInfo{
-				"test-resource": {
-					Type:     "k8s",
-					Resource: kubecloudscalerv1alpha3.K8sResource{Name: "test-resource"},
-					Periods:  []types.PeriodWithDelay{},
-				},
-			}, nil
-		}
-		mockResourceCreator.CreateK8sResourceFunc = func(ctx context.Context, flow *kubecloudscalerv1alpha3.Flow, resourceName string, k8sResource kubecloudscalerv1alpha3.K8sResource, periodsWithDelay []types.PeriodWithDelay) error {
-			return nil
-		}
+				mockValidator.ExtractFlowDataFunc = func(
+					f *kubecloudscalerv1alpha3.Flow,
+				) (map[string]bool, map[string]bool, error) {
+					return map[string]bool{"test-resource": true}, map[string]bool{"test-period": true}, nil
+				}
+				mockValidator.ValidatePeriodTimingsFunc = func(
+					f *kubecloudscalerv1alpha3.Flow, periodNames map[string]bool,
+				) error {
+					return nil
+				}
+				mockResourceMapper.CreateResourceMappingsFunc = func(
+					f *kubecloudscalerv1alpha3.Flow, resourceNames map[string]bool,
+				) (map[string]types.ResourceInfo, error) {
+					k8sRes := kubecloudscalerv1alpha3.K8sResource{Name: "test-resource"}
+					return map[string]types.ResourceInfo{
+						"test-resource": {
+							Type:    "k8s",
+							K8sRes:  &k8sRes,
+							Periods: []types.PeriodWithDelay{},
+						},
+					}, nil
+				}
+				mockResourceCreator.CreateK8sResourceFunc = func(
+					ctx context.Context,
+					f *kubecloudscalerv1alpha3.Flow,
+					resourceName string,
+					k8sResource kubecloudscalerv1alpha3.K8sResource,
+					periodsWithDelay []types.PeriodWithDelay,
+				) error {
+					return nil
+				}
 
-		// Execute
-		err := service.ProcessFlow(context.Background(), flow)
+				err := svc.ProcessFlow(context.Background(), flow)
+				Expect(err).ToNot(HaveOccurred())
+			})
+		})
 
-		// Assert
-		assert.NoError(t, err)
+		Context("when extract flow data fails", func() {
+			It("should return an error containing the failure context", func() {
+				flow := &kubecloudscalerv1alpha3.Flow{}
+
+				mockValidator.ExtractFlowDataFunc = func(
+					f *kubecloudscalerv1alpha3.Flow,
+				) (map[string]bool, map[string]bool, error) {
+					return nil, nil, errors.New("extract error")
+				}
+
+				err := svc.ProcessFlow(context.Background(), flow)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("failed to extract flow data"))
+			})
+		})
 	})
-
-	t.Run("extract flow data error", func(t *testing.T) {
-		mockValidator := &MockFlowValidator{}
-		mockResourceMapper := &MockResourceMapper{}
-		mockResourceCreator := &MockResourceCreator{}
-
-		service := NewFlowProcessorService(mockValidator, mockResourceMapper, mockResourceCreator, &logger)
-
-		flow := &kubecloudscalerv1alpha3.Flow{}
-
-		mockValidator.ExtractFlowDataFunc = func(flow *kubecloudscalerv1alpha3.Flow) (map[string]bool, map[string]bool, error) {
-			return nil, nil, errors.New("extract error")
-		}
-
-		err := service.ProcessFlow(context.Background(), flow)
-
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "failed to extract flow data")
-	})
-}
+})

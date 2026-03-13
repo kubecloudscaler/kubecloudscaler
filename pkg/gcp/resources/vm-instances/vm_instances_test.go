@@ -8,6 +8,7 @@ import (
 	"github.com/rs/zerolog/log"
 
 	computepb "cloud.google.com/go/compute/apiv1/computepb"
+	"github.com/kubecloudscaler/kubecloudscaler/api/common"
 	"github.com/kubecloudscaler/kubecloudscaler/pkg/gcp/utils"
 	"github.com/kubecloudscaler/kubecloudscaler/pkg/period"
 )
@@ -16,7 +17,7 @@ var _ = Describe("ComputeInstances", func() {
 	var (
 		ctx    context.Context
 		config *utils.Config
-		ci     *VMnstances
+		ci     *VMInstances
 	)
 
 	BeforeEach(func() {
@@ -33,10 +34,10 @@ var _ = Describe("ComputeInstances", func() {
 	Describe("New", func() {
 		Context("when config is valid", func() {
 			BeforeEach(func() {
-				config.Period = &period.Period{Type: "up"}
+				config.Period = &period.Period{Type: common.PeriodTypeUp}
 			})
 
-			It("should create a new VMnstances instance", func() {
+			It("should create a new VMInstances instance", func() {
 				var err error
 				ci, err = New(ctx, config)
 				Expect(err).NotTo(HaveOccurred())
@@ -87,7 +88,7 @@ var _ = Describe("ComputeInstances", func() {
 
 	Describe("getDesiredState", func() {
 		BeforeEach(func() {
-			ci = &VMnstances{Config: config}
+			ci = &VMInstances{Config: config}
 		})
 
 		Context("when period is nil", func() {
@@ -103,7 +104,7 @@ var _ = Describe("ComputeInstances", func() {
 
 		Context("when period type is up", func() {
 			BeforeEach(func() {
-				ci.Period = &period.Period{Type: "up"}
+				ci.Period = &period.Period{Type: common.PeriodTypeUp}
 			})
 
 			It("should return running state", func() {
@@ -114,7 +115,7 @@ var _ = Describe("ComputeInstances", func() {
 
 		Context("when period type is down", func() {
 			BeforeEach(func() {
-				ci.Period = &period.Period{Type: "down"}
+				ci.Period = &period.Period{Type: common.PeriodTypeDown}
 			})
 
 			It("should return stopped state", func() {
@@ -125,7 +126,7 @@ var _ = Describe("ComputeInstances", func() {
 
 		Context("when period type is unknown", func() {
 			BeforeEach(func() {
-				ci.Period = &period.Period{Type: "unknown"}
+				ci.Period = &period.Period{Type: common.PeriodType("unknown")}
 			})
 
 			It("should return stopped state", func() {
@@ -137,7 +138,7 @@ var _ = Describe("ComputeInstances", func() {
 
 	Describe("isInstanceInDesiredState", func() {
 		BeforeEach(func() {
-			ci = &VMnstances{Config: config}
+			ci = &VMInstances{Config: config}
 		})
 
 		Context("when instance is in desired state", func() {
@@ -159,7 +160,7 @@ var _ = Describe("ComputeInstances", func() {
 
 	Describe("extractZoneFromInstance", func() {
 		BeforeEach(func() {
-			ci = &VMnstances{Config: config}
+			ci = &VMInstances{Config: config}
 		})
 
 		Context("when zone URL is valid", func() {
@@ -201,9 +202,9 @@ var _ = Describe("ComputeInstances", func() {
 
 	Describe("SetState", func() {
 		BeforeEach(func() {
-			ci = &VMnstances{
+			ci = &VMInstances{
 				Config: config,
-				Period: &period.Period{Type: "up"},
+				Period: &period.Period{Type: common.PeriodTypeUp},
 			}
 		})
 
@@ -221,7 +222,7 @@ var _ = Describe("ComputeInstances", func() {
 
 	Describe("applyInstanceState", func() {
 		BeforeEach(func() {
-			ci = &VMnstances{Config: config}
+			ci = &VMInstances{Config: config}
 		})
 
 		Context("when desired state is unknown", func() {

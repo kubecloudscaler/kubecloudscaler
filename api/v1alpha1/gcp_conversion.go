@@ -18,8 +18,6 @@ package v1alpha1
 
 import (
 	"fmt"
-
-	"github.com/rs/zerolog/log"
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
 
 	"github.com/kubecloudscaler/kubecloudscaler/api/common"
@@ -32,9 +30,6 @@ func (src *Gcp) ConvertTo(dstRaw conversion.Hub) error {
 	if !ok {
 		return fmt.Errorf("expected *kubecloudscalercloudv1alpha3.Gcp, got %T", dstRaw)
 	}
-	log.Debug().Msgf("ConvertTo: Converting Gcp from Spoke version v1alpha1 to Hub version v1alpha3;"+
-		"source: %s/%s, target: %s/%s", src.Namespace, src.Name, dst.Namespace, dst.Name)
-
 	// ObjectMeta
 	dst.ObjectMeta = src.ObjectMeta
 
@@ -52,11 +47,20 @@ func (src *Gcp) ConvertTo(dstRaw conversion.Hub) error {
 	dst.Spec.Config.AuthSecret = src.Spec.AuthSecret
 	dst.Spec.Config.RestoreOnDelete = src.Spec.RestoreOnDelete
 	dst.Spec.Config.WaitForOperation = src.Spec.WaitForOperation
-	dst.Spec.Config.DefaultPeriodType = "down"
+	if v := getConversionAnnotation(&dst.ObjectMeta, annotationGCPDefaultPeriodType); v != "" {
+		dst.Spec.Config.DefaultPeriodType = v
+	} else {
+		dst.Spec.Config.DefaultPeriodType = "down"
+	}
 
 	// convert fields from v1alpha1 to v1alpha2
-	dst.Spec.Resources.Types = src.Spec.Resources
+	dst.Spec.Resources.Types = stringsToResourceKinds(src.Spec.Resources)
 	dst.Spec.Resources.LabelSelector = src.Spec.LabelSelector
+
+	setConversionAnnotation(&dst.ObjectMeta, annotationExcludeResources,
+		encodeStringSlice(src.Spec.ExcludeResources))
+	setConversionAnnotation(&dst.ObjectMeta, annotationGCPDeploymentTimeAnnotation,
+		src.Spec.DeploymentTimeAnnotation)
 
 	// Status
 	dst.Status = src.Status
@@ -72,9 +76,6 @@ func (dst *Gcp) ConvertFrom(srcRaw conversion.Hub) error {
 	if !ok {
 		return fmt.Errorf("expected *kubecloudscalercloudv1alpha3.Gcp, got %T", srcRaw)
 	}
-	log.Debug().Msgf("ConvertFrom: Converting Gcp from Hub version v1alpha3 to Spoke version v1alpha1;"+
-		"source: %s/%s, target: %s/%s", src.Namespace, src.Name, dst.Namespace, dst.Name)
-
 	// ObjectMeta
 	dst.ObjectMeta = src.ObjectMeta
 
@@ -92,8 +93,18 @@ func (dst *Gcp) ConvertFrom(srcRaw conversion.Hub) error {
 	dst.Spec.WaitForOperation = src.Spec.Config.WaitForOperation
 
 	// convert fields from v1alpha2 to v1alpha1
-	dst.Spec.Resources = src.Spec.Resources.Types
+	dst.Spec.Resources = resourceKindsToStrings(src.Spec.Resources.Types)
 	dst.Spec.LabelSelector = src.Spec.Resources.LabelSelector
+
+	if v := getConversionAnnotation(&dst.ObjectMeta, annotationExcludeResources); v != "" {
+		dst.Spec.ExcludeResources = decodeStringSlice(v)
+	}
+	if v := getConversionAnnotation(&dst.ObjectMeta, annotationGCPDeploymentTimeAnnotation); v != "" {
+		dst.Spec.DeploymentTimeAnnotation = v
+	}
+
+	setConversionAnnotation(&dst.ObjectMeta, annotationGCPDefaultPeriodType,
+		src.Spec.Config.DefaultPeriodType)
 
 	// Status
 	dst.Status = src.Status

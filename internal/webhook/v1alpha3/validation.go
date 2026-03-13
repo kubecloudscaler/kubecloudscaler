@@ -14,19 +14,19 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package e2e
+package v1alpha3
 
 import (
 	"fmt"
-	"testing"
 
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
+	"github.com/kubecloudscaler/kubecloudscaler/api/common"
 )
 
-// Run e2e tests using the Ginkgo runner.
-func TestE2E(t *testing.T) {
-	RegisterFailHandler(Fail)
-	_, _ = fmt.Fprintf(GinkgoWriter, "Starting cloudscaler suite\n")
-	RunSpecs(t, "e2e suite")
+// validatePeriod validates a single ScalerPeriod configuration, wrapping errors with the period index.
+func validatePeriod(p common.ScalerPeriod, index int) error {
+	if err := p.Validate(); err != nil {
+		return fmt.Errorf("periods[%d]: %w", index, err)
+	}
+
+	return nil
 }

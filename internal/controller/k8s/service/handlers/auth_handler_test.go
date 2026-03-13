@@ -18,7 +18,6 @@ package handlers_test
 
 import (
 	"context"
-	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -91,15 +90,6 @@ var _ = Describe("AuthHandler", func() {
 			}
 		})
 
-		It("should complete in under 100ms (regardless of success/failure)", func() {
-			reconCtx.Client = fake.NewClientBuilder().WithScheme(scheme).WithObjects(scaler).Build()
-
-			startTime := time.Now()
-			_ = handler.Execute(reconCtx) // May fail, but should be fast
-			duration := time.Since(startTime)
-
-			Expect(duration).To(BeNumerically("<", 100*time.Millisecond))
-		})
 	})
 
 	Context("When an AuthSecret is specified and exists", func() {

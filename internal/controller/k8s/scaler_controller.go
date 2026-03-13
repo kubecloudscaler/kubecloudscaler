@@ -19,6 +19,7 @@ package k8s
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	"github.com/rs/zerolog"
@@ -41,15 +42,31 @@ import (
 // refactoring.guru Go pattern where handlers have Execute() and SetNext() methods.
 // See: https://refactoring.guru/design-patterns/chain-of-responsibility/go/example
 type ScalerReconciler struct {
-	client.Client                 // Kubernetes client for API operations
-	Scheme        *runtime.Scheme // Scheme for type conversion and serialization
-	Logger        *zerolog.Logger
-	chain         service.Handler // handler chain, initialized once
+	client.Client
+	Scheme    *runtime.Scheme
+	Logger    *zerolog.Logger
+	recorder  metrics.Recorder
+	chain     service.Handler
+	chainOnce sync.Once
+}
+
+// NewScalerReconciler creates a new K8s ScalerReconciler with proper dependency injection.
+func NewScalerReconciler(c client.Client, scheme *runtime.Scheme, logger *zerolog.Logger, rec metrics.Recorder) *ScalerReconciler {
+	if rec == nil {
+		rec = metrics.GetRecorder()
+	}
+	return &ScalerReconciler{
+		Client:   c,
+		Scheme:   scheme,
+		Logger:   logger,
+		recorder: rec,
+	}
 }
 
 // +kubebuilder:rbac:groups=kubecloudscaler.cloud,resources=k8s,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=kubecloudscaler.cloud,resources=k8s/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=kubecloudscaler.cloud,resources=k8s/finalizers,verbs=update
+// +kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -67,7 +84,10 @@ type ScalerReconciler struct {
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.18.4/pkg/reconcile
 func (r *ScalerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	start := time.Now()
-	rec := metrics.GetRecorder()
+	rec := r.recorder
+	if rec == nil {
+		rec = metrics.GetRecorder()
+	}
 
 	r.Logger.Info().
 		Str("name", req.Name).
@@ -83,9 +103,11 @@ func (r *ScalerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	}
 
 	// Initialize chain lazily if not set (e.g., in tests without SetupWithManager)
-	if r.chain == nil {
-		r.chain = r.initializeChain()
-	}
+	r.chainOnce.Do(func() {
+		if r.chain == nil {
+			r.chain = r.initializeChain()
+		}
+	})
 
 	// Execute the handler chain
 	err := r.chain.Execute(reconCtx)
@@ -107,7 +129,7 @@ func (r *ScalerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 			}
 			return ctrl.Result{RequeueAfter: requeue}, nil
 		}
-		rec.RecordReconcile(metrics.ControllerK8sScaler, metrics.ResultRecoverableError, duration)
+		rec.RecordReconcile(metrics.ControllerK8sScaler, metrics.ResultUnclassifiedError, duration)
 		r.Logger.Error().Err(err).Msg("unexpected error during reconciliation")
 		return ctrl.Result{RequeueAfter: utils.ReconcileErrorDuration}, nil
 	}
@@ -115,7 +137,7 @@ func (r *ScalerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	// Success: record period and scaling metrics, then reconcile result
 	if reconCtx.Period != nil {
 		rec.RecordPeriodActive(metrics.ControllerK8sScaler,
-			metrics.NormalizePeriodType(reconCtx.Period.Type))
+			metrics.NormalizePeriodType(string(reconCtx.Period.Type)))
 	}
 	metrics.RecordScalingFromResults(rec, metrics.ControllerK8sScaler,
 		toScalingResults(reconCtx.SuccessResults), toScalingResultsFailed(reconCtx.FailedResults))

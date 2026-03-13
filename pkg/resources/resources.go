@@ -17,7 +17,7 @@ import (
 
 // NewResource creates a new resource instance based on the resource type name.
 // The ctx is propagated for cancellation and timeout; pass the reconciliation context when available.
-func NewResource(ctx context.Context, resourceName string, config Config, logger *zerolog.Logger) (IResource, error) {
+func NewResource(ctx context.Context, resourceName string, config Config, logger *zerolog.Logger) (Resource, error) {
 	ctx = logger.With().Str("resource-type", resourceName).Logger().WithContext(ctx)
 
 	switch resourceName {
@@ -37,7 +37,7 @@ func NewResource(ctx context.Context, resourceName string, config Config, logger
 }
 
 // newDeploymentsResource creates a new deployments resource
-func newDeploymentsResource(ctx context.Context, config Config) (IResource, error) {
+func newDeploymentsResource(ctx context.Context, config Config) (Resource, error) {
 	if config.K8s == nil {
 		return nil, fmt.Errorf("K8s config is required for deployments resource")
 	}
@@ -49,7 +49,7 @@ func newDeploymentsResource(ctx context.Context, config Config) (IResource, erro
 }
 
 // newStatefulSetsResource creates a new statefulsets resource
-func newStatefulSetsResource(ctx context.Context, config Config) (IResource, error) {
+func newStatefulSetsResource(ctx context.Context, config Config) (Resource, error) {
 	if config.K8s == nil {
 		return nil, fmt.Errorf("K8s config is required for statefulsets resource")
 	}
@@ -61,7 +61,7 @@ func newStatefulSetsResource(ctx context.Context, config Config) (IResource, err
 }
 
 // newCronJobsResource creates a new cronjobs resource
-func newCronJobsResource(ctx context.Context, config Config) (IResource, error) {
+func newCronJobsResource(ctx context.Context, config Config) (Resource, error) {
 	if config.K8s == nil {
 		return nil, fmt.Errorf("K8s config is required for cronjobs resource")
 	}
@@ -73,7 +73,7 @@ func newCronJobsResource(ctx context.Context, config Config) (IResource, error) 
 }
 
 // newVMInstancesResource creates a new vm-instances resource
-func newVMInstancesResource(ctx context.Context, config Config) (IResource, error) {
+func newVMInstancesResource(ctx context.Context, config Config) (Resource, error) {
 	if config.GCP == nil {
 		return nil, fmt.Errorf("GCP config is required for vm-instances resource")
 	}
@@ -85,7 +85,7 @@ func newVMInstancesResource(ctx context.Context, config Config) (IResource, erro
 }
 
 // newGitHubARSResource creates a new github-ars resource
-func newGitHubARSResource(ctx context.Context, config Config) (IResource, error) {
+func newGitHubARSResource(ctx context.Context, config Config) (Resource, error) {
 	if config.K8s == nil {
 		return nil, fmt.Errorf("K8s config is required for github-ars resource")
 	}
