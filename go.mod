@@ -3,7 +3,7 @@ module github.com/kubecloudscaler/kubecloudscaler
 go 1.26.1
 
 require (
-	cloud.google.com/go/compute v1.56.0
+	cloud.google.com/go/compute v1.57.0
 	github.com/actions/actions-runner-controller v0.27.7-0.20260313133641-f99c6eda0bfa
 	github.com/onsi/ginkgo/v2 v2.28.1
 	github.com/onsi/gomega v1.39.1
@@ -114,7 +114,7 @@ require (
 	golang.org/x/tools v0.42.0 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.5.0 // indirect
 	google.golang.org/genproto v0.0.0-20260217215200-42d3e9bedb6d // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20260217215200-42d3e9bedb6d // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20260226221140-a57be14db171 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260226221140-a57be14db171 // indirect
 	google.golang.org/grpc v1.79.2 // indirect
 	google.golang.org/protobuf v1.36.11 // indirect
