@@ -364,6 +364,7 @@ var _ = Describe("FetchHandler", func() {
 - **No-op logger**: `zerolog.Nop()` for silent test logging
 - **Scheme registration**: Register API types before creating fake clients
 - **Mock handlers**: Implement `Handler` interface with function fields for custom behavior
+- **Resource types in tests**: Use valid `common.ResourceKind` constants, not arbitrary strings. K8s: `common.ResourceDeployments`, `common.ResourceStatefulSets`, etc. GCP: only `common.ResourceVMInstances` (`"vm-instances"`); do not use `"instance"`, `"disk"`, etc. See `api/common/resources_type.go`.
 - **Performance benchmarks**: Use `testing.B` benchmarks with `b.ResetTimer()` and `b.N` loops
 - **Error type checks**: `Expect(service.IsCriticalError(err)).To(BeTrue())`
 
@@ -564,4 +565,4 @@ All PRs MUST verify:
 
 This document is the single source of guidance for AI agents (including Claude Code) and synthesizes the former CLAUDE.md and [.specify/memory/constitution.md](.specify/memory/constitution.md). The constitution supersedes all other practices. For amendments to constitutional principles, see the Governance section in the constitution.
 
-**Last Updated**: 2026-03-07
+**Last Updated**: 2026-03-13

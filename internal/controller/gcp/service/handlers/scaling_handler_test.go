@@ -56,7 +56,7 @@ var _ = Describe("ScalingHandler", func() {
 		scaler.SetNamespace("default")
 		scaler.Spec.Config.ProjectID = "test-project"
 		scaler.Spec.Config.Region = "us-central1"
-		scaler.Spec.Resources.Types = []common.ResourceKind{"instance"}
+		scaler.Spec.Resources.Types = []common.ResourceKind{common.ResourceVMInstances}
 		scaler.Spec.Resources.Names = []string{"test-instance-1"}
 
 		// Create a mock period
@@ -161,7 +161,7 @@ var _ = Describe("ScalingHandler", func() {
 
 	Context("When multiple resource types are specified", func() {
 		BeforeEach(func() {
-			scaler.Spec.Resources.Types = []common.ResourceKind{"instance", "disk", "snapshot"}
+			scaler.Spec.Resources.Types = []common.ResourceKind{common.ResourceVMInstances, common.ResourceVMInstances}
 
 			k8sClient := fake.NewClientBuilder().
 				WithScheme(scheme).
