@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.9.0](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.8.6...v1.9.0) (2026-03-13)
+
+
+### Features
+
+* add metrics ([131c77d](https://github.com/kubecloudscaler/kubecloudscaler/commit/131c77d3ac8e4eaa2a5fe1e287f7df2f1198bb7f))
+* fixes all review ([#237](https://github.com/kubecloudscaler/kubecloudscaler/issues/237)) ([300d61a](https://github.com/kubecloudscaler/kubecloudscaler/commit/300d61a47a170b61138165ad7fd381512b99385c))
+
+
+### Bug Fixes
+
+* **deps:** update all non-major dependencies ([#223](https://github.com/kubecloudscaler/kubecloudscaler/issues/223)) ([5e091c3](https://github.com/kubecloudscaler/kubecloudscaler/commit/5e091c31a3757fcecf88b241ca355609d6b8cd2f))
+* **deps:** update github.com/actions/actions-runner-controller digest to 1f3e5b9 ([#232](https://github.com/kubecloudscaler/kubecloudscaler/issues/232)) ([070cc44](https://github.com/kubecloudscaler/kubecloudscaler/commit/070cc443fc13e3979fcb3eca9b00bc84fb9fada3))
+* **deps:** update github.com/actions/actions-runner-controller digest to 396ee88 ([#224](https://github.com/kubecloudscaler/kubecloudscaler/issues/224)) ([689f778](https://github.com/kubecloudscaler/kubecloudscaler/commit/689f77831608d2571b4404d4d30d3b2fd48c9028))
+* **deps:** update github.com/actions/actions-runner-controller digest to f99c6ed ([#235](https://github.com/kubecloudscaler/kubecloudscaler/issues/235)) ([26633ec](https://github.com/kubecloudscaler/kubecloudscaler/commit/26633ec4702839855e0e371bcee49f474230f791))
+* **deps:** update module cloud.google.com/go/compute to v1.57.0 ([#236](https://github.com/kubecloudscaler/kubecloudscaler/issues/236)) ([22e3b6a](https://github.com/kubecloudscaler/kubecloudscaler/commit/22e3b6aa910cde92b19b47c5c351aa048016b919))
+* metrics ([a198b21](https://github.com/kubecloudscaler/kubecloudscaler/commit/a198b210d76847dbb2cd2276696a09fee11afcda))
+* resolve 8 critical issues from code review ([#228](https://github.com/kubecloudscaler/kubecloudscaler/issues/228)) ([8749808](https://github.com/kubecloudscaler/kubecloudscaler/commit/874980827ed2cf730dd7a1d67fd3050aa95d08b4))
+
 ## [1.8.6](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.8.5...v1.8.6) (2026-02-21)
 
 
