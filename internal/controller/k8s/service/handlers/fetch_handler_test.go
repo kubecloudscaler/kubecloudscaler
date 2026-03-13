@@ -18,7 +18,7 @@ package handlers_test
 
 import (
 	"context"
-	"time"
+	"fmt"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -27,7 +27,9 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 
 	kubecloudscalerv1alpha3 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha3"
 	"github.com/kubecloudscaler/kubecloudscaler/internal/controller/k8s/service"
@@ -78,22 +80,6 @@ var _ = Describe("FetchHandler", func() {
 			Expect(reconCtx.Scaler.Name).To(Equal("test-scaler"))
 		})
 
-		It("should complete in under 100ms", func() {
-			scaler := &kubecloudscalerv1alpha3.K8s{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-scaler",
-					Namespace: "default",
-				},
-			}
-			reconCtx.Client = fake.NewClientBuilder().WithScheme(scheme).WithObjects(scaler).Build()
-
-			startTime := time.Now()
-			err := handler.Execute(reconCtx)
-			duration := time.Since(startTime)
-
-			Expect(err).ToNot(HaveOccurred())
-			Expect(duration).To(BeNumerically("<", 100*time.Millisecond))
-		})
 	})
 
 	Context("When the Scaler resource does not exist", func() {
@@ -103,6 +89,26 @@ var _ = Describe("FetchHandler", func() {
 			err := handler.Execute(reconCtx)
 
 			Expect(err).ToNot(HaveOccurred())
+			Expect(reconCtx.Scaler).To(BeNil())
+		})
+	})
+
+	Context("When Get returns a non-NotFound error", func() {
+		It("should return a recoverable error", func() {
+			injectedErr := fmt.Errorf("transient API failure")
+			reconCtx.Client = fake.NewClientBuilder().
+				WithScheme(scheme).
+				WithInterceptorFuncs(interceptor.Funcs{
+					Get: func(ctx context.Context, c client.WithWatch, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
+						return injectedErr
+					},
+				}).
+				Build()
+
+			err := handler.Execute(reconCtx)
+
+			Expect(err).To(HaveOccurred())
+			Expect(service.IsRecoverableError(err)).To(BeTrue())
 			Expect(reconCtx.Scaler).To(BeNil())
 		})
 	})

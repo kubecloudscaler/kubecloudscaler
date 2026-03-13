@@ -114,5 +114,9 @@ func validResourceList(scaler *kubecloudscalerv1alpha3.Gcp) []string {
 	if len(scaler.Spec.Resources.Types) == 0 {
 		return []string{resources.DefaultGCPResourceType}
 	}
-	return scaler.Spec.Resources.Types
+	out := make([]string, len(scaler.Spec.Resources.Types))
+	for i, t := range scaler.Spec.Resources.Types {
+		out[i] = string(t)
+	}
+	return out
 }

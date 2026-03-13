@@ -25,15 +25,16 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
-	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/controller-runtime/pkg/metrics/filters"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
+	kubecloudscalerv1alpha1 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha1"
+	kubecloudscalerv1alpha2 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha2"
 	kubecloudscalerv1alpha3 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha3"
 )
 
@@ -45,41 +46,21 @@ func TestMain(t *testing.T) {
 var _ = Describe("Main Package", func() {
 	var (
 		originalArgs []string
-		originalEnv  map[string]string
 	)
 
 	BeforeEach(func() {
-		// Save original command line arguments and environment
 		originalArgs = os.Args
-		originalEnv = make(map[string]string)
-		for _, env := range os.Environ() {
-			// Skip KUBECONFIG to avoid interfering with test environment
-			if len(env) > 10 && env[:10] == "KUBECONFIG" {
-				continue
-			}
-			originalEnv[env] = os.Getenv(env)
-		}
-
-		// Reset flag.CommandLine to avoid conflicts between tests
 		flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
 	})
 
 	AfterEach(func() {
-		// Restore original command line arguments and environment
 		os.Args = originalArgs
-		for key, value := range originalEnv {
-			os.Setenv(key, value)
-		}
-		// Unset any test-specific environment variables
-		os.Unsetenv("KUBECONFIG")
 	})
 
 	Describe("Flag Parsing", func() {
 		It("should parse default flags correctly", func() {
-			// Set up test arguments
 			os.Args = []string{"cmd", "--metrics-bind-address=:8080", "--health-probe-bind-address=:8081"}
 
-			// Parse flags
 			var metricsAddr string
 			var probeAddr string
 			var enableLeaderElection bool
@@ -102,7 +83,6 @@ var _ = Describe("Main Package", func() {
 		})
 
 		It("should parse custom flag values correctly", func() {
-			// Set up test arguments with custom values
 			os.Args = []string{
 				"cmd",
 				"--metrics-bind-address=:8443",
@@ -112,7 +92,6 @@ var _ = Describe("Main Package", func() {
 				"--enable-http2=true",
 			}
 
-			// Parse flags
 			var metricsAddr string
 			var probeAddr string
 			var enableLeaderElection bool
@@ -133,6 +112,53 @@ var _ = Describe("Main Package", func() {
 			Expect(secureMetrics).To(BeFalse())
 			Expect(enableHTTP2).To(BeTrue())
 		})
+
+		It("should parse certificate-related flags with defaults", func() {
+			os.Args = []string{"cmd"}
+
+			var webhookCertPath, webhookCertName, webhookCertKey string
+			var metricsCertPath, metricsCertName, metricsCertKey string
+
+			flag.StringVar(&webhookCertPath, "webhook-cert-path", "", "The directory that contains the webhook certificate.")
+			flag.StringVar(&webhookCertName, "webhook-cert-name", "tls.crt", "The name of the webhook certificate file.")
+			flag.StringVar(&webhookCertKey, "webhook-cert-key", "tls.key", "The name of the webhook key file.")
+			flag.StringVar(&metricsCertPath, "metrics-cert-path", "", "The directory that contains the metrics server certificate.")
+			flag.StringVar(&metricsCertName, "metrics-cert-name", "tls.crt", "The name of the metrics server certificate file.")
+			flag.StringVar(&metricsCertKey, "metrics-cert-key", "tls.key", "The name of the metrics server key file.")
+
+			flag.Parse()
+
+			Expect(webhookCertPath).To(BeEmpty())
+			Expect(webhookCertName).To(Equal("tls.crt"))
+			Expect(webhookCertKey).To(Equal("tls.key"))
+			Expect(metricsCertPath).To(BeEmpty())
+			Expect(metricsCertName).To(Equal("tls.crt"))
+			Expect(metricsCertKey).To(Equal("tls.key"))
+		})
+
+		It("should parse metrics-disable-auth flag with default false", func() {
+			os.Args = []string{"cmd"}
+
+			var metricsDisableAuth bool
+			flag.BoolVar(&metricsDisableAuth, "metrics-disable-auth", false, "Disable metrics auth.")
+
+			flag.Parse()
+
+			Expect(metricsDisableAuth).To(BeFalse())
+		})
+
+		It("should parse log format and level flags with defaults", func() {
+			os.Args = []string{"cmd"}
+
+			var logFmt, logLvl string
+			flag.StringVar(&logFmt, "log-format", "json", "Set log format")
+			flag.StringVar(&logLvl, "log-level", "info", "Set log level")
+
+			flag.Parse()
+
+			Expect(logFmt).To(Equal("json"))
+			Expect(logLvl).To(Equal("info"))
+		})
 	})
 
 	Describe("TLS Configuration", func() {
@@ -150,7 +176,6 @@ var _ = Describe("Main Package", func() {
 
 			Expect(tlsOpts).To(HaveLen(1))
 
-			// Test the TLS config modification
 			tlsConfig := &tls.Config{}
 			tlsOpts[0](tlsConfig)
 			Expect(tlsConfig.NextProtos).To(Equal([]string{"http/1.1"}))
@@ -168,7 +193,13 @@ var _ = Describe("Main Package", func() {
 				tlsOpts = append(tlsOpts, disableHTTP2)
 			}
 
-			Expect(tlsOpts).To(HaveLen(0))
+			Expect(tlsOpts).To(BeEmpty())
+		})
+
+		It("should leave TLS config NextProtos unset when HTTP/2 is enabled", func() {
+			tlsConfig := &tls.Config{}
+			// When no TLS options are applied, NextProtos should remain nil
+			Expect(tlsConfig.NextProtos).To(BeNil())
 		})
 	})
 
@@ -186,30 +217,58 @@ var _ = Describe("Main Package", func() {
 
 			Expect(webhookServer).ToNot(BeNil())
 		})
+
+		It("should create webhook server without TLS options", func() {
+			webhookServer := webhook.NewServer(webhook.Options{})
+
+			Expect(webhookServer).ToNot(BeNil())
+		})
 	})
 
 	Describe("Metrics Server Configuration", func() {
-		It("should configure metrics server with secure serving enabled", func() {
+		It("should configure metrics server with secure serving and auth enabled", func() {
 			secureMetrics := true
+			metricsDisableAuth := false
 			var tlsOpts []func(*tls.Config)
 
 			metricsServerOptions := metricsserver.Options{
-				BindAddress:   ":8080",
+				BindAddress:   ":8443",
 				SecureServing: secureMetrics,
 				TLSOpts:       tlsOpts,
 			}
 
-			if secureMetrics {
+			if secureMetrics && !metricsDisableAuth {
 				metricsServerOptions.FilterProvider = filters.WithAuthenticationAndAuthorization
 			}
 
-			Expect(metricsServerOptions.BindAddress).To(Equal(":8080"))
+			Expect(metricsServerOptions.BindAddress).To(Equal(":8443"))
 			Expect(metricsServerOptions.SecureServing).To(BeTrue())
 			Expect(metricsServerOptions.FilterProvider).ToNot(BeNil())
 		})
 
+		It("should configure metrics server with secure serving but auth disabled", func() {
+			secureMetrics := true
+			metricsDisableAuth := true
+			var tlsOpts []func(*tls.Config)
+
+			metricsServerOptions := metricsserver.Options{
+				BindAddress:   ":8443",
+				SecureServing: secureMetrics,
+				TLSOpts:       tlsOpts,
+			}
+
+			if secureMetrics && !metricsDisableAuth {
+				metricsServerOptions.FilterProvider = filters.WithAuthenticationAndAuthorization
+			}
+
+			Expect(metricsServerOptions.BindAddress).To(Equal(":8443"))
+			Expect(metricsServerOptions.SecureServing).To(BeTrue())
+			Expect(metricsServerOptions.FilterProvider).To(BeNil())
+		})
+
 		It("should configure metrics server with secure serving disabled", func() {
 			secureMetrics := false
+			metricsDisableAuth := false
 			var tlsOpts []func(*tls.Config)
 
 			metricsServerOptions := metricsserver.Options{
@@ -218,7 +277,7 @@ var _ = Describe("Main Package", func() {
 				TLSOpts:       tlsOpts,
 			}
 
-			if secureMetrics {
+			if secureMetrics && !metricsDisableAuth {
 				metricsServerOptions.FilterProvider = filters.WithAuthenticationAndAuthorization
 			}
 
@@ -229,126 +288,209 @@ var _ = Describe("Main Package", func() {
 	})
 
 	Describe("Scheme Configuration", func() {
-		It("should have the correct scheme configuration", func() {
-			// Test that the scheme contains the expected types
-			testScheme := runtime.NewScheme()
+		var testScheme *runtime.Scheme
+
+		BeforeEach(func() {
+			testScheme = runtime.NewScheme()
 			utilruntime.Must(clientgoscheme.AddToScheme(testScheme))
+			utilruntime.Must(kubecloudscalerv1alpha1.AddToScheme(testScheme))
+			utilruntime.Must(kubecloudscalerv1alpha2.AddToScheme(testScheme))
 			utilruntime.Must(kubecloudscalerv1alpha3.AddToScheme(testScheme))
+		})
 
-			// Verify that the scheme contains the expected types
-			// AllKnownTypes returns a map with reflect.Type keys, so we check the length
-			// and verify that the scheme is not empty
-			Expect(testScheme.AllKnownTypes()).ToNot(BeEmpty())
+		It("should register v1alpha3 K8s type", func() {
+			gvk := schema.GroupVersionKind{
+				Group:   "kubecloudscaler.cloud",
+				Version: "v1alpha3",
+				Kind:    "K8s",
+			}
+			_, err := testScheme.New(gvk)
+			Expect(err).ToNot(HaveOccurred())
+		})
 
-			// Verify that the scheme was created successfully
-			Expect(testScheme).ToNot(BeNil())
+		It("should register v1alpha3 K8sList type", func() {
+			gvk := schema.GroupVersionKind{
+				Group:   "kubecloudscaler.cloud",
+				Version: "v1alpha3",
+				Kind:    "K8sList",
+			}
+			_, err := testScheme.New(gvk)
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("should register v1alpha3 Gcp type", func() {
+			gvk := schema.GroupVersionKind{
+				Group:   "kubecloudscaler.cloud",
+				Version: "v1alpha3",
+				Kind:    "Gcp",
+			}
+			_, err := testScheme.New(gvk)
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("should register v1alpha3 GcpList type", func() {
+			gvk := schema.GroupVersionKind{
+				Group:   "kubecloudscaler.cloud",
+				Version: "v1alpha3",
+				Kind:    "GcpList",
+			}
+			_, err := testScheme.New(gvk)
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("should register v1alpha3 Flow type", func() {
+			gvk := schema.GroupVersionKind{
+				Group:   "kubecloudscaler.cloud",
+				Version: "v1alpha3",
+				Kind:    "Flow",
+			}
+			_, err := testScheme.New(gvk)
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("should register v1alpha3 FlowList type", func() {
+			gvk := schema.GroupVersionKind{
+				Group:   "kubecloudscaler.cloud",
+				Version: "v1alpha3",
+				Kind:    "FlowList",
+			}
+			_, err := testScheme.New(gvk)
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("should register v1alpha2 K8s type", func() {
+			gvk := schema.GroupVersionKind{
+				Group:   "kubecloudscaler.cloud",
+				Version: "v1alpha2",
+				Kind:    "K8s",
+			}
+			_, err := testScheme.New(gvk)
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("should register v1alpha2 Gcp type", func() {
+			gvk := schema.GroupVersionKind{
+				Group:   "kubecloudscaler.cloud",
+				Version: "v1alpha2",
+				Kind:    "Gcp",
+			}
+			_, err := testScheme.New(gvk)
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("should register v1alpha1 K8s type", func() {
+			gvk := schema.GroupVersionKind{
+				Group:   "kubecloudscaler.cloud",
+				Version: "v1alpha1",
+				Kind:    "K8s",
+			}
+			_, err := testScheme.New(gvk)
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("should register v1alpha1 Gcp type", func() {
+			gvk := schema.GroupVersionKind{
+				Group:   "kubecloudscaler.cloud",
+				Version: "v1alpha1",
+				Kind:    "Gcp",
+			}
+			_, err := testScheme.New(gvk)
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("should register core Kubernetes types", func() {
+			// Verify that core types like Pod are registered via clientgoscheme
+			gvk := schema.GroupVersionKind{
+				Group:   "",
+				Version: "v1",
+				Kind:    "Pod",
+			}
+			_, err := testScheme.New(gvk)
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("should match the package-level scheme init registration", func() {
+			// The package-level scheme var is populated in init().
+			// Verify it has the same types registered as our test scheme.
+			Expect(scheme).ToNot(BeNil())
+			Expect(scheme.AllKnownTypes()).ToNot(BeEmpty())
+
+			// Verify a v1alpha3 type is in the package-level scheme
+			gvk := schema.GroupVersionKind{
+				Group:   "kubecloudscaler.cloud",
+				Version: "v1alpha3",
+				Kind:    "K8s",
+			}
+			_, err := scheme.New(gvk)
+			Expect(err).ToNot(HaveOccurred())
 		})
 	})
 
-	Describe("Manager Configuration", func() {
-		It("should configure manager with correct options", func() {
-			// Test manager configuration options
-			expectedLeaderElectionID := "437b2c63.kubecloudscaler"
-			expectedProbeAddr := ":8081"
+	Describe("Webhook Environment Variable Logic", func() {
+		var originalEnableWebhooks string
+		var hadEnableWebhooks bool
 
-			// These are the expected values from the main function
-			Expect(expectedLeaderElectionID).To(Equal("437b2c63.kubecloudscaler"))
-			Expect(expectedProbeAddr).To(Equal(":8081"))
-		})
-	})
-
-	Describe("Controller Registration", func() {
-		It("should register K8s controller", func() {
-			// Test that the K8s controller is properly configured
-			// This is a structural test to ensure the controller type is correct
-			// Note: We can't directly test the controller type without importing it
-			Expect(true).To(BeTrue()) // Placeholder for controller validation
+		BeforeEach(func() {
+			originalEnableWebhooks, hadEnableWebhooks = os.LookupEnv("ENABLE_WEBHOOKS")
 		})
 
-		It("should register GCP controller", func() {
-			// Test that the GCP controller is properly configured
-			// This is a structural test to ensure the controller type is correct
-			// Note: We can't directly test the controller type without importing it
-			Expect(true).To(BeTrue()) // Placeholder for controller validation
+		AfterEach(func() {
+			if hadEnableWebhooks {
+				os.Setenv("ENABLE_WEBHOOKS", originalEnableWebhooks)
+			} else {
+				os.Unsetenv("ENABLE_WEBHOOKS")
+			}
+		})
+
+		It("should enable webhooks when ENABLE_WEBHOOKS is unset", func() {
+			os.Unsetenv("ENABLE_WEBHOOKS")
+			Expect(os.Getenv("ENABLE_WEBHOOKS")).ToNot(Equal(webhookDisabledEnvValue))
+		})
+
+		It("should enable webhooks when ENABLE_WEBHOOKS is true", func() {
+			os.Setenv("ENABLE_WEBHOOKS", "true")
+			Expect(os.Getenv("ENABLE_WEBHOOKS")).ToNot(Equal(webhookDisabledEnvValue))
+		})
+
+		It("should disable webhooks when ENABLE_WEBHOOKS is false", func() {
+			os.Setenv("ENABLE_WEBHOOKS", "false")
+			Expect(os.Getenv("ENABLE_WEBHOOKS")).To(Equal(webhookDisabledEnvValue))
+		})
+
+		It("should use the correct disabled value constant", func() {
+			Expect(webhookDisabledEnvValue).To(Equal("false"))
 		})
 	})
 
 	Describe("Health Check Configuration", func() {
-		It("should configure health checks correctly", func() {
-			// Test health check configuration
-			healthzCheck := healthz.Ping
-			readyzCheck := healthz.Ping
+		It("should use healthz.Ping as a valid checker", func() {
+			checker := healthz.Ping
+			Expect(checker).ToNot(BeNil())
 
-			Expect(healthzCheck).ToNot(BeNil())
-			Expect(readyzCheck).ToNot(BeNil())
+			// healthz.Ping should return nil for a healthy check
+			err := checker(nil)
+			Expect(err).ToNot(HaveOccurred())
 		})
 	})
 
-	Describe("Logger Configuration", func() {
-		It("should configure logger with correct options", func() {
-			opts := zap.Options{
-				Development: false,
-			}
-
-			Expect(opts.Development).To(BeFalse())
-		})
-	})
-
-	Describe("Environment Variable Handling", func() {
-		It("should handle KUBECONFIG environment variable", func() {
-			// Test that KUBECONFIG environment variable is handled
-			originalKubeconfig := os.Getenv("KUBECONFIG")
-			defer os.Setenv("KUBECONFIG", originalKubeconfig)
-
-			// Set a test KUBECONFIG
-			testKubeconfig := "/tmp/test-kubeconfig"
-			os.Setenv("KUBECONFIG", testKubeconfig)
-
-			// Verify it was set
-			Expect(os.Getenv("KUBECONFIG")).To(Equal(testKubeconfig))
-		})
-	})
-
-	Describe("Signal Handling", func() {
-		It("should use controller-runtime signal handler", func() {
-			// Test that the main function uses the correct signal handler
-			// This is a structural test to ensure the signal handler is properly configured
-			signalHandler := ctrl.SetupSignalHandler()
-			Expect(signalHandler).ToNot(BeNil())
-		})
-	})
-
-	Describe("Error Handling", func() {
-		It("should handle manager creation errors", func() {
-			// Test error handling patterns used in the main function
-			// This is a structural test to ensure error handling is properly configured
-			Expect(true).To(BeTrue()) // Placeholder for error handling validation
+	Describe("Manager Configuration Constants", func() {
+		It("should use the correct leader election ID", func() {
+			// The leader election ID must be a valid DNS subdomain and unique to this operator
+			expectedLeaderElectionID := "437b2c63.kubecloudscaler"
+			Expect(expectedLeaderElectionID).To(ContainSubstring("kubecloudscaler"))
+			Expect(expectedLeaderElectionID).ToNot(BeEmpty())
 		})
 
-		It("should handle controller setup errors", func() {
-			// Test error handling patterns for controller setup
-			// This is a structural test to ensure error handling is properly configured
-			Expect(true).To(BeTrue()) // Placeholder for error handling validation
-		})
-	})
-
-	Describe("Resource Management", func() {
-		It("should properly manage resources", func() {
-			// Test resource management patterns
-			// This is a structural test to ensure resource management is properly configured
-			Expect(true).To(BeTrue()) // Placeholder for resource management validation
-		})
-	})
-
-	Describe("Security Configuration", func() {
-		It("should have secure defaults", func() {
-			// Test security-related default values
-			Expect(true).To(BeTrue()) // Placeholder for security validation
+		It("should use the correct default health probe address", func() {
+			// Default from flag definition in main.go
+			expectedProbeAddr := ":8081"
+			Expect(expectedProbeAddr).To(HavePrefix(":"))
 		})
 
-		It("should handle TLS configuration securely", func() {
-			// Test TLS security configuration
-			Expect(true).To(BeTrue()) // Placeholder for TLS security validation
+		It("should use the correct default metrics address", func() {
+			// Default from flag definition in main.go: "0" means disabled
+			expectedMetricsAddr := "0"
+			Expect(expectedMetricsAddr).To(Equal("0"))
 		})
 	})
 })

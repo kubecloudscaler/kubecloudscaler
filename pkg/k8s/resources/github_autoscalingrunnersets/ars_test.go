@@ -97,14 +97,14 @@ var _ = Describe("GithubAutoscalingRunnersets", func() {
 		Expect(actionsV1alpha1.AddToScheme(scheme)).To(Succeed())
 
 		mockPeriod = &period.Period{
-			Type:         "down",
-			MinReplicas:  1,
-			MaxReplicas:  5,
-			IsActive:     true,
-			GetStartTime: time.Now(),
-			GetEndTime:   time.Now(),
-			Period: &common.RecurringPeriod{
-				Days:      []string{"all"},
+			Type:        common.PeriodTypeDown,
+			MinReplicas: 1,
+			MaxReplicas: 5,
+			IsActive:    true,
+			StartTime:   time.Now(),
+			EndTime:     time.Now(),
+			Spec: &common.RecurringPeriod{
+				Days:      []common.DayOfWeek{common.DayAll},
 				StartTime: "00:00",
 				EndTime:   "23:59",
 			},
@@ -119,7 +119,7 @@ var _ = Describe("GithubAutoscalingRunnersets", func() {
 
 	Context("scaling operations", func() {
 		It("scales down runner sets", func() {
-			mockPeriod.Type = "down"
+			mockPeriod.Type = common.PeriodTypeDown
 			mockPeriod.MinReplicas = 2
 			mockPeriod.MaxReplicas = 4
 
@@ -141,7 +141,7 @@ var _ = Describe("GithubAutoscalingRunnersets", func() {
 		})
 
 		It("scales up runner sets", func() {
-			mockPeriod.Type = "up"
+			mockPeriod.Type = common.PeriodTypeUp
 			mockPeriod.MinReplicas = 8
 			mockPeriod.MaxReplicas = 12
 
@@ -252,7 +252,7 @@ var _ = Describe("GithubAutoscalingRunnersets", func() {
 	Context("multi namespace management", func() {
 		It("processes runner sets across namespaces", func() {
 			resource.NsList = []string{"ns-one", "ns-two"}
-			mockPeriod.Type = "down"
+			mockPeriod.Type = common.PeriodTypeDown
 			mockPeriod.MinReplicas = 1
 			mockPeriod.MaxReplicas = 2
 

@@ -53,7 +53,7 @@ func (src *K8s) ConvertTo(dstRaw conversion.Hub) error {
 	dst.Spec.Config.RestoreOnDelete = src.Spec.RestoreOnDelete
 
 	// convert fields from v1alpha1 to v1alpha3
-	dst.Spec.Resources.Types = src.Spec.Resources
+	dst.Spec.Resources.Types = stringsToResourceKinds(src.Spec.Resources)
 	dst.Spec.Resources.LabelSelector = src.Spec.LabelSelector
 
 	// Preserve v1alpha1-only fields in annotations for round-trip safety
@@ -93,7 +93,7 @@ func (dst *K8s) ConvertFrom(srcRaw conversion.Hub) error {
 	dst.Spec.RestoreOnDelete = src.Spec.Config.RestoreOnDelete
 
 	// convert fields from v1alpha3 to v1alpha1
-	dst.Spec.Resources = src.Spec.Resources.Types
+	dst.Spec.Resources = resourceKindsToStrings(src.Spec.Resources.Types)
 	dst.Spec.LabelSelector = src.Spec.Resources.LabelSelector
 
 	// Restore v1alpha1-only fields from annotations (round-trip preservation)

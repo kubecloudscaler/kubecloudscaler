@@ -46,11 +46,11 @@ func (am *annotationManager) AddAnnotations(annotations map[string]string, perio
 		return annotations
 	}
 
-	annotations[AnnotationsPrefix+"/"+PeriodType] = period.Type
-	annotations[AnnotationsPrefix+"/"+PeriodStartTime] = period.GetStartTime.Format(time.RFC3339)
-	annotations[AnnotationsPrefix+"/"+PeriodEndTime] = period.GetEndTime.Format(time.RFC3339)
-	if period.Period != nil && period.Period.Timezone != nil {
-		annotations[AnnotationsPrefix+"/"+PeriodTimezone] = *period.Period.Timezone
+	annotations[AnnotationsPrefix+"/"+PeriodType] = string(period.Type)
+	annotations[AnnotationsPrefix+"/"+PeriodStartTime] = period.StartTime.Format(time.RFC3339)
+	annotations[AnnotationsPrefix+"/"+PeriodEndTime] = period.EndTime.Format(time.RFC3339)
+	if period.Spec != nil && period.Spec.Timezone != nil {
+		annotations[AnnotationsPrefix+"/"+PeriodTimezone] = *period.Spec.Timezone
 	}
 
 	return annotations

@@ -8,6 +8,7 @@ import (
 	"github.com/rs/zerolog/log"
 
 	computepb "cloud.google.com/go/compute/apiv1/computepb"
+	"github.com/kubecloudscaler/kubecloudscaler/api/common"
 	"github.com/kubecloudscaler/kubecloudscaler/pkg/gcp/utils"
 	"github.com/kubecloudscaler/kubecloudscaler/pkg/period"
 )
@@ -33,7 +34,7 @@ var _ = Describe("ComputeInstances", func() {
 	Describe("New", func() {
 		Context("when config is valid", func() {
 			BeforeEach(func() {
-				config.Period = &period.Period{Type: "up"}
+				config.Period = &period.Period{Type: common.PeriodTypeUp}
 			})
 
 			It("should create a new VMInstances instance", func() {
@@ -103,7 +104,7 @@ var _ = Describe("ComputeInstances", func() {
 
 		Context("when period type is up", func() {
 			BeforeEach(func() {
-				ci.Period = &period.Period{Type: "up"}
+				ci.Period = &period.Period{Type: common.PeriodTypeUp}
 			})
 
 			It("should return running state", func() {
@@ -114,7 +115,7 @@ var _ = Describe("ComputeInstances", func() {
 
 		Context("when period type is down", func() {
 			BeforeEach(func() {
-				ci.Period = &period.Period{Type: "down"}
+				ci.Period = &period.Period{Type: common.PeriodTypeDown}
 			})
 
 			It("should return stopped state", func() {
@@ -125,7 +126,7 @@ var _ = Describe("ComputeInstances", func() {
 
 		Context("when period type is unknown", func() {
 			BeforeEach(func() {
-				ci.Period = &period.Period{Type: "unknown"}
+				ci.Period = &period.Period{Type: common.PeriodType("unknown")}
 			})
 
 			It("should return stopped state", func() {
@@ -203,7 +204,7 @@ var _ = Describe("ComputeInstances", func() {
 		BeforeEach(func() {
 			ci = &VMInstances{
 				Config: config,
-				Period: &period.Period{Type: "up"},
+				Period: &period.Period{Type: common.PeriodTypeUp},
 			}
 		})
 

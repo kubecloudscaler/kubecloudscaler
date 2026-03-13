@@ -42,10 +42,10 @@ var _ = Describe("AnnotationManager", func() {
 	BeforeEach(func() {
 		annotationMgr = NewAnnotationManager()
 		mockPeriod = &periodPkg.Period{
-			Type:         "test-period",
-			GetStartTime: time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
-			GetEndTime:   time.Date(2024, 1, 1, 1, 0, 0, 0, time.UTC),
-			Period:       &common.RecurringPeriod{Timezone: ptr.To("UTC")},
+			Type:      "test-period",
+			StartTime: time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
+			EndTime:   time.Date(2024, 1, 1, 1, 0, 0, 0, time.UTC),
+			Spec:      &common.RecurringPeriod{Timezone: ptr.To("UTC")},
 		}
 	})
 

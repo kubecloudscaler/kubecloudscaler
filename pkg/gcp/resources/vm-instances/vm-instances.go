@@ -97,7 +97,7 @@ func (c *VMInstances) SetState(ctx context.Context) ([]common.ScalerStatusSucces
 // stops VMs by default ("down") unless defaultPeriodType is explicitly set to "up".
 func (c *VMInstances) getDesiredState() string {
 	defaultPeriodType := gcpUtils.InstanceStopped
-	if c.Config.DefaultPeriodType == "up" {
+	if c.Config.DefaultPeriodType == string(common.PeriodTypeUp) {
 		defaultPeriodType = gcpUtils.InstanceRunning
 	}
 
@@ -106,9 +106,9 @@ func (c *VMInstances) getDesiredState() string {
 	}
 
 	switch c.Period.Type {
-	case "up":
+	case common.PeriodTypeUp:
 		return gcpUtils.InstanceRunning
-	case "down":
+	case common.PeriodTypeDown:
 		return gcpUtils.InstanceStopped
 	default:
 		return defaultPeriodType

@@ -43,11 +43,11 @@ var _ = Describe("Flow Webhook Validation", func() {
 				Spec: kubecloudscalerv1alpha3.FlowSpec{
 					Periods: []common.ScalerPeriod{
 						{
-							Type: "up",
+							Type: common.PeriodTypeUp,
 							Name: "test-period",
 							Time: common.TimePeriod{
 								Recurring: &common.RecurringPeriod{
-									Days:      []string{"Monday", "Tuesday"},
+									Days:      []common.DayOfWeek{common.DayMonday, common.DayTuesday},
 									StartTime: "09:00",
 									EndTime:   "17:00",
 								},
@@ -59,7 +59,7 @@ var _ = Describe("Flow Webhook Validation", func() {
 							{
 								Name: "test-k8s-resource",
 								Resources: common.Resources{
-									Types: []string{"deployments"},
+									Types: []common.ResourceKind{common.ResourceDeployments},
 								},
 							},
 						},
@@ -88,22 +88,22 @@ var _ = Describe("Flow Webhook Validation", func() {
 				Spec: kubecloudscalerv1alpha3.FlowSpec{
 					Periods: []common.ScalerPeriod{
 						{
-							Type: "up",
+							Type: common.PeriodTypeUp,
 							Name: "duplicate-name",
 							Time: common.TimePeriod{
 								Recurring: &common.RecurringPeriod{
-									Days:      []string{"Monday"},
+									Days:      []common.DayOfWeek{common.DayMonday},
 									StartTime: "09:00",
 									EndTime:   "17:00",
 								},
 							},
 						},
 						{
-							Type: "down",
+							Type: common.PeriodTypeDown,
 							Name: "duplicate-name", // Duplicate name
 							Time: common.TimePeriod{
 								Recurring: &common.RecurringPeriod{
-									Days:      []string{"Tuesday"},
+									Days:      []common.DayOfWeek{common.DayTuesday},
 									StartTime: "09:00",
 									EndTime:   "17:00",
 								},
@@ -124,11 +124,11 @@ var _ = Describe("Flow Webhook Validation", func() {
 				Spec: kubecloudscalerv1alpha3.FlowSpec{
 					Periods: []common.ScalerPeriod{
 						{
-							Type: "up",
+							Type: common.PeriodTypeUp,
 							// Name is nil
 							Time: common.TimePeriod{
 								Recurring: &common.RecurringPeriod{
-									Days:      []string{"Monday"},
+									Days:      []common.DayOfWeek{common.DayMonday},
 									StartTime: "09:00",
 									EndTime:   "17:00",
 								},
@@ -149,11 +149,11 @@ var _ = Describe("Flow Webhook Validation", func() {
 				Spec: kubecloudscalerv1alpha3.FlowSpec{
 					Periods: []common.ScalerPeriod{
 						{
-							Type: "up",
+							Type: common.PeriodTypeUp,
 							Name: "test-period",
 							Time: common.TimePeriod{
 								Recurring: &common.RecurringPeriod{
-									Days:      []string{"Monday"},
+									Days:      []common.DayOfWeek{common.DayMonday},
 									StartTime: "09:00",
 									EndTime:   "17:00",
 								},
@@ -165,13 +165,13 @@ var _ = Describe("Flow Webhook Validation", func() {
 							{
 								Name: "duplicate-name",
 								Resources: common.Resources{
-									Types: []string{"deployments"},
+									Types: []common.ResourceKind{common.ResourceDeployments},
 								},
 							},
 							{
 								Name: "duplicate-name", // Duplicate name
 								Resources: common.Resources{
-									Types: []string{"statefulsets"},
+									Types: []common.ResourceKind{common.ResourceStatefulSets},
 								},
 							},
 						},
@@ -190,11 +190,11 @@ var _ = Describe("Flow Webhook Validation", func() {
 				Spec: kubecloudscalerv1alpha3.FlowSpec{
 					Periods: []common.ScalerPeriod{
 						{
-							Type: "up",
+							Type: common.PeriodTypeUp,
 							Name: "test-period",
 							Time: common.TimePeriod{
 								Recurring: &common.RecurringPeriod{
-									Days:      []string{"Monday"},
+									Days:      []common.DayOfWeek{common.DayMonday},
 									StartTime: "09:00",
 									EndTime:   "17:00",
 								},
@@ -206,7 +206,7 @@ var _ = Describe("Flow Webhook Validation", func() {
 							{
 								Name: "conflict-name",
 								Resources: common.Resources{
-									Types: []string{"deployments"},
+									Types: []common.ResourceKind{common.ResourceDeployments},
 								},
 							},
 						},
@@ -214,7 +214,7 @@ var _ = Describe("Flow Webhook Validation", func() {
 							{
 								Name: "conflict-name", // Same name as K8s resource
 								Resources: common.Resources{
-									Types: []string{"vm-instances"},
+									Types: []common.ResourceKind{common.ResourceVMInstances},
 								},
 							},
 						},
@@ -233,11 +233,11 @@ var _ = Describe("Flow Webhook Validation", func() {
 				Spec: kubecloudscalerv1alpha3.FlowSpec{
 					Periods: []common.ScalerPeriod{
 						{
-							Type: "up",
+							Type: common.PeriodTypeUp,
 							Name: "short-period",
 							Time: common.TimePeriod{
 								Recurring: &common.RecurringPeriod{
-									Days:      []string{"Monday"},
+									Days:      []common.DayOfWeek{common.DayMonday},
 									StartTime: "09:00",
 									EndTime:   "10:00", // 1 hour period
 								},
@@ -249,7 +249,7 @@ var _ = Describe("Flow Webhook Validation", func() {
 							{
 								Name: "test-k8s-resource",
 								Resources: common.Resources{
-									Types: []string{"deployments"},
+									Types: []common.ResourceKind{common.ResourceDeployments},
 								},
 							},
 						},
@@ -279,11 +279,11 @@ var _ = Describe("Flow Webhook Validation", func() {
 				Spec: kubecloudscalerv1alpha3.FlowSpec{
 					Periods: []common.ScalerPeriod{
 						{
-							Type: "up",
+							Type: common.PeriodTypeUp,
 							Name: "test-period",
 							Time: common.TimePeriod{
 								Recurring: &common.RecurringPeriod{
-									Days:      []string{"Monday"},
+									Days:      []common.DayOfWeek{common.DayMonday},
 									StartTime: "09:00",
 									EndTime:   "17:00",
 								},
@@ -295,7 +295,7 @@ var _ = Describe("Flow Webhook Validation", func() {
 							{
 								Name: "test-k8s-resource",
 								Resources: common.Resources{
-									Types: []string{"deployments"},
+									Types: []common.ResourceKind{common.ResourceDeployments},
 								},
 							},
 						},
@@ -327,11 +327,11 @@ var _ = Describe("Flow Webhook Validation", func() {
 				Spec: kubecloudscalerv1alpha3.FlowSpec{
 					Periods: []common.ScalerPeriod{
 						{
-							Type: "up",
+							Type: common.PeriodTypeUp,
 							Name: "test-period",
 							Time: common.TimePeriod{
 								Recurring: &common.RecurringPeriod{
-									Days:      []string{"Monday"},
+									Days:      []common.DayOfWeek{common.DayMonday},
 									StartTime: "09:00",
 									EndTime:   "17:00",
 								},
@@ -345,11 +345,11 @@ var _ = Describe("Flow Webhook Validation", func() {
 				Spec: kubecloudscalerv1alpha3.FlowSpec{
 					Periods: []common.ScalerPeriod{
 						{
-							Type: "up",
+							Type: common.PeriodTypeUp,
 							Name: "test-period",
 							Time: common.TimePeriod{
 								Recurring: &common.RecurringPeriod{
-									Days:      []string{"Monday", "Tuesday"}, // Added Tuesday
+									Days:      []common.DayOfWeek{common.DayMonday, common.DayTuesday}, // Added Tuesday
 									StartTime: "09:00",
 									EndTime:   "17:00",
 								},
@@ -369,11 +369,11 @@ var _ = Describe("Flow Webhook Validation", func() {
 				Spec: kubecloudscalerv1alpha3.FlowSpec{
 					Periods: []common.ScalerPeriod{
 						{
-							Type: "up",
+							Type: common.PeriodTypeUp,
 							Name: "test-period",
 							Time: common.TimePeriod{
 								Recurring: &common.RecurringPeriod{
-									Days:      []string{"Monday"},
+									Days:      []common.DayOfWeek{common.DayMonday},
 									StartTime: "09:00",
 									EndTime:   "17:00",
 								},
@@ -387,22 +387,22 @@ var _ = Describe("Flow Webhook Validation", func() {
 				Spec: kubecloudscalerv1alpha3.FlowSpec{
 					Periods: []common.ScalerPeriod{
 						{
-							Type: "up",
+							Type: common.PeriodTypeUp,
 							Name: "duplicate-name",
 							Time: common.TimePeriod{
 								Recurring: &common.RecurringPeriod{
-									Days:      []string{"Monday"},
+									Days:      []common.DayOfWeek{common.DayMonday},
 									StartTime: "09:00",
 									EndTime:   "17:00",
 								},
 							},
 						},
 						{
-							Type: "down",
+							Type: common.PeriodTypeDown,
 							Name: "duplicate-name", // Duplicate name
 							Time: common.TimePeriod{
 								Recurring: &common.RecurringPeriod{
-									Days:      []string{"Tuesday"},
+									Days:      []common.DayOfWeek{common.DayTuesday},
 									StartTime: "09:00",
 									EndTime:   "17:00",
 								},
@@ -425,11 +425,11 @@ var _ = Describe("Flow Webhook Validation", func() {
 				Spec: kubecloudscalerv1alpha3.FlowSpec{
 					Periods: []common.ScalerPeriod{
 						{
-							Type: "up",
+							Type: common.PeriodTypeUp,
 							Name: "test-period",
 							Time: common.TimePeriod{
 								Recurring: &common.RecurringPeriod{
-									Days:      []string{"Monday"},
+									Days:      []common.DayOfWeek{common.DayMonday},
 									StartTime: "09:00",
 									EndTime:   "17:00",
 								},

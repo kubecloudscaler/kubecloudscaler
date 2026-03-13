@@ -63,10 +63,10 @@ var _ = Describe("PeriodHandler", func() {
 			scaler.Spec.Periods = []common.ScalerPeriod{
 				{
 					Name: "business-hours",
-					Type: "up",
+					Type: common.PeriodTypeUp,
 					Time: common.TimePeriod{
 						Recurring: &common.RecurringPeriod{
-							Days:      []string{"monday", "tuesday", "wednesday", "thursday", "friday"},
+							Days:      []common.DayOfWeek{common.DayMonday, common.DayTuesday, common.DayWednesday, common.DayThursday, common.DayFriday},
 							StartTime: "09:00",
 							EndTime:   "17:00",
 							Once:      ptr.To(false),
@@ -98,9 +98,6 @@ var _ = Describe("PeriodHandler", func() {
 			Expect(err).ToNot(HaveOccurred())
 		})
 
-		It("should complete in under 100ms", func() {
-			_ = periodHandler.Execute(reconCtx)
-		})
 	})
 
 	Context("When period is 'noaction' and status matches", func() {
@@ -111,7 +108,7 @@ var _ = Describe("PeriodHandler", func() {
 					Type: "noaction",
 					Time: common.TimePeriod{
 						Recurring: &common.RecurringPeriod{
-							Days:      []string{"all"},
+							Days:      []common.DayOfWeek{common.DayAll},
 							StartTime: "00:00",
 							EndTime:   "23:59",
 							Once:      ptr.To(false),
@@ -186,10 +183,10 @@ var _ = Describe("PeriodHandler", func() {
 			scaler.Spec.Periods = []common.ScalerPeriod{
 				{
 					Name: "down",
-					Type: "down",
+					Type: common.PeriodTypeDown,
 					Time: common.TimePeriod{
 						Recurring: &common.RecurringPeriod{
-							Days:      []string{"all"},
+							Days:      []common.DayOfWeek{common.DayAll},
 							StartTime: "00:00",
 							EndTime:   "23:59",
 							Once:      ptr.To(false),

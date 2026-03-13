@@ -1,21 +1,6 @@
 // Package utils provides constants for GCP resource management in the kubecloudscaler project.
 package utils
 
-import kubeconsts "github.com/kubecloudscaler/kubecloudscaler/pkg/consts"
-
-// Re-export shared constants for backward compatibility.
-const (
-	AnnotationsPrefix       = kubeconsts.AnnotationsPrefix
-	AnnotationsOrigValue    = kubeconsts.AnnotationsOrigValue
-	AnnotationsMinOrigValue = kubeconsts.AnnotationsMinOrigValue
-	AnnotationsMaxOrigValue = kubeconsts.AnnotationsMaxOrigValue
-	PeriodType              = kubeconsts.PeriodType
-	PeriodStartTime         = kubeconsts.PeriodStartTime
-	PeriodEndTime           = kubeconsts.PeriodEndTime
-	PeriodTimezone          = kubeconsts.PeriodTimezone
-	FieldManager            = kubeconsts.FieldManager
-)
-
 // GCP-specific constants.
 const (
 	// DefaultResource is the default GCP resource type for scaling.

@@ -46,39 +46,39 @@
 
 ### P2 — Improve When Touching (quality & consistency)
 
-- [ ] **P2-1**: Add `Validate()` methods to API types (`ScalerPeriod`, `TimePeriod`, `Resources`)
-- [ ] **P2-2**: Extract named types for stringly-typed domain concepts (`PeriodType`, `ResourceKind`, `DayOfWeek`)
+- [x] **P2-1**: Add `Validate()` methods to API types (`ScalerPeriod`, `TimePeriod`, `Resources`)
+- [x] **P2-2**: Extract named types for stringly-typed domain concepts (`PeriodType`, `ResourceKind`, `DayOfWeek`)
 - [x] **P2-3**: Remove global logger from conversion functions
 - [x] **P2-4**: Make exported mutable slices immutable (return copies from functions)
 - [x] **P2-5**: Fix GCP StatusHandler unconditional `RequeueAfter` override
 - [x] **P2-6**: Extract `typeAssertionError` to `pkg/k8s/resources/base/errors.go`
-- [ ] **P2-7**: Extract duplicated constants to shared package
+- [x] **P2-7**: Extract duplicated constants to shared package
 - [x] **P2-8**: Replace Flow `resource_creator.go` Create-then-Update with SSA or `CreateOrUpdate`
 - [x] **P2-9**: Remove `ctrl.Result` from Flow `StatusUpdaterService` return type
-- [ ] **P2-10**: Inject `time.Now` into period logic via `Clock` interface
-- [ ] **P2-11**: Fix `Period` struct field naming (`Period.Period` → `Spec`, `GetStartTime` → `StartTime`)
+- [x] **P2-10**: Inject `time.Now` into period logic via `Clock` interface
+- [x] **P2-11**: Fix `Period` struct field naming (`Period.Period` → `Spec`, `GetStartTime` → `StartTime`)
 - [x] **P2-12**: Fix type name typo `VMnstances` → `VMInstances`
 - [x] **P2-13**: Fix overnight recurring period rejection in Flow webhook
-- [ ] **P2-14**: Move mocks from production packages to `_test.go` or `testutil/`
+- [x] **P2-14**: Move mocks from production packages to `_test.go` or `testutil/`
 - [x] **P2-15**: Handle discarded `processResource` errors in `base/processor.go`
 - [x] **P2-16**: Add coverage threshold enforcement to Makefile/CI
 
 ### Test Improvements
 
-- [ ] **T1**: Fix non-deterministic tests (replace `if err != nil` conditional assertions with deterministic expectations)
-- [ ] **T2**: Add RecoverableError test coverage for all 4 handler paths that return it
-- [ ] **T3**: Write tests for `pkg/resources/resources.go` factory
-- [ ] **T4**: Write tests for `pkg/k8s/resources/base/processor.go`
-- [ ] **T5**: Write tests for `pkg/k8s/resources/base/strategies.go`
-- [ ] **T6**: Add CRD conversion round-trip tests (v1alpha1 ↔ v1alpha3, v1alpha2 ↔ v1alpha3)
-- [ ] **T7**: Replace stub webhook tests (K8s, GCP) with real validation tests
-- [ ] **T8**: Replace `cmd/main_test.go` placeholder assertions (`Expect(true).To(BeTrue())`)
-- [ ] **T9**: Convert Flow service tests from raw `testing.T` to Ginkgo BDD
-- [ ] **T10**: Delete fake "performance tests" that discard results, replace with `testing.B` benchmarks
-- [ ] **T11**: Add period `IsActive` / activation tests with time injection
-- [ ] **T12**: Add RequeueAfter value assertions to handler tests
+- [x] **T1**: Fix non-deterministic tests (replace `if err != nil` conditional assertions with deterministic expectations)
+- [x] **T2**: Add RecoverableError test coverage for all 4 handler paths that return it
+- [x] **T3**: Write tests for `pkg/resources/resources.go` factory
+- [x] **T4**: Write tests for `pkg/k8s/resources/base/processor.go`
+- [x] **T5**: Write tests for `pkg/k8s/resources/base/strategies.go`
+- [x] **T6**: Add CRD conversion round-trip tests (v1alpha1 ↔ v1alpha3, v1alpha2 ↔ v1alpha3)
+- [x] **T7**: Replace stub webhook tests (K8s, GCP) with real validation tests
+- [x] **T8**: Replace `cmd/main_test.go` placeholder assertions (`Expect(true).To(BeTrue())`)
+- [x] **T9**: Convert Flow service tests from raw `testing.T` to Ginkgo BDD
+- [x] **T10**: Delete fake "performance tests" that discard results, replace with `testing.B` benchmarks
+- [x] **T11**: Add period `IsActive` / activation tests with time injection
+- [x] **T12**: Add RequeueAfter value assertions to handler tests
 - [ ] **T13**: Expand E2E tests to cover actual reconciliation, scaling, and status verification
-- [ ] **T14**: Add table-driven tests for multi-scenario functions (validResourceList, period types, resource kinds)
+- [x] **T14**: Add table-driven tests for multi-scenario functions (validResourceList, period types, resource kinds)
 
 ---
 

@@ -18,6 +18,8 @@ package handlers_test
 
 import (
 	"context"
+	"fmt"
+	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -27,6 +29,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 
 	kubecloudscalerv1alpha3 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha3"
 	"github.com/kubecloudscaler/kubecloudscaler/internal/controller/gcp/service"
@@ -94,11 +97,6 @@ var _ = Describe("FetchHandler", func() {
 			Expect(reconCtx.Scaler.Namespace).To(Equal(scalerNS))
 		})
 
-		It("should complete in under 100ms", func() {
-			// Test execution time is implicitly tested by Ginkgo's timeout mechanisms
-			// Ginkgo will fail the test if it exceeds the default timeout
-			_ = fetchHandler.Execute(reconCtx)
-		})
 	})
 
 	Context("When scaler resource does not exist", func() {
@@ -125,23 +123,32 @@ var _ = Describe("FetchHandler", func() {
 
 	Context("When client returns a transient error", func() {
 		BeforeEach(func() {
-			// Create a mock client that returns a transient error
-			// Note: This test is a placeholder since fake client doesn't support error injection
-			// In a real implementation, we'd use a mock client interface
 			k8sClient = fake.NewClientBuilder().
 				WithScheme(scheme).
+				WithInterceptorFuncs(interceptor.Funcs{
+					Get: func(
+						ctx context.Context,
+						c client.WithWatch,
+						key client.ObjectKey,
+						obj client.Object,
+						opts ...client.GetOption,
+					) error {
+						return fmt.Errorf("transient API failure")
+					},
+				}).
 				Build()
 
 			reconCtx.Client = k8sClient
 			fetchHandler = handlers.NewFetchHandler()
 		})
 
-		It("should handle the error appropriately", func() {
-			// This test needs a proper mock client to inject transient errors
-			// For now, we test the not-found case which returns nil with SkipRemaining
+		It("should return a recoverable error", func() {
 			err := fetchHandler.Execute(reconCtx)
-			Expect(err).ToNot(HaveOccurred())
-			Expect(reconCtx.SkipRemaining).To(BeTrue())
+
+			Expect(err).To(HaveOccurred())
+			Expect(service.IsRecoverableError(err)).To(BeTrue())
+			Expect(reconCtx.Scaler).To(BeNil())
+			Expect(reconCtx.RequeueAfter).To(Equal(5 * time.Second))
 		})
 	})
 })

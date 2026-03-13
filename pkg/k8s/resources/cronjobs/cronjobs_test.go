@@ -44,14 +44,14 @@ var _ = Describe("Cronjobs", func() {
 
 		BeforeEach(func() {
 			mockPeriod = &period.Period{
-				Type:         "down",
-				MinReplicas:  0,
-				MaxReplicas:  5,
-				IsActive:     true,
-				GetStartTime: time.Now(),
-				GetEndTime:   time.Now(),
-				Period: &common.RecurringPeriod{
-					Days:      []string{"all"},
+				Type:        common.PeriodTypeDown,
+				MinReplicas: 0,
+				MaxReplicas: 5,
+				IsActive:    true,
+				StartTime:   time.Now(),
+				EndTime:     time.Now(),
+				Spec: &common.RecurringPeriod{
+					Days:      []common.DayOfWeek{common.DayAll},
 					StartTime: "00:00",
 					EndTime:   "23:59",
 				},
@@ -72,7 +72,7 @@ var _ = Describe("Cronjobs", func() {
 
 		Context("when scaling down cronjobs", func() {
 			BeforeEach(func() {
-				mockPeriod.Type = "down"
+				mockPeriod.Type = common.PeriodTypeDown
 
 				// Create a test cronjob
 				testCronJob := &batchV1.CronJob{
@@ -121,7 +121,7 @@ var _ = Describe("Cronjobs", func() {
 
 		Context("when scaling up cronjobs", func() {
 			BeforeEach(func() {
-				mockPeriod.Type = "up"
+				mockPeriod.Type = common.PeriodTypeUp
 
 				// Create a test cronjob
 				testCronJob := &batchV1.CronJob{
@@ -310,7 +310,7 @@ var _ = Describe("Cronjobs", func() {
 
 		Context("with multiple cronjobs", func() {
 			BeforeEach(func() {
-				mockPeriod.Type = "down"
+				mockPeriod.Type = common.PeriodTypeDown
 
 				// Create multiple test cronjobs
 				cronjobNames := []string{"cronjob1", "cronjob2", "cronjob3"}
@@ -368,7 +368,7 @@ var _ = Describe("Cronjobs", func() {
 			var secondNamespace = "second-namespace"
 
 			BeforeEach(func() {
-				mockPeriod.Type = "down"
+				mockPeriod.Type = common.PeriodTypeDown
 
 				// Add second namespace
 				cronjobs.Resource.NsList = []string{testNamespace, secondNamespace}
@@ -408,7 +408,7 @@ var _ = Describe("Cronjobs", func() {
 
 		Context("edge cases", func() {
 			It("should handle cronjob with nil suspend", func() {
-				mockPeriod.Type = "down"
+				mockPeriod.Type = common.PeriodTypeDown
 
 				// Create a cronjob with nil suspend (defaults to false)
 				testCronJob := &batchV1.CronJob{

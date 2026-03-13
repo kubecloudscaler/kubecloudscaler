@@ -54,7 +54,7 @@ func (src *Gcp) ConvertTo(dstRaw conversion.Hub) error {
 	}
 
 	// convert fields from v1alpha1 to v1alpha2
-	dst.Spec.Resources.Types = src.Spec.Resources
+	dst.Spec.Resources.Types = stringsToResourceKinds(src.Spec.Resources)
 	dst.Spec.Resources.LabelSelector = src.Spec.LabelSelector
 
 	setConversionAnnotation(&dst.ObjectMeta, annotationExcludeResources,
@@ -93,7 +93,7 @@ func (dst *Gcp) ConvertFrom(srcRaw conversion.Hub) error {
 	dst.Spec.WaitForOperation = src.Spec.Config.WaitForOperation
 
 	// convert fields from v1alpha2 to v1alpha1
-	dst.Spec.Resources = src.Spec.Resources.Types
+	dst.Spec.Resources = resourceKindsToStrings(src.Spec.Resources.Types)
 	dst.Spec.LabelSelector = src.Spec.Resources.LabelSelector
 
 	if v := getConversionAnnotation(&dst.ObjectMeta, annotationExcludeResources); v != "" {

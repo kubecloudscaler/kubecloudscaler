@@ -59,10 +59,15 @@ func NewFlowReconciler(
 	client client.Client,
 	scheme *runtime.Scheme,
 	logger *zerolog.Logger,
+	rec metrics.Recorder,
 ) *FlowReconciler {
 	if logger == nil {
 		nopLogger := zerolog.Nop()
 		logger = &nopLogger
+	}
+
+	if rec == nil {
+		rec = metrics.GetRecorder()
 	}
 
 	timeCalculator := service.NewTimeCalculatorService(logger)
@@ -76,7 +81,7 @@ func NewFlowReconciler(
 		Client:        client,
 		Scheme:        scheme,
 		Logger:        logger,
-		recorder:      metrics.GetRecorder(),
+		recorder:      rec,
 		flowProcessor: flowProcessor,
 		statusUpdater: statusUpdater,
 	}
@@ -97,9 +102,6 @@ func NewFlowReconciler(
 func (r *FlowReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	start := time.Now()
 	rec := r.recorder
-	if rec == nil {
-		rec = metrics.GetRecorder()
-	}
 
 	reconCtx := &service.FlowReconciliationContext{
 		Ctx:     ctx,

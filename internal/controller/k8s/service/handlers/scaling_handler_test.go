@@ -18,7 +18,6 @@ package handlers_test
 
 import (
 	"context"
-	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -62,7 +61,7 @@ var _ = Describe("ScalingHandler", func() {
 			},
 			Spec: kubecloudscalerv1alpha3.K8sSpec{
 				Resources: common.Resources{
-					Types: []string{"deployment"},
+					Types: []common.ResourceKind{common.ResourceDeployments},
 				},
 			},
 		}
@@ -81,7 +80,7 @@ var _ = Describe("ScalingHandler", func() {
 			Logger:    &logger,
 			Scaler:    scaler,
 			K8sClient: mockK8sClient,
-			Period:    &period.Period{Name: "up", Type: "up"},
+			Period:    &period.Period{Name: "up", Type: common.PeriodTypeUp},
 			ResourceConfig: resources.Config{
 				K8s: &k8sUtils.Config{
 					Client: mockK8sClient,
@@ -108,18 +107,11 @@ var _ = Describe("ScalingHandler", func() {
 			Expect(nextCalled).To(BeTrue())
 		})
 
-		It("should complete in under 100ms", func() {
-			startTime := time.Now()
-			_ = handler.Execute(reconCtx)
-			duration := time.Since(startTime)
-
-			Expect(duration).To(BeNumerically("<", 100*time.Millisecond))
-		})
 	})
 
 	Context("When no resource types are specified", func() {
 		It("should default to deployment and attempt to scale", func() {
-			scaler.Spec.Resources.Types = []string{} // No types specified
+			scaler.Spec.Resources.Types = []common.ResourceKind{} // No types specified
 
 			nextCalled := false
 			mockNext := &testutil.MockHandler{

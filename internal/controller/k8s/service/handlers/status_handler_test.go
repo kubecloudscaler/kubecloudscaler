@@ -18,7 +18,7 @@ package handlers_test
 
 import (
 	"context"
-	"time"
+	"fmt"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -27,13 +27,16 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	"github.com/kubecloudscaler/kubecloudscaler/api/common"
 	kubecloudscalerv1alpha3 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha3"
 	"github.com/kubecloudscaler/kubecloudscaler/internal/controller/k8s/service"
 	"github.com/kubecloudscaler/kubecloudscaler/internal/controller/k8s/service/handlers"
+	"github.com/kubecloudscaler/kubecloudscaler/internal/utils"
 )
 
 var _ = Describe("StatusHandler", func() {
@@ -87,16 +90,9 @@ var _ = Describe("StatusHandler", func() {
 
 			Expect(err).ToNot(HaveOccurred())
 			Expect(reconCtx.Scaler.Status.CurrentPeriod.Successful).To(Equal(reconCtx.SuccessResults))
-			Expect(reconCtx.RequeueAfter).To(BeNumerically(">", 0))
+			Expect(reconCtx.RequeueAfter).To(Equal(utils.ReconcileSuccessDuration))
 		})
 
-		It("should complete in under 100ms", func() {
-			startTime := time.Now()
-			_ = handler.Execute(reconCtx)
-			duration := time.Since(startTime)
-
-			Expect(duration).To(BeNumerically("<", 100*time.Millisecond))
-		})
 	})
 
 	Context("When updating status with failed results", func() {
@@ -122,6 +118,57 @@ var _ = Describe("StatusHandler", func() {
 
 			Expect(err).ToNot(HaveOccurred())
 			Expect(controllerutil.ContainsFinalizer(reconCtx.Scaler, handlers.ScalerFinalizer)).To(BeFalse())
+		})
+	})
+
+	Context("When client Update fails during finalizer removal", func() {
+		It("should return a recoverable error and set RequeueAfter", func() {
+			controllerutil.AddFinalizer(reconCtx.Scaler, handlers.ScalerFinalizer)
+			injectedErr := fmt.Errorf("update conflict")
+			reconCtx.Client = fake.NewClientBuilder().
+				WithScheme(scheme).
+				WithObjects(reconCtx.Scaler).
+				WithInterceptorFuncs(interceptor.Funcs{
+					Update: func(ctx context.Context, c client.WithWatch, obj client.Object, opts ...client.UpdateOption) error {
+						return injectedErr
+					},
+				}).
+				Build()
+			reconCtx.ShouldFinalize = true
+
+			err := handler.Execute(reconCtx)
+
+			Expect(err).To(HaveOccurred())
+			Expect(service.IsRecoverableError(err)).To(BeTrue())
+			Expect(reconCtx.RequeueAfter).To(Equal(utils.ReconcileErrorDuration))
+		})
+	})
+
+	Context("When client Status Update fails", func() {
+		It("should return a recoverable error and set RequeueAfter", func() {
+			injectedErr := fmt.Errorf("status update failure")
+			reconCtx.Client = fake.NewClientBuilder().
+				WithScheme(scheme).
+				WithObjects(scaler).
+				WithStatusSubresource(scaler).
+				WithInterceptorFuncs(interceptor.Funcs{
+					SubResourceUpdate: func(
+						ctx context.Context,
+						c client.Client,
+						subResourceName string,
+						obj client.Object,
+						opts ...client.SubResourceUpdateOption,
+					) error {
+						return injectedErr
+					},
+				}).
+				Build()
+
+			err := handler.Execute(reconCtx)
+
+			Expect(err).To(HaveOccurred())
+			Expect(service.IsRecoverableError(err)).To(BeTrue())
+			Expect(reconCtx.RequeueAfter).To(Equal(utils.ReconcileErrorDuration))
 		})
 	})
 

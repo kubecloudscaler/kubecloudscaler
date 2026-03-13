@@ -18,78 +18,91 @@ package service
 
 import (
 	"context"
-	"testing"
 
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 	"github.com/rs/zerolog"
-	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	kubecloudscalerv1alpha3 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha3"
 )
 
-func TestStatusUpdaterService_UpdateFlowStatus_Simple(t *testing.T) {
-	scheme := runtime.NewScheme()
-	_ = kubecloudscalerv1alpha3.AddToScheme(scheme)
+var _ = Describe("StatusUpdaterService", func() {
+	var (
+		scheme    *runtime.Scheme
+		logger    zerolog.Logger
+		svc       *StatusUpdaterService
+		k8sClient client.Client
+	)
 
-	logger := zerolog.Nop()
-	fakeClient := fake.NewClientBuilder().
-		WithScheme(scheme).
-		WithStatusSubresource(&kubecloudscalerv1alpha3.Flow{}).
-		Build()
+	BeforeEach(func() {
+		scheme = runtime.NewScheme()
+		Expect(kubecloudscalerv1alpha3.AddToScheme(scheme)).To(Succeed())
 
-	service := NewStatusUpdaterService(fakeClient, &logger)
-
-	t.Run("successful status update", func(t *testing.T) {
-		flow := &kubecloudscalerv1alpha3.Flow{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test-flow",
-				Namespace: "default",
-			},
-			Status: kubecloudscalerv1alpha3.FlowStatus{
-				Conditions: []metav1.Condition{},
-			},
-		}
-
-		// Create the flow in the fake client
-		err := fakeClient.Create(context.Background(), flow)
-		assert.NoError(t, err)
-
-		condition := metav1.Condition{
-			Type:    "Processed",
-			Status:  metav1.ConditionTrue,
-			Reason:  "ProcessingSucceeded",
-			Message: "Flow processed successfully",
-		}
-
-		err = service.UpdateFlowStatus(context.Background(), flow, condition)
-		assert.NoError(t, err)
+		logger = zerolog.Nop()
+		k8sClient = fake.NewClientBuilder().
+			WithScheme(scheme).
+			WithStatusSubresource(&kubecloudscalerv1alpha3.Flow{}).
+			Build()
+		svc = NewStatusUpdaterService(k8sClient, &logger)
 	})
 
-	t.Run("error condition", func(t *testing.T) {
-		flow := &kubecloudscalerv1alpha3.Flow{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test-flow-error",
-				Namespace: "default",
-			},
-			Status: kubecloudscalerv1alpha3.FlowStatus{
-				Conditions: []metav1.Condition{},
-			},
-		}
+	Describe("UpdateFlowStatus", func() {
+		Context("when updating with a success condition", func() {
+			It("should update the flow status successfully", func() {
+				flow := &kubecloudscalerv1alpha3.Flow{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test-flow",
+						Namespace: "default",
+					},
+					Status: kubecloudscalerv1alpha3.FlowStatus{
+						Conditions: []metav1.Condition{},
+					},
+				}
 
-		// Create the flow in the fake client
-		err := fakeClient.Create(context.Background(), flow)
-		assert.NoError(t, err)
+				err := k8sClient.Create(context.Background(), flow)
+				Expect(err).ToNot(HaveOccurred())
 
-		condition := metav1.Condition{
-			Type:    "Error",
-			Status:  metav1.ConditionTrue,
-			Reason:  "ProcessingFailed",
-			Message: "Flow processing failed",
-		}
+				condition := metav1.Condition{
+					Type:    "Processed",
+					Status:  metav1.ConditionTrue,
+					Reason:  "ProcessingSucceeded",
+					Message: "Flow processed successfully",
+				}
 
-		err = service.UpdateFlowStatus(context.Background(), flow, condition)
-		assert.NoError(t, err)
+				err = svc.UpdateFlowStatus(context.Background(), flow, condition)
+				Expect(err).ToNot(HaveOccurred())
+			})
+		})
+
+		Context("when updating with an error condition", func() {
+			It("should update the flow status successfully", func() {
+				flow := &kubecloudscalerv1alpha3.Flow{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test-flow-error",
+						Namespace: "default",
+					},
+					Status: kubecloudscalerv1alpha3.FlowStatus{
+						Conditions: []metav1.Condition{},
+					},
+				}
+
+				err := k8sClient.Create(context.Background(), flow)
+				Expect(err).ToNot(HaveOccurred())
+
+				condition := metav1.Condition{
+					Type:    "Error",
+					Status:  metav1.ConditionTrue,
+					Reason:  "ProcessingFailed",
+					Message: "Flow processing failed",
+				}
+
+				err = svc.UpdateFlowStatus(context.Background(), flow, condition)
+				Expect(err).ToNot(HaveOccurred())
+			})
+		})
 	})
-}
+})

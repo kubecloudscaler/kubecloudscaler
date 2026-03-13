@@ -140,7 +140,7 @@ func (r *ScalerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	// Success: record period and scaling metrics, then reconcile result
 	if reconCtx.Period != nil {
 		rec.RecordPeriodActive(metrics.ControllerGcpScaler,
-			metrics.NormalizePeriodType(reconCtx.Period.Type))
+			metrics.NormalizePeriodType(string(reconCtx.Period.Type)))
 	}
 	metrics.RecordScalingFromResults(rec, metrics.ControllerGcpScaler,
 		toScalingResults(reconCtx.SuccessResults), toScalingResultsFailed(reconCtx.FailedResults))
@@ -177,24 +177,14 @@ func toScalingResultsFailed(s []common.ScalerStatusFailed) []metrics.ScalingResu
 // 1. FetchHandler → 2. FinalizerHandler → 3. AuthHandler →
 // 4. PeriodHandler → 5. ScalingHandler → 6. StatusHandler
 func (r *ScalerReconciler) initializeChain() service.Handler {
-	// Create all handlers
-	fetchHandler := handlers.NewFetchHandler()
-	finalizerHandler := handlers.NewFinalizerHandler()
-	authHandler := handlers.NewAuthHandler(nil)
-	periodHandler := handlers.NewPeriodHandler()
-	scalingHandler := handlers.NewScalingHandler()
-	statusHandler := handlers.NewStatusHandler()
-
-	// Link handlers via SetNext() in fixed order
-	fetchHandler.SetNext(finalizerHandler)
-	finalizerHandler.SetNext(authHandler)
-	authHandler.SetNext(periodHandler)
-	periodHandler.SetNext(scalingHandler)
-	scalingHandler.SetNext(statusHandler)
-	// statusHandler.SetNext(nil) - implicit, last handler
-
-	// Return the first handler in the chain
-	return fetchHandler
+	return service.BuildHandlerChain(
+		handlers.NewFetchHandler(),
+		handlers.NewFinalizerHandler(),
+		handlers.NewAuthHandler(nil),
+		handlers.NewPeriodHandler(),
+		handlers.NewScalingHandler(),
+		handlers.NewStatusHandler(),
+	)
 }
 
 // SetupWithManager sets up the controller with the Manager.

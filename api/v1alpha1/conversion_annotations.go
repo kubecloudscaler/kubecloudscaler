@@ -21,6 +21,8 @@ import (
 	"strings"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/kubecloudscaler/kubecloudscaler/api/common"
 )
 
 // Annotation keys for preserving v1alpha1-specific fields during conversion round-trips.
@@ -79,4 +81,28 @@ func decodeStringSlice(s string) []string {
 		return strings.Split(s, ",")
 	}
 	return result
+}
+
+// stringsToResourceKinds converts []string to []common.ResourceKind for v1alpha1→v1alpha3 conversion.
+func stringsToResourceKinds(ss []string) []common.ResourceKind {
+	if ss == nil {
+		return nil
+	}
+	kinds := make([]common.ResourceKind, len(ss))
+	for i, s := range ss {
+		kinds[i] = common.ResourceKind(s)
+	}
+	return kinds
+}
+
+// resourceKindsToStrings converts []common.ResourceKind to []string for v1alpha3→v1alpha1 conversion.
+func resourceKindsToStrings(kinds []common.ResourceKind) []string {
+	if kinds == nil {
+		return nil
+	}
+	ss := make([]string, len(kinds))
+	for i, k := range kinds {
+		ss[i] = string(k)
+	}
+	return ss
 }

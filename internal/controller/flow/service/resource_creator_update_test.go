@@ -18,167 +18,176 @@ package service
 
 import (
 	"context"
-	"testing"
 
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 	"github.com/rs/zerolog"
-	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	kubecloudscalerv1alpha3 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha3"
 )
 
-func TestResourceCreatorService_createOrUpdateResource(t *testing.T) {
-	scheme := runtime.NewScheme()
-	_ = kubecloudscalerv1alpha3.AddToScheme(scheme)
+var _ = Describe("ResourceCreatorService", func() {
+	var (
+		scheme    *runtime.Scheme
+		logger    zerolog.Logger
+		svc       *ResourceCreatorService
+		k8sClient client.Client
+	)
 
-	logger := zerolog.Nop()
-	fakeClient := fake.NewClientBuilder().
-		WithScheme(scheme).
-		WithStatusSubresource(&kubecloudscalerv1alpha3.K8s{}).
-		Build()
+	BeforeEach(func() {
+		scheme = runtime.NewScheme()
+		Expect(kubecloudscalerv1alpha3.AddToScheme(scheme)).To(Succeed())
 
-	service := NewResourceCreatorService(fakeClient, scheme, &logger)
-
-	t.Run("create new resource", func(t *testing.T) {
-		obj := &kubecloudscalerv1alpha3.K8s{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test-k8s",
-				Namespace: "default",
-			},
-			Spec: kubecloudscalerv1alpha3.K8sSpec{
-				DryRun: false,
-			},
-		}
-
-		err := service.createOrUpdateResource(context.Background(), obj)
-
-		assert.NoError(t, err)
-
-		// Verify the resource was created
-		var createdObj kubecloudscalerv1alpha3.K8s
-		err = fakeClient.Get(context.Background(), types.NamespacedName{
-			Name:      "test-k8s",
-			Namespace: "default",
-		}, &createdObj)
-
-		assert.NoError(t, err)
-		assert.Equal(t, "test-k8s", createdObj.Name)
+		logger = zerolog.Nop()
+		k8sClient = fake.NewClientBuilder().
+			WithScheme(scheme).
+			WithStatusSubresource(&kubecloudscalerv1alpha3.K8s{}).
+			Build()
+		svc = NewResourceCreatorService(k8sClient, scheme, &logger)
 	})
 
-	t.Run("update existing resource", func(t *testing.T) {
-		// Create initial resource
-		initialObj := &kubecloudscalerv1alpha3.K8s{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test-k8s-update",
-				Namespace: "default",
-				Labels: map[string]string{
-					"original": "label",
-				},
-				Annotations: map[string]string{
-					"original": "annotation",
-				},
-			},
-			Spec: kubecloudscalerv1alpha3.K8sSpec{
-				DryRun: false,
-			},
-		}
+	Describe("createOrUpdateResource", func() {
+		Context("when creating a new resource", func() {
+			It("should create the resource successfully", func() {
+				obj := &kubecloudscalerv1alpha3.K8s{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test-k8s-create",
+						Namespace: "default",
+					},
+					Spec: kubecloudscalerv1alpha3.K8sSpec{
+						DryRun: false,
+					},
+				}
 
-		err := fakeClient.Create(context.Background(), initialObj)
-		assert.NoError(t, err)
+				err := svc.createOrUpdateResource(context.Background(), obj)
+				Expect(err).ToNot(HaveOccurred())
 
-		// Update the resource with new spec
-		updatedObj := &kubecloudscalerv1alpha3.K8s{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test-k8s-update",
-				Namespace: "default",
-				Labels: map[string]string{
-					"new": "label",
-				},
-				Annotations: map[string]string{
-					"new": "annotation",
-				},
-			},
-			Spec: kubecloudscalerv1alpha3.K8sSpec{
-				DryRun: true, // Changed from false to true
-			},
-		}
+				var createdObj kubecloudscalerv1alpha3.K8s
+				err = k8sClient.Get(context.Background(), types.NamespacedName{
+					Name:      "test-k8s-create",
+					Namespace: "default",
+				}, &createdObj)
 
-		err = service.createOrUpdateResource(context.Background(), updatedObj)
-		assert.NoError(t, err)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(createdObj.Name).To(Equal("test-k8s-create"))
+			})
+		})
 
-		// Verify the resource was updated
-		var finalObj kubecloudscalerv1alpha3.K8s
-		err = fakeClient.Get(context.Background(), types.NamespacedName{
-			Name:      "test-k8s-update",
-			Namespace: "default",
-		}, &finalObj)
+		Context("when updating an existing resource", func() {
+			It("should update the spec and merge labels and annotations", func() {
+				initialObj := &kubecloudscalerv1alpha3.K8s{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test-k8s-update",
+						Namespace: "default",
+						Labels: map[string]string{
+							"original": "label",
+						},
+						Annotations: map[string]string{
+							"original": "annotation",
+						},
+					},
+					Spec: kubecloudscalerv1alpha3.K8sSpec{
+						DryRun: false,
+					},
+				}
 
-		assert.NoError(t, err)
-		assert.True(t, finalObj.Spec.DryRun)                            // Should be updated to true
-		assert.Equal(t, "label", finalObj.Labels["original"])           // Original labels should be preserved
-		assert.Equal(t, "label", finalObj.Labels["new"])                // New labels should be added
-		assert.Equal(t, "annotation", finalObj.Annotations["original"]) // Original annotations should be preserved
-		assert.Equal(t, "annotation", finalObj.Annotations["new"])      // New annotations should be added
+				err := k8sClient.Create(context.Background(), initialObj)
+				Expect(err).ToNot(HaveOccurred())
+
+				updatedObj := &kubecloudscalerv1alpha3.K8s{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test-k8s-update",
+						Namespace: "default",
+						Labels: map[string]string{
+							"new": "label",
+						},
+						Annotations: map[string]string{
+							"new": "annotation",
+						},
+					},
+					Spec: kubecloudscalerv1alpha3.K8sSpec{
+						DryRun: true,
+					},
+				}
+
+				err = svc.createOrUpdateResource(context.Background(), updatedObj)
+				Expect(err).ToNot(HaveOccurred())
+
+				var finalObj kubecloudscalerv1alpha3.K8s
+				err = k8sClient.Get(context.Background(), types.NamespacedName{
+					Name:      "test-k8s-update",
+					Namespace: "default",
+				}, &finalObj)
+
+				Expect(err).ToNot(HaveOccurred())
+				Expect(finalObj.Spec.DryRun).To(BeTrue())
+				Expect(finalObj.Labels).To(HaveKeyWithValue("original", "label"))
+				Expect(finalObj.Labels).To(HaveKeyWithValue("new", "label"))
+				Expect(finalObj.Annotations).To(HaveKeyWithValue("original", "annotation"))
+				Expect(finalObj.Annotations).To(HaveKeyWithValue("new", "annotation"))
+			})
+		})
+
+		Context("when updating with new labels and annotations", func() {
+			It("should preserve existing metadata and add new entries", func() {
+				initialObj := &kubecloudscalerv1alpha3.K8s{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test-k8s-labels",
+						Namespace: "default",
+						Labels: map[string]string{
+							"existing": "label",
+						},
+						Annotations: map[string]string{
+							"existing": "annotation",
+						},
+					},
+					Spec: kubecloudscalerv1alpha3.K8sSpec{
+						DryRun: false,
+					},
+				}
+
+				err := k8sClient.Create(context.Background(), initialObj)
+				Expect(err).ToNot(HaveOccurred())
+
+				updatedObj := &kubecloudscalerv1alpha3.K8s{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test-k8s-labels",
+						Namespace: "default",
+						Labels: map[string]string{
+							"existing": "label",
+							"new":      "label",
+						},
+						Annotations: map[string]string{
+							"existing": "annotation",
+							"new":      "annotation",
+						},
+					},
+					Spec: kubecloudscalerv1alpha3.K8sSpec{
+						DryRun: true,
+					},
+				}
+
+				err = svc.createOrUpdateResource(context.Background(), updatedObj)
+				Expect(err).ToNot(HaveOccurred())
+
+				var finalObj kubecloudscalerv1alpha3.K8s
+				err = k8sClient.Get(context.Background(), types.NamespacedName{
+					Name:      "test-k8s-labels",
+					Namespace: "default",
+				}, &finalObj)
+
+				Expect(err).ToNot(HaveOccurred())
+				Expect(finalObj.Spec.DryRun).To(BeTrue())
+				Expect(finalObj.Labels).To(HaveKeyWithValue("existing", "label"))
+				Expect(finalObj.Labels).To(HaveKeyWithValue("new", "label"))
+				Expect(finalObj.Annotations).To(HaveKeyWithValue("existing", "annotation"))
+				Expect(finalObj.Annotations).To(HaveKeyWithValue("new", "annotation"))
+			})
+		})
 	})
-
-	t.Run("update with new labels and annotations", func(t *testing.T) {
-		// Create initial resource
-		initialObj := &kubecloudscalerv1alpha3.K8s{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test-k8s-labels",
-				Namespace: "default",
-				Labels: map[string]string{
-					"existing": "label",
-				},
-				Annotations: map[string]string{
-					"existing": "annotation",
-				},
-			},
-			Spec: kubecloudscalerv1alpha3.K8sSpec{
-				DryRun: false,
-			},
-		}
-
-		err := fakeClient.Create(context.Background(), initialObj)
-		assert.NoError(t, err)
-
-		// Update with new labels and annotations
-		updatedObj := &kubecloudscalerv1alpha3.K8s{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test-k8s-labels",
-				Namespace: "default",
-				Labels: map[string]string{
-					"existing": "label",
-					"new":      "label",
-				},
-				Annotations: map[string]string{
-					"existing": "annotation",
-					"new":      "annotation",
-				},
-			},
-			Spec: kubecloudscalerv1alpha3.K8sSpec{
-				DryRun: true,
-			},
-		}
-
-		err = service.createOrUpdateResource(context.Background(), updatedObj)
-		assert.NoError(t, err)
-
-		// Verify the resource was updated with preserved and new metadata
-		var finalObj kubecloudscalerv1alpha3.K8s
-		err = fakeClient.Get(context.Background(), types.NamespacedName{
-			Name:      "test-k8s-labels",
-			Namespace: "default",
-		}, &finalObj)
-
-		assert.NoError(t, err)
-		assert.True(t, finalObj.Spec.DryRun)
-		assert.Equal(t, "label", finalObj.Labels["existing"])
-		assert.Equal(t, "label", finalObj.Labels["new"])
-		assert.Equal(t, "annotation", finalObj.Annotations["existing"])
-		assert.Equal(t, "annotation", finalObj.Annotations["new"])
-	})
-}
+})

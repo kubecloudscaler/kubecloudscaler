@@ -14,8 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package utils provides mock implementations for testing Kubernetes resource management.
-package utils
+// Package testutil provides mock implementations for testing Kubernetes resource management.
+package testutil
 
 import (
 	"context"
@@ -23,36 +23,37 @@ import (
 	coreV1 "k8s.io/api/core/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"github.com/kubecloudscaler/kubecloudscaler/pkg/k8s/utils"
 	periodPkg "github.com/kubecloudscaler/kubecloudscaler/pkg/period"
 )
 
-// MockKubernetesClient is a mock implementation of KubernetesClient
+// MockKubernetesClient is a mock implementation of utils.KubernetesClient
 type MockKubernetesClient struct {
-	CoreV1Func func() CoreV1Interface
+	CoreV1Func func() utils.CoreV1Interface
 }
 
 // CoreV1 returns a mock CoreV1Interface.
-func (m *MockKubernetesClient) CoreV1() CoreV1Interface {
+func (m *MockKubernetesClient) CoreV1() utils.CoreV1Interface {
 	if m.CoreV1Func != nil {
 		return m.CoreV1Func()
 	}
 	return &MockCoreV1Interface{}
 }
 
-// MockCoreV1Interface is a mock implementation of CoreV1Interface
+// MockCoreV1Interface is a mock implementation of utils.CoreV1Interface
 type MockCoreV1Interface struct {
-	NamespacesFunc func() NamespaceLister
+	NamespacesFunc func() utils.NamespaceLister
 }
 
 // Namespaces returns a mock NamespaceLister.
-func (m *MockCoreV1Interface) Namespaces() NamespaceLister {
+func (m *MockCoreV1Interface) Namespaces() utils.NamespaceLister {
 	if m.NamespacesFunc != nil {
 		return m.NamespacesFunc()
 	}
 	return &MockNamespaceLister{}
 }
 
-// MockNamespaceLister is a mock implementation of NamespaceLister
+// MockNamespaceLister is a mock implementation of utils.NamespaceLister
 type MockNamespaceLister struct {
 	ListFunc func(ctx context.Context, opts metaV1.ListOptions) (*coreV1.NamespaceList, error)
 }
@@ -67,7 +68,7 @@ func (m *MockNamespaceLister) List(ctx context.Context, opts metaV1.ListOptions)
 	return &coreV1.NamespaceList{}, nil
 }
 
-// MockConfigProvider is a mock implementation of ConfigProvider
+// MockConfigProvider is a mock implementation of utils.ConfigProvider
 type MockConfigProvider struct {
 	GetNamespacesFunc                   func() []string
 	GetExcludeNamespacesFunc            func() []string
@@ -116,7 +117,7 @@ func (m *MockConfigProvider) GetPeriod() *periodPkg.Period {
 	return nil
 }
 
-// MockAnnotationManager is a mock implementation of AnnotationManager
+// MockAnnotationManager is a mock implementation of utils.AnnotationManager
 //
 //nolint:dupl,revive // This struct intentionally duplicates the interface structure for mocking, max parameter is clearer than renaming
 type MockAnnotationManager struct {
@@ -212,9 +213,9 @@ func (m *MockAnnotationManager) RestoreIntAnnotations(annot map[string]string) (
 // NewMockKubernetesClientWithNamespaces creates a mock client that returns the specified namespaces
 func NewMockKubernetesClientWithNamespaces(namespaces []string) *MockKubernetesClient {
 	return &MockKubernetesClient{
-		CoreV1Func: func() CoreV1Interface {
+		CoreV1Func: func() utils.CoreV1Interface {
 			return &MockCoreV1Interface{
-				NamespacesFunc: func() NamespaceLister {
+				NamespacesFunc: func() utils.NamespaceLister {
 					return &MockNamespaceLister{
 						ListFunc: func(_ context.Context, _ metaV1.ListOptions) (*coreV1.NamespaceList, error) {
 							items := make([]coreV1.Namespace, len(namespaces))
@@ -235,9 +236,9 @@ func NewMockKubernetesClientWithNamespaces(namespaces []string) *MockKubernetesC
 // NewMockKubernetesClientWithError creates a mock client that returns an error
 func NewMockKubernetesClientWithError(err error) *MockKubernetesClient {
 	return &MockKubernetesClient{
-		CoreV1Func: func() CoreV1Interface {
+		CoreV1Func: func() utils.CoreV1Interface {
 			return &MockCoreV1Interface{
-				NamespacesFunc: func() NamespaceLister {
+				NamespacesFunc: func() utils.NamespaceLister {
 					return &MockNamespaceLister{
 						ListFunc: func(_ context.Context, _ metaV1.ListOptions) (*coreV1.NamespaceList, error) {
 							return nil, err

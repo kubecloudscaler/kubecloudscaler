@@ -162,7 +162,7 @@ func (p *Processor) processResource(
 	}
 
 	// Apply scaling strategy
-	alreadyRestored, err := p.strategy.ApplyScaling(ctx, resource, p.resource.Period.Type, p.resource.Period)
+	alreadyRestored, err := p.strategy.ApplyScaling(ctx, resource, string(p.resource.Period.Type), p.resource.Period)
 	if err != nil {
 		p.appendFailure(failedList, item.GetName(), err.Error())
 		return err

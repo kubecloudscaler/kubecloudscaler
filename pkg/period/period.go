@@ -20,8 +20,13 @@ const (
 	EndTimeInclusiveSeconds = 59
 )
 
-// New creates a new Period from the given ScalerPeriod configuration.
+// New creates a new Period from the given ScalerPeriod configuration using the system clock.
 func New(period *common.ScalerPeriod) (*Period, error) {
+	return NewWithClock(period, SystemClock{})
+}
+
+// NewWithClock creates a new Period using the provided clock for time evaluation.
+func NewWithClock(period *common.ScalerPeriod, clock Clock) (*Period, error) {
 	var err error
 
 	curPeriod := &Period{
@@ -46,9 +51,10 @@ func New(period *common.ScalerPeriod) (*Period, error) {
 		return nil, ErrMinReplicasGreaterThanMax
 	}
 
-	curPeriod.IsActive, curPeriod.GetStartTime, curPeriod.GetEndTime, curPeriod.Once, err = isPeriodActive(
+	curPeriod.IsActive, curPeriod.StartTime, curPeriod.EndTime, curPeriod.Once, err = isPeriodActive(
 		periodType,
 		convertedPeriod,
+		clock,
 	)
 	if err != nil {
 		return nil, err
@@ -59,7 +65,7 @@ func New(period *common.ScalerPeriod) (*Period, error) {
 		return nil, fmt.Errorf("error parsing grace period: %w", err)
 	}
 
-	curPeriod.Period = convertedPeriod
+	curPeriod.Spec = convertedPeriod
 
 	periodData, err := json.Marshal(period)
 	if err != nil {
@@ -71,17 +77,18 @@ func New(period *common.ScalerPeriod) (*Period, error) {
 	return curPeriod, nil
 }
 
-func isDay(day string, localTime *time.Time) (bool, error) {
-	if day == AllDays {
+func isDay(day common.DayOfWeek, localTime *time.Time) (bool, error) {
+	if day == common.DayAll {
 		return true, nil
 	}
 
 	localDay := int(localTime.Weekday())
-	sanitizedDay := strings.ToLower(day)
+	dayStr := string(day)
+	sanitizedDay := strings.ToLower(dayStr)
 
 	// Reject day strings shorter than minDayLength to avoid panic on sanitizedDay[:3]
-	if len(day) < dayStringLength {
-		return false, fmt.Errorf("%w: %s", ErrBadDay, day)
+	if len(dayStr) < dayStringLength {
+		return false, fmt.Errorf("%w: %s", ErrBadDay, dayStr)
 	}
 
 	// check if the day is valid — shorten the day value to 3 chars, lowered
@@ -98,7 +105,7 @@ func isDay(day string, localTime *time.Time) (bool, error) {
 	return indexedDay == localDay, nil
 }
 
-func getTime(period, periodType string, timeLocation *time.Location) (time.Time, error) {
+func getTime(period, periodType string, now time.Time, timeLocation *time.Location) (time.Time, error) {
 	var (
 		outTime time.Time
 		err     error
@@ -111,12 +118,10 @@ func getTime(period, periodType string, timeLocation *time.Location) (time.Time,
 			return timeOnly, ErrRecurringTimeFormat
 		}
 
-		localTime := time.Now().In(timeLocation)
-
 		outTime = time.Date(
-			localTime.Year(),
-			localTime.Month(),
-			localTime.Day(),
+			now.Year(),
+			now.Month(),
+			now.Day(),
 			timeOnly.Hour(),
 			timeOnly.Minute(),
 			0,
@@ -139,6 +144,7 @@ func getTime(period, periodType string, timeLocation *time.Location) (time.Time,
 func isPeriodActive(
 	periodType string,
 	period *common.RecurringPeriod,
+	clock Clock,
 ) (bool, time.Time, time.Time, *bool, error) {
 	var (
 		err error
@@ -154,7 +160,7 @@ func isPeriodActive(
 		}
 	}
 
-	localTime := time.Now().In(timeLocation)
+	localTime := clock.Now().In(timeLocation)
 
 	for _, day := range period.Days {
 		var onDayErr error
@@ -173,7 +179,7 @@ func isPeriodActive(
 		return onDay, time.Time{}, time.Time{}, nil, nil
 	}
 
-	startTime, err := getTime(period.StartTime, periodType, timeLocation)
+	startTime, err := getTime(period.StartTime, periodType, localTime, timeLocation)
 	if err != nil {
 		return false, time.Time{}, time.Time{}, nil, err
 	}
@@ -184,7 +190,7 @@ func isPeriodActive(
 		endTimeStr = "23:59"
 	}
 
-	endTime, err := getTime(endTimeStr, periodType, timeLocation)
+	endTime, err := getTime(endTimeStr, periodType, localTime, timeLocation)
 	if err != nil {
 		return false, time.Time{}, time.Time{}, nil, err
 	}
@@ -214,7 +220,7 @@ func convertFixedToRecurring(fixed *common.FixedPeriod) *common.RecurringPeriod 
 	}
 
 	return &common.RecurringPeriod{
-		Days:        []string{AllDays},
+		Days:        []common.DayOfWeek{common.DayAll},
 		StartTime:   fixed.StartTime,
 		EndTime:     fixed.EndTime,
 		Timezone:    fixed.Timezone,

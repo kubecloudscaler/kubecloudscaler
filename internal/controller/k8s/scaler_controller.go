@@ -137,7 +137,7 @@ func (r *ScalerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	// Success: record period and scaling metrics, then reconcile result
 	if reconCtx.Period != nil {
 		rec.RecordPeriodActive(metrics.ControllerK8sScaler,
-			metrics.NormalizePeriodType(reconCtx.Period.Type))
+			metrics.NormalizePeriodType(string(reconCtx.Period.Type)))
 	}
 	metrics.RecordScalingFromResults(rec, metrics.ControllerK8sScaler,
 		toScalingResults(reconCtx.SuccessResults), toScalingResultsFailed(reconCtx.FailedResults))

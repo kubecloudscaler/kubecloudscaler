@@ -18,6 +18,8 @@ package handlers_test
 
 import (
 	"context"
+	"fmt"
+	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -25,7 +27,9 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 
 	kubecloudscalerv1alpha3 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha3"
 	"github.com/kubecloudscaler/kubecloudscaler/internal/controller/gcp/service"
@@ -74,6 +78,41 @@ var _ = Describe("FinalizerHandler", func() {
 
 			Expect(err).ToNot(HaveOccurred())
 			Expect(reconCtx.ShouldFinalize).To(BeFalse())
+		})
+	})
+
+	Context("When client Update fails while adding finalizer", func() {
+		BeforeEach(func() {
+			k8sClient := fake.NewClientBuilder().
+				WithScheme(scheme).
+				WithObjects(scaler).
+				WithInterceptorFuncs(interceptor.Funcs{
+					Update: func(
+						ctx context.Context,
+						c client.WithWatch,
+						obj client.Object,
+						opts ...client.UpdateOption,
+					) error {
+						return fmt.Errorf("conflict on update")
+					},
+				}).
+				Build()
+
+			reconCtx = &service.ReconciliationContext{
+				Ctx:     context.Background(),
+				Request: ctrl.Request{},
+				Client:  k8sClient,
+				Logger:  &logger,
+				Scaler:  scaler,
+			}
+		})
+
+		It("should return a recoverable error and set RequeueAfter", func() {
+			err := finalizerHandler.Execute(reconCtx)
+
+			Expect(err).To(HaveOccurred())
+			Expect(service.IsRecoverableError(err)).To(BeTrue())
+			Expect(reconCtx.RequeueAfter).To(Equal(5 * time.Second))
 		})
 	})
 

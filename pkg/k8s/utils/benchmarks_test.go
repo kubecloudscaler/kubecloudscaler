@@ -60,9 +60,9 @@ func BenchmarkAddAnnotations(b *testing.B) {
 	annotationMgr := NewAnnotationManager()
 
 	period := &periodPkg.Period{
-		Type:         "test-period",
-		GetStartTime: time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
-		GetEndTime:   time.Date(2024, 1, 1, 1, 0, 0, 0, time.UTC),
+		Type:      "test-period",
+		StartTime: time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
+		EndTime:   time.Date(2024, 1, 1, 1, 0, 0, 0, time.UTC),
 	}
 
 	b.ResetTimer()
@@ -99,9 +99,9 @@ func BenchmarkAddMinMaxAnnotations(b *testing.B) {
 	annotationMgr := NewAnnotationManager()
 
 	period := &periodPkg.Period{
-		Type:         "test-period",
-		GetStartTime: time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
-		GetEndTime:   time.Date(2024, 1, 1, 1, 0, 0, 0, time.UTC),
+		Type:      "test-period",
+		StartTime: time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
+		EndTime:   time.Date(2024, 1, 1, 1, 0, 0, 0, time.UTC),
 	}
 
 	min := int32(2)

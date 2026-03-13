@@ -98,7 +98,7 @@ func (h *PeriodHandler) Execute(ctx *service.ReconciliationContext) error {
 	if err != nil {
 		// Handle run-once period - requeue until the period ends
 		if errors.Is(err, utils.ErrRunOncePeriod) {
-			requeueAfter := time.Until(period.GetEndTime.Add(RequeueDelaySeconds * time.Second))
+			requeueAfter := time.Until(period.EndTime.Add(RequeueDelaySeconds * time.Second))
 			ctx.Logger.Info().Dur("requeue_after", requeueAfter).Msg("run-once period active, requeuing")
 			ctx.RequeueAfter = requeueAfter
 			ctx.SkipRemaining = true
@@ -124,7 +124,7 @@ func (h *PeriodHandler) Execute(ctx *service.ReconciliationContext) error {
 		return nil
 	}
 
-	ctx.Logger.Info().Str("period", period.Name).Str("type", period.Type).Msg("active period set")
+	ctx.Logger.Info().Str("period", period.Name).Str("type", string(period.Type)).Msg("active period set")
 	if h.next != nil && !ctx.SkipRemaining {
 		return h.next.Execute(ctx)
 	}

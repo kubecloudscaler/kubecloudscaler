@@ -364,7 +364,7 @@ var _ = Describe("FetchHandler", func() {
 - **No-op logger**: `zerolog.Nop()` for silent test logging
 - **Scheme registration**: Register API types before creating fake clients
 - **Mock handlers**: Implement `Handler` interface with function fields for custom behavior
-- **Performance assertions**: `Expect(duration).To(BeNumerically("<", maxDuration))`
+- **Performance benchmarks**: Use `testing.B` benchmarks with `b.ResetTimer()` and `b.N` loops
 - **Error type checks**: `Expect(service.IsCriticalError(err)).To(BeTrue())`
 
 ### Test File Locations

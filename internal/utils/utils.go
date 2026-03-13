@@ -36,11 +36,11 @@ func IgnoreDeletionPredicate() predicate.Predicate {
 // accidentally mutating shared state.
 func newNoactionPeriod() *common.ScalerPeriod {
 	return &common.ScalerPeriod{
-		Type: periodPkg.NoactionPeriodName,
+		Type: common.PeriodType(periodPkg.NoactionPeriodName),
 		Name: periodPkg.NoactionPeriodName,
 		Time: common.TimePeriod{
 			Recurring: &common.RecurringPeriod{
-				Days:      []string{periodPkg.AllDays},
+				Days:      []common.DayOfWeek{common.DayAll},
 				StartTime: "00:00",
 				EndTime:   "23:59",
 				Once:      ptr.To(false),
@@ -70,7 +70,7 @@ func SetActivePeriod(
 				logger.Error().Err(err).Msg("unable to load period")
 				return nil, ErrLoadPeriod
 			}
-			logger.Debug().Str("period", period.Type).Bool("active", curPeriod.IsActive).Msg("period checked")
+			logger.Debug().Str("period", string(period.Type)).Bool("active", curPeriod.IsActive).Msg("period checked")
 			if curPeriod.IsActive {
 				onPeriod = curPeriod
 				break
@@ -85,9 +85,9 @@ func SetActivePeriod(
 
 	// prepare status
 	status.CurrentPeriod = &common.ScalerStatusPeriod{}
-	status.CurrentPeriod.Spec = onPeriod.Period
+	status.CurrentPeriod.Spec = onPeriod.Spec
 	status.CurrentPeriod.SpecSHA = onPeriod.Hash
-	status.CurrentPeriod.Type = onPeriod.Type
+	status.CurrentPeriod.Type = string(onPeriod.Type)
 	status.CurrentPeriod.Name = onPeriod.Name
 
 	return onPeriod, nil
