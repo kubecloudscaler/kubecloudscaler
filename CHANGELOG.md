@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.9.3](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.9.2...v1.9.3) (2026-03-19)
+
+
+### Bug Fixes
+
+* **controllers:** add per-request logger context for reconcilers ([eec7db5](https://github.com/kubecloudscaler/kubecloudscaler/commit/eec7db5eadb4e0e3df03b1ab8388c29022aea24e))
+
 ## [1.9.2](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.9.1...v1.9.2) (2026-03-19)
 
 
