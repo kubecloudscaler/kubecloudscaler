@@ -47,7 +47,7 @@ type GcpConfig struct {
 	// ProjectID
 	ProjectID string `json:"projectId"`
 	// Region
-	Region string `json:"region,omitempty"`
+	Region string `json:"region"`
 	// AuthSecret name
 	AuthSecret *string `json:"authSecret,omitempty"`
 	// RestoreOnDelete applies defaultPeriodType to all managed resources when the CR is deleted.

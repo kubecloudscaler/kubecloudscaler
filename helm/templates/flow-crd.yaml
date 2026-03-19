@@ -214,6 +214,7 @@ spec:
                           required:
                           - defaultPeriodType
                           - projectId
+                          - region
                           - restoreOnDelete
                           type: object
                         name:

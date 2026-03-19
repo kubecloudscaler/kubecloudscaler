@@ -15,6 +15,12 @@ import (
 
 // GetZonesFromRegion returns a list of zones for a given region using Regions API
 func GetZonesFromRegion(ctx context.Context, clients *ClientSet, projectID, region string) ([]string, error) {
+	if projectID == "" {
+		return nil, fmt.Errorf("projectID must not be empty")
+	}
+	if region == "" {
+		return nil, fmt.Errorf("region must not be empty, set config.region in the Gcp CR spec (e.g. \"europe-west1\")")
+	}
 	if clients == nil || clients.Regions == nil {
 		return nil, fmt.Errorf("regions client is nil")
 	}
@@ -26,7 +32,8 @@ func GetZonesFromRegion(ctx context.Context, clients *ClientSet, projectID, regi
 
 	reg, err := clients.Regions.Get(ctx, req)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get region %s: %w", region, err)
+		return nil, fmt.Errorf("failed to get region %q in project %q (check that the region exists "+
+			"and the service account has compute.regions.get permission): %w", region, projectID, err)
 	}
 
 	var zones []string
@@ -76,7 +83,8 @@ func GetInstancesInZones(
 				break
 			}
 			if err != nil {
-				return nil, fmt.Errorf("failed to list instances in zone %s: %w", zone, err)
+				return nil, fmt.Errorf("failed to list instances in zone %q of project %q "+
+					"(check that the service account has compute.instances.list permission): %w", zone, projectID, err)
 			}
 			allInstances = append(allInstances, inst)
 		}

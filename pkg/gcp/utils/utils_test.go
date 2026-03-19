@@ -36,6 +36,24 @@ var _ = Describe("GCP Utils", func() {
 				Expect(zones).To(BeNil())
 			})
 		})
+
+		Context("when region is empty", func() {
+			It("should return a clear error", func() {
+				zones, err := GetZonesFromRegion(ctx, &ClientSet{}, "test-project", "")
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("region must not be empty"))
+				Expect(zones).To(BeNil())
+			})
+		})
+
+		Context("when projectID is empty", func() {
+			It("should return a clear error", func() {
+				zones, err := GetZonesFromRegion(ctx, &ClientSet{}, "", "us-central1")
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("projectID must not be empty"))
+				Expect(zones).To(BeNil())
+			})
+		})
 	})
 
 	Describe("GetInstancesInZones", func() {

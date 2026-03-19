@@ -149,7 +149,8 @@ func (c *VMInstances) startInstance(ctx context.Context, instance *computepb.Ins
 		Instance: instance.GetName(),
 	})
 	if err != nil {
-		return fmt.Errorf("failed to start instance %s: %w", instance.GetName(), err)
+		return fmt.Errorf("failed to start instance %q in zone %q (check compute.instances.start permission): %w",
+			instance.GetName(), zone, err)
 	}
 	if c.Config.WaitForOperation {
 		return c.waitForOperation(ctx, op.Name(), zone)
@@ -168,7 +169,8 @@ func (c *VMInstances) stopInstance(ctx context.Context, instance *computepb.Inst
 		Instance: instance.GetName(),
 	})
 	if err != nil {
-		return fmt.Errorf("failed to stop instance %s: %w", instance.GetName(), err)
+		return fmt.Errorf("failed to stop instance %q in zone %q (check compute.instances.stop permission): %w",
+			instance.GetName(), zone, err)
 	}
 	if c.Config.WaitForOperation {
 		return c.waitForOperation(ctx, op.Name(), zone)
