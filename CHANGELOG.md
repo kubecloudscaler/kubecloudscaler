@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.9.2](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.9.1...v1.9.2) (2026-03-19)
+
+
+### Bug Fixes
+
+* **deps:** update all non-major dependencies ([#239](https://github.com/kubecloudscaler/kubecloudscaler/issues/239)) ([71121e3](https://github.com/kubecloudscaler/kubecloudscaler/commit/71121e3a84850c3732b1263f9ebff31749abc7ae))
+* **gcp:** enforce required region and improve operator error clarity ([69ab225](https://github.com/kubecloudscaler/kubecloudscaler/commit/69ab225594369dc272d970c3021f863137bccd51))
+
 ## [1.9.1](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.9.0...v1.9.1) (2026-03-19)
 
 
