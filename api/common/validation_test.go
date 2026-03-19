@@ -136,6 +136,15 @@ func TestRecurringPeriod_Validate(t *testing.T) {
 			wantErr: ErrDaysEmpty,
 		},
 		{
+			name: "valid DayAll wildcard",
+			period: RecurringPeriod{
+				Days:      []DayOfWeek{DayAll},
+				StartTime: "08:00",
+				EndTime:   "18:00",
+			},
+			wantErr: nil,
+		},
+		{
 			name: "valid full day name",
 			period: RecurringPeriod{
 				Days:      []DayOfWeek{DayOfWeek("monday"), DayOfWeek("Friday")},
@@ -218,8 +227,8 @@ func Test_isValidDay(t *testing.T) {
 		{name: "DaySaturday constant", day: DaySaturday, want: true},
 		{name: "DaySunday constant", day: DaySunday, want: true},
 
-		// DayAll ("all") is NOT in validDayPrefixes — rejected by isValidDay
-		{name: "DayAll constant", day: DayAll, want: false},
+		// DayAll ("all") is a valid wildcard matching every day of the week
+		{name: "DayAll constant", day: DayAll, want: true},
 
 		// Full day names (case-insensitive)
 		{name: "full lowercase monday", day: "monday", want: true},

@@ -9,9 +9,12 @@ import (
 
 // isValidDay checks if a DayOfWeek value is valid, matching the period package's isDay logic:
 // lowercase the value, take the first 3 chars, and check against known prefixes.
-// This accepts "mon", "monday", "Monday", "MON", etc.
+// This accepts "mon", "monday", "Monday", "MON", "all", etc.
 func isValidDay(day DayOfWeek) bool {
 	s := strings.ToLower(string(day))
+	if s == string(DayAll) {
+		return true
+	}
 	if len(s) < dayPrefixLength {
 		return false
 	}
