@@ -103,11 +103,13 @@ func (r *FlowReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	start := time.Now()
 	rec := r.recorder
 
+	logger := r.Logger.With().Str("controller", "flow").Str("name", req.Name).Logger()
+
 	reconCtx := &service.FlowReconciliationContext{
 		Ctx:     ctx,
 		Request: req,
 		Client:  r.Client,
-		Logger:  r.Logger,
+		Logger:  &logger,
 	}
 
 	r.chainOnce.Do(func() {
@@ -122,12 +124,12 @@ func (r *FlowReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	if err != nil {
 		if shared.IsCriticalError(err) {
 			rec.RecordReconcile(metrics.ControllerFlow, metrics.ResultCriticalError, duration)
-			r.Logger.Error().Err(err).Msg("critical error during reconciliation")
+			logger.Error().Err(err).Msg("critical error during reconciliation")
 			return ctrl.Result{}, client.IgnoreNotFound(err)
 		}
 		if shared.IsRecoverableError(err) {
 			rec.RecordReconcile(metrics.ControllerFlow, metrics.ResultRecoverableError, duration)
-			r.Logger.Warn().Err(err).Msg("recoverable error during reconciliation, will requeue")
+			logger.Warn().Err(err).Msg("recoverable error during reconciliation, will requeue")
 			requeue := utils.ReconcileErrorDuration
 			if reconCtx.RequeueAfter > 0 {
 				requeue = reconCtx.RequeueAfter
@@ -135,7 +137,7 @@ func (r *FlowReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 			return ctrl.Result{RequeueAfter: requeue}, nil
 		}
 		rec.RecordReconcile(metrics.ControllerFlow, metrics.ResultRecoverableError, duration)
-		r.Logger.Error().Err(err).Msg("unexpected error during reconciliation")
+		logger.Error().Err(err).Msg("unexpected error during reconciliation")
 		return ctrl.Result{RequeueAfter: utils.ReconcileErrorDuration}, nil
 	}
 

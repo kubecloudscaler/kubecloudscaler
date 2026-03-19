@@ -89,17 +89,15 @@ func (r *ScalerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		rec = metrics.GetRecorder()
 	}
 
-	r.Logger.Info().
-		Str("name", req.Name).
-		Str("namespace", req.Namespace).
-		Msg("reconciling scaler")
+	logger := r.Logger.With().Str("controller", "k8s").Str("name", req.Name).Logger()
+	logger.Info().Msg("reconciling scaler")
 
 	// Create reconciliation context with initial values
 	reconCtx := &service.ReconciliationContext{
 		Ctx:     ctx,
 		Request: req,
 		Client:  r.Client,
-		Logger:  r.Logger,
+		Logger:  &logger,
 	}
 
 	// Initialize chain lazily if not set (e.g., in tests without SetupWithManager)
@@ -117,12 +115,12 @@ func (r *ScalerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	if err != nil {
 		if service.IsCriticalError(err) {
 			rec.RecordReconcile(metrics.ControllerK8sScaler, metrics.ResultCriticalError, duration)
-			r.Logger.Error().Err(err).Msg("critical error during reconciliation")
+			logger.Error().Err(err).Msg("critical error during reconciliation")
 			return ctrl.Result{}, client.IgnoreNotFound(err)
 		}
 		if service.IsRecoverableError(err) {
 			rec.RecordReconcile(metrics.ControllerK8sScaler, metrics.ResultRecoverableError, duration)
-			r.Logger.Warn().Err(err).Msg("recoverable error during reconciliation, will requeue")
+			logger.Warn().Err(err).Msg("recoverable error during reconciliation, will requeue")
 			requeue := utils.ReconcileErrorDuration
 			if reconCtx.RequeueAfter > 0 {
 				requeue = reconCtx.RequeueAfter
@@ -130,7 +128,7 @@ func (r *ScalerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 			return ctrl.Result{RequeueAfter: requeue}, nil
 		}
 		rec.RecordReconcile(metrics.ControllerK8sScaler, metrics.ResultUnclassifiedError, duration)
-		r.Logger.Error().Err(err).Msg("unexpected error during reconciliation")
+		logger.Error().Err(err).Msg("unexpected error during reconciliation")
 		return ctrl.Result{RequeueAfter: utils.ReconcileErrorDuration}, nil
 	}
 
