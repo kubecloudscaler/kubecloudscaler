@@ -23,7 +23,7 @@ spec:
     labelSelector: { ... }
   config:                    # GCP-specific settings
     projectId: ""            # Required: GCP project ID
-    region: ""               # Optional: GCP region
+    region: ""               # Required: GCP region (e.g. "europe-west1")
     authSecret: null         # Optional: secret for GCP credentials
     restoreOnDelete: true
     waitForOperation: false
@@ -78,13 +78,17 @@ spec:
     authSecret: gcp-credentials
 ```
 
-**Required GCP Permissions**:
-- `compute.instances.get`
-- `compute.instances.list`
-- `compute.instances.start`
-- `compute.instances.stop`
-- `compute.regions.get`
-- `compute.zoneOperations.get` (if `waitForOperation` is enabled)
+**Minimum GCP IAM Permissions** (for VM instances):
+
+| Permission | Required | Used for |
+|------------|----------|----------|
+| `compute.regions.get` | Always | Discover zones in the configured region |
+| `compute.instances.list` | Always | List instances to scale |
+| `compute.instances.start` | Always | Start stopped instances |
+| `compute.instances.stop` | Always | Stop running instances |
+| `compute.zoneOperations.get` | Always | Check operation status |
+
+The predefined role `roles/compute.instanceAdmin.v1` covers all of the above. For least-privilege, create a custom role with only these five permissions.
 
 ## Supported Resource Types
 
@@ -136,13 +140,13 @@ spec:
 | `periods` | `[]ScalerPeriod` | Time periods defining when to scale resources |
 | `resources` | `Resources` | Resource types and filters to target |
 | `config.projectId` | `string` | The GCP project ID containing the resources |
+| `config.region` | `string` | GCP region to target (e.g. `europe-west1`) |
 
 ### Optional Fields
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
 | `dryRun` | `bool` | `false` | Preview actions without executing them |
-| `config.region` | `string` | all regions | GCP region to target |
 | `config.authSecret` | `string` | none | Name of the Kubernetes secret containing GCP credentials |
 | `config.restoreOnDelete` | `bool` | `true` | Restore resources to their original state when the scaler is deleted |
 | `config.waitForOperation` | `bool` | `false` | Wait for GCP operations to complete before proceeding |
