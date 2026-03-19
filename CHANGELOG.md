@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.9.1](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.9.0...v1.9.1) (2026-03-19)
+
+
+### Bug Fixes
+
+* **webhook:** accept "all" as valid day in period validation ([b902f0e](https://github.com/kubecloudscaler/kubecloudscaler/commit/b902f0ece575513b3f0c999d6709b7645f6424b0))
+
 ## [1.9.0](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.8.6...v1.9.0) (2026-03-13)
 
 
