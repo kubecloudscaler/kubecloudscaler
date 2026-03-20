@@ -85,7 +85,8 @@ func SetActivePeriod(
 
 	// prepare status
 	status.CurrentPeriod = &common.ScalerStatusPeriod{}
-	status.CurrentPeriod.Spec = onPeriod.Spec
+	spec := onPeriod.OriginalTime
+	status.CurrentPeriod.Spec = &spec
 	status.CurrentPeriod.SpecSHA = onPeriod.Hash
 	status.CurrentPeriod.Type = string(onPeriod.Type)
 	status.CurrentPeriod.Name = onPeriod.Name

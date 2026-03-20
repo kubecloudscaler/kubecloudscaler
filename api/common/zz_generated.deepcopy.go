@@ -200,7 +200,7 @@ func (in *ScalerStatusPeriod) DeepCopyInto(out *ScalerStatusPeriod) {
 	*out = *in
 	if in.Spec != nil {
 		in, out := &in.Spec, &out.Spec
-		*out = new(RecurringPeriod)
+		*out = new(TimePeriod)
 		(*in).DeepCopyInto(*out)
 	}
 	if in.Successful != nil {

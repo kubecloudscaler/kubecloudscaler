@@ -35,6 +35,7 @@ Name of the period
 
 _Appears in:_
 - [common.ScalerPeriod](#commonscalerperiod)
+- [common.ScalerStatusPeriod](#commonscalerstatusperiod)
 
 | Field | Description | Default | Validation |
 | --- | --- | --- | --- |
@@ -49,7 +50,6 @@ RecurringPeriod defines a recurring time period for scaling operations.
 
 _Appears in:_
 - [common.TimePeriod](#commontimeperiod)
-- [common.ScalerStatusPeriod](#commonscalerstatusperiod)
 
 | Field | Description | Default | Validation |
 | --- | --- | --- | --- |
@@ -105,7 +105,7 @@ _Appears in:_
 
 | Field | Description | Default | Validation |
 | --- | --- | --- | --- |
-| `spec` _[common.RecurringPeriod](#commonrecurringperiod)_ |   |   |   |
+| `spec` _[common.TimePeriod](#commontimeperiod)_ |   |   |   |
 | `specSHA` _string_ |   |   |   |
 | `name` _string_ |   |   |   |
 | `type` _string_ |   |   |   |

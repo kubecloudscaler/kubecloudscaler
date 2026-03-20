@@ -510,6 +510,7 @@ All PRs MUST verify:
 3. Verify compliance with constitutional principles
 4. Plan changes using TodoWrite tool for multi-step tasks
 5. Check existing tests to understand expected behavior
+6. **Use LSP tools in priority** when available (goToDefinition, findReferences, hover, goToImplementation, incomingCalls, outgoingCalls) for navigating code, understanding type hierarchies, and finding all usages before refactoring — prefer LSP over grep/glob for symbol-level queries
 
 ### When Writing Code
 1. Follow TDD for service layer (`internal/controller/*/service/`)

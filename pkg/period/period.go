@@ -66,6 +66,7 @@ func NewWithClock(period *common.ScalerPeriod, clock Clock) (*Period, error) {
 	}
 
 	curPeriod.Spec = convertedPeriod
+	curPeriod.OriginalTime = period.Time
 
 	periodData, err := json.Marshal(period)
 	if err != nil {

@@ -20,15 +20,16 @@ func (SystemClock) Now() time.Time { return time.Now() }
 
 // Period represents a scaling period configuration.
 type Period struct {
-	Spec        *common.RecurringPeriod
-	Name        string
-	Type        common.PeriodType
-	IsActive    bool
-	Hash        string
-	StartTime   time.Time
-	EndTime     time.Time
-	GracePeriod time.Duration
-	Once        *bool
-	MinReplicas int32
-	MaxReplicas int32
+	Spec         *common.RecurringPeriod
+	OriginalTime common.TimePeriod
+	Name         string
+	Type         common.PeriodType
+	IsActive     bool
+	Hash         string
+	StartTime    time.Time
+	EndTime      time.Time
+	GracePeriod  time.Duration
+	Once         *bool
+	MinReplicas  int32
+	MaxReplicas  int32
 }

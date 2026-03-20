@@ -86,7 +86,7 @@ type ScalerStatus struct {
 
 // ScalerStatusPeriod defines the current period status for a scaler.
 type ScalerStatusPeriod struct {
-	Spec       *RecurringPeriod      `json:"spec"`
+	Spec       *TimePeriod           `json:"spec"`
 	SpecSHA    string                `json:"specSHA"`
 	Name       string                `json:"name,omitempty"`
 	Type       string                `json:"type"`

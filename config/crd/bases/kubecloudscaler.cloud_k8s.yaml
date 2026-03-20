@@ -252,36 +252,70 @@ spec:
                   name:
                     type: string
                   spec:
-                    description: RecurringPeriod defines a recurring time period for
-                      scaling operations.
+                    description: TimePeriod defines the time configuration for a scaling
+                      period.
                     properties:
-                      days:
-                        items:
-                          description: DayOfWeek represents a day of the week for
-                            recurring periods.
-                          type: string
-                        type: array
-                      endTime:
-                        pattern: ^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$
-                        type: string
-                      gracePeriod:
-                        pattern: ^\d*s$
-                        type: string
-                      once:
-                        description: Run once at StartTime
-                        type: boolean
-                      reverse:
-                        description: Reverse the period
-                        type: boolean
-                      startTime:
-                        pattern: ^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$
-                        type: string
-                      timezone:
-                        type: string
-                    required:
-                    - days
-                    - endTime
-                    - startTime
+                      fixed:
+                        description: FixedPeriod defines a fixed time period for scaling
+                          operations.
+                        properties:
+                          endTime:
+                            pattern: ^\d{4}-(0?[1-9]|1[0,1,2])-(0?[1-9]|[12][0-9]|3[01])
+                              ([0-1]?[0-9]|2[0-3]):[0-5]?[0-9]:[0-5]?[0-9]$
+                            type: string
+                          gracePeriod:
+                            description: Grace period in seconds for deployments before
+                              scaling down
+                            pattern: ^\d*s$
+                            type: string
+                          once:
+                            description: Run once at StartTime
+                            type: boolean
+                          reverse:
+                            description: Reverse the period
+                            type: boolean
+                          startTime:
+                            pattern: ^\d{4}-(0?[1-9]|1[0,1,2])-(0?[1-9]|[12][0-9]|3[01])
+                              ([0-1]?[0-9]|2[0-3]):[0-5]?[0-9]:[0-5]?[0-9]$
+                            type: string
+                          timezone:
+                            type: string
+                        required:
+                        - endTime
+                        - startTime
+                        type: object
+                      recurring:
+                        description: RecurringPeriod defines a recurring time period
+                          for scaling operations.
+                        properties:
+                          days:
+                            items:
+                              description: DayOfWeek represents a day of the week
+                                for recurring periods.
+                              type: string
+                            type: array
+                          endTime:
+                            pattern: ^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$
+                            type: string
+                          gracePeriod:
+                            pattern: ^\d*s$
+                            type: string
+                          once:
+                            description: Run once at StartTime
+                            type: boolean
+                          reverse:
+                            description: Reverse the period
+                            type: boolean
+                          startTime:
+                            pattern: ^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$
+                            type: string
+                          timezone:
+                            type: string
+                        required:
+                        - days
+                        - endTime
+                        - startTime
+                        type: object
                     type: object
                   specSHA:
                     type: string
@@ -563,36 +597,70 @@ spec:
                   name:
                     type: string
                   spec:
-                    description: RecurringPeriod defines a recurring time period for
-                      scaling operations.
+                    description: TimePeriod defines the time configuration for a scaling
+                      period.
                     properties:
-                      days:
-                        items:
-                          description: DayOfWeek represents a day of the week for
-                            recurring periods.
-                          type: string
-                        type: array
-                      endTime:
-                        pattern: ^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$
-                        type: string
-                      gracePeriod:
-                        pattern: ^\d*s$
-                        type: string
-                      once:
-                        description: Run once at StartTime
-                        type: boolean
-                      reverse:
-                        description: Reverse the period
-                        type: boolean
-                      startTime:
-                        pattern: ^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$
-                        type: string
-                      timezone:
-                        type: string
-                    required:
-                    - days
-                    - endTime
-                    - startTime
+                      fixed:
+                        description: FixedPeriod defines a fixed time period for scaling
+                          operations.
+                        properties:
+                          endTime:
+                            pattern: ^\d{4}-(0?[1-9]|1[0,1,2])-(0?[1-9]|[12][0-9]|3[01])
+                              ([0-1]?[0-9]|2[0-3]):[0-5]?[0-9]:[0-5]?[0-9]$
+                            type: string
+                          gracePeriod:
+                            description: Grace period in seconds for deployments before
+                              scaling down
+                            pattern: ^\d*s$
+                            type: string
+                          once:
+                            description: Run once at StartTime
+                            type: boolean
+                          reverse:
+                            description: Reverse the period
+                            type: boolean
+                          startTime:
+                            pattern: ^\d{4}-(0?[1-9]|1[0,1,2])-(0?[1-9]|[12][0-9]|3[01])
+                              ([0-1]?[0-9]|2[0-3]):[0-5]?[0-9]:[0-5]?[0-9]$
+                            type: string
+                          timezone:
+                            type: string
+                        required:
+                        - endTime
+                        - startTime
+                        type: object
+                      recurring:
+                        description: RecurringPeriod defines a recurring time period
+                          for scaling operations.
+                        properties:
+                          days:
+                            items:
+                              description: DayOfWeek represents a day of the week
+                                for recurring periods.
+                              type: string
+                            type: array
+                          endTime:
+                            pattern: ^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$
+                            type: string
+                          gracePeriod:
+                            pattern: ^\d*s$
+                            type: string
+                          once:
+                            description: Run once at StartTime
+                            type: boolean
+                          reverse:
+                            description: Reverse the period
+                            type: boolean
+                          startTime:
+                            pattern: ^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$
+                            type: string
+                          timezone:
+                            type: string
+                        required:
+                        - days
+                        - endTime
+                        - startTime
+                        type: object
                     type: object
                   specSHA:
                     type: string
@@ -882,36 +950,70 @@ spec:
                   name:
                     type: string
                   spec:
-                    description: RecurringPeriod defines a recurring time period for
-                      scaling operations.
+                    description: TimePeriod defines the time configuration for a scaling
+                      period.
                     properties:
-                      days:
-                        items:
-                          description: DayOfWeek represents a day of the week for
-                            recurring periods.
-                          type: string
-                        type: array
-                      endTime:
-                        pattern: ^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$
-                        type: string
-                      gracePeriod:
-                        pattern: ^\d*s$
-                        type: string
-                      once:
-                        description: Run once at StartTime
-                        type: boolean
-                      reverse:
-                        description: Reverse the period
-                        type: boolean
-                      startTime:
-                        pattern: ^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$
-                        type: string
-                      timezone:
-                        type: string
-                    required:
-                    - days
-                    - endTime
-                    - startTime
+                      fixed:
+                        description: FixedPeriod defines a fixed time period for scaling
+                          operations.
+                        properties:
+                          endTime:
+                            pattern: ^\d{4}-(0?[1-9]|1[0,1,2])-(0?[1-9]|[12][0-9]|3[01])
+                              ([0-1]?[0-9]|2[0-3]):[0-5]?[0-9]:[0-5]?[0-9]$
+                            type: string
+                          gracePeriod:
+                            description: Grace period in seconds for deployments before
+                              scaling down
+                            pattern: ^\d*s$
+                            type: string
+                          once:
+                            description: Run once at StartTime
+                            type: boolean
+                          reverse:
+                            description: Reverse the period
+                            type: boolean
+                          startTime:
+                            pattern: ^\d{4}-(0?[1-9]|1[0,1,2])-(0?[1-9]|[12][0-9]|3[01])
+                              ([0-1]?[0-9]|2[0-3]):[0-5]?[0-9]:[0-5]?[0-9]$
+                            type: string
+                          timezone:
+                            type: string
+                        required:
+                        - endTime
+                        - startTime
+                        type: object
+                      recurring:
+                        description: RecurringPeriod defines a recurring time period
+                          for scaling operations.
+                        properties:
+                          days:
+                            items:
+                              description: DayOfWeek represents a day of the week
+                                for recurring periods.
+                              type: string
+                            type: array
+                          endTime:
+                            pattern: ^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$
+                            type: string
+                          gracePeriod:
+                            pattern: ^\d*s$
+                            type: string
+                          once:
+                            description: Run once at StartTime
+                            type: boolean
+                          reverse:
+                            description: Reverse the period
+                            type: boolean
+                          startTime:
+                            pattern: ^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$
+                            type: string
+                          timezone:
+                            type: string
+                        required:
+                        - days
+                        - endTime
+                        - startTime
+                        type: object
                     type: object
                   specSHA:
                     type: string
