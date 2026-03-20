@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.9.5](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.9.4...v1.9.5) (2026-03-20)
+
+
+### Bug Fixes
+
+* **logging:** reduce reconcile and no-action period log verbosity ([8818ab8](https://github.com/kubecloudscaler/kubecloudscaler/commit/8818ab8f388c30705011c1dafc2d5af84cfef269))
+
 ## [1.9.4](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.9.3...v1.9.4) (2026-03-20)
 
 
