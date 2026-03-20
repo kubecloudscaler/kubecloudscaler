@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.9.4](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.9.3...v1.9.4) (2026-03-20)
+
+
+### Bug Fixes
+
+* **api:** use TimePeriod in status to support fixed period datetime format ([139507f](https://github.com/kubecloudscaler/kubecloudscaler/commit/139507fe676e737baea9e7894b2be1ee99d4f11b))
+* **deps:** update github.com/actions/actions-runner-controller digest to 104bc6b ([#238](https://github.com/kubecloudscaler/kubecloudscaler/issues/238)) ([3a29577](https://github.com/kubecloudscaler/kubecloudscaler/commit/3a295771e39f9196e72ac0900619d609b2783357))
+
 ## [1.9.3](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.9.2...v1.9.3) (2026-03-19)
 
 
