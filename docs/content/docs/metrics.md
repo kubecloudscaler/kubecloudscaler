@@ -96,6 +96,10 @@ Or after `make build`: `./bin/kubecloudscaler --metrics-disable-auth --metrics-b
 
 **Do not use `--metrics-disable-auth` in production**: the endpoint would be accessible without authentication or authorization.
 
+## Grafana Dashboard
+
+A ready-to-use Grafana dashboard is provided in [`grafana/kubecloudscaler-dashboard.json`](https://github.com/kubecloudscaler/kubecloudscaler/blob/main/grafana/kubecloudscaler-dashboard.json). Import it into your Grafana instance to visualize reconciliations, scaling operations, and period activations.
+
 ## Best Practices
 
 - **Cardinality**: Labels are limited to known values (controller, result, period_type, resource_kind). Do not add resource or CR names to avoid series explosion.

@@ -147,6 +147,10 @@ Periods support two modes:
 
 Additional options: `once` (trigger once at start), `reverse` (invert the period), `gracePeriod` (delay before scaling).
 
+## Observability
+
+A ready-to-use Grafana dashboard is available in [`grafana/kubecloudscaler-dashboard.json`](grafana/kubecloudscaler-dashboard.json). Import it into your Grafana instance to monitor reconciliations, scaling operations, and period activations.
+
 ## Documentation
 
 Full documentation is available at [kubecloudscaler.cloud](https://kubecloudscaler.cloud).
