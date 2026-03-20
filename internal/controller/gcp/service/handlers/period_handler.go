@@ -118,7 +118,7 @@ func (h *PeriodHandler) Execute(ctx *service.ReconciliationContext) error {
 	// cycle. If we just transitioned from an active period the scaling handler must still run
 	// to restore resource state.
 	if prevPeriodName == periodPkg.NoactionPeriodName && period.Name == periodPkg.NoactionPeriodName {
-		ctx.Logger.Info().Str("period", periodPkg.NoactionPeriodName).Msg("no action period, skipping")
+		ctx.Logger.Debug().Str("period", periodPkg.NoactionPeriodName).Msg("no action period, skipping")
 		ctx.SkipRemaining = true
 		ctx.RequeueAfter = utils.ReconcileSuccessDuration
 		return nil

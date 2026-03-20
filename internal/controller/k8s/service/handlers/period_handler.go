@@ -107,7 +107,7 @@ func (h *PeriodHandler) Execute(ctx *service.ReconciliationContext) error {
 	// cycle (prevPeriodName). If we just transitioned from an active period the scaling handler
 	// must still run to restore replica counts.
 	if prevPeriodName == periodPkg.NoactionPeriodName && ctx.Period.Name == periodPkg.NoactionPeriodName {
-		ctx.Logger.Info().Str("period", periodPkg.NoactionPeriodName).Msg("no action period, skipping")
+		ctx.Logger.Debug().Str("period", periodPkg.NoactionPeriodName).Msg("no action period, skipping")
 		ctx.SkipRemaining = true
 		if ctx.RequeueAfter == 0 {
 			ctx.RequeueAfter = utils.ReconcileSuccessDuration

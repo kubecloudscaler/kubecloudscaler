@@ -90,7 +90,7 @@ func (r *ScalerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	}
 
 	logger := r.Logger.With().Str("controller", "k8s").Str("name", req.Name).Logger()
-	logger.Info().Msg("reconciling scaler")
+	logger.Debug().Msg("reconciling scaler")
 
 	// Create reconciliation context with initial values
 	reconCtx := &service.ReconciliationContext{
