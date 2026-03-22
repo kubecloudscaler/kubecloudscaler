@@ -208,7 +208,7 @@ if r.chain == nil {
 
 **File**: `internal/controller/flow/flow_controller.go:98-143`
 
-AGENTS.md: "All controllers MUST implement reconciliation logic using the Chain of Responsibility pattern. The `Reconcile()` method MUST NOT contain business logic directly." The Flow reconciler has business logic in `Reconcile()`.
+CLAUDE.md: "All controllers MUST implement reconciliation logic using the Chain of Responsibility pattern. The `Reconcile()` method MUST NOT contain business logic directly." The Flow reconciler has business logic in `Reconcile()`.
 
 #### 2.4 MAJOR: Flow controller missing `Owns()` watches
 
@@ -236,7 +236,7 @@ Errors that are neither `CriticalError` nor `RecoverableError` are recorded as `
 GCPClient *gcpUtils.ClientSet
 ```
 
-Per AGENTS.md: "All dependencies MUST be defined as interfaces."
+Per CLAUDE.md: "All dependencies MUST be defined as interfaces."
 
 #### 2.8 MAJOR: Potential nil dereference on `ctx.Period` in status handlers
 
@@ -682,11 +682,11 @@ The project mandates `errors.Is`/`errors.As` but `errorlint` is not enabled to e
 
 #### 6.5 MEDIUM: Makefile — no coverage threshold enforcement
 
-AGENTS.md mandates 80% minimum. Neither `make test` nor `make test-coverage` fails on < 80%.
+CLAUDE.md mandates 80% minimum. Neither `make test` nor `make test-coverage` fails on < 80%.
 
 #### 6.6 MEDIUM: Makefile `GOLANGCI_LINT_VERSION` mismatch
 
-**File**: `Makefile:234` — `v2.11.0` vs AGENTS.md documented `v2.5.0`.
+**File**: `Makefile:234` — `v2.11.0` vs CLAUDE.md documented `v2.5.0`.
 
 #### 6.7 LOW: Makefile comment copy-paste errors
 
@@ -745,7 +745,7 @@ All 5 files in `internal/controller/flow/service/` violate mandatory Ginkgo BDD 
 
 #### 7.7 HIGH: No CRD conversion round-trip tests
 
-AGENTS.md mandates bidirectional conversion tests. None exist.
+CLAUDE.md mandates bidirectional conversion tests. None exist.
 
 #### 7.8 HIGH: No period `IsActive` / activation tests
 
