@@ -80,7 +80,7 @@ jobs:
         shell: bash
 
       - name: Run chart-releaser
-        uses: bitdeps/helm-oci-charts-releaser@main
+        uses: bitdeps/helm-oci-charts-releaser@caedceea2a5ab997c7e5469a999811dbb3d5b070 # main
         with:
           oci_registry: ghcr.io/kubecloudscaler/charts
           oci_username: username
