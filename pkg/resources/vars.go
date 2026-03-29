@@ -17,6 +17,7 @@ var availableResources = []string{
 	"statefulsets",
 	"cronjobs",
 	"github-ars",
+	"scaledobjects",
 }
 
 // GetAvailableResources returns a copy of the available resource types for scaling.

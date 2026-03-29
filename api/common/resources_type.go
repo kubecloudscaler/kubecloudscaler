@@ -12,12 +12,13 @@ import (
 type ResourceKind string
 
 const (
-	ResourceDeployments  ResourceKind = "deployments"
-	ResourceStatefulSets ResourceKind = "statefulsets"
-	ResourceCronJobs     ResourceKind = "cronjobs"
-	ResourceGithubARS    ResourceKind = "github-ars"
-	ResourceHPA          ResourceKind = "hpa"
-	ResourceVMInstances  ResourceKind = "vm-instances"
+	ResourceDeployments   ResourceKind = "deployments"
+	ResourceStatefulSets  ResourceKind = "statefulsets"
+	ResourceCronJobs      ResourceKind = "cronjobs"
+	ResourceGithubARS     ResourceKind = "github-ars"
+	ResourceHPA           ResourceKind = "hpa"
+	ResourceScaledObjects ResourceKind = "scaledobjects"
+	ResourceVMInstances   ResourceKind = "vm-instances"
 )
 
 // Resources defines the configuration for managed resources.

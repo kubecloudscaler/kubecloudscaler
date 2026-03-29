@@ -11,6 +11,7 @@ import (
 	"github.com/kubecloudscaler/kubecloudscaler/pkg/k8s/resources/cronjobs"
 	"github.com/kubecloudscaler/kubecloudscaler/pkg/k8s/resources/deployments"
 	ars "github.com/kubecloudscaler/kubecloudscaler/pkg/k8s/resources/github_autoscalingrunnersets"
+	"github.com/kubecloudscaler/kubecloudscaler/pkg/k8s/resources/scaledobjects"
 	"github.com/kubecloudscaler/kubecloudscaler/pkg/k8s/resources/statefulsets"
 	// "github.com/kubecloudscaler/kubecloudscaler/pkg/k8s/resources/horizontalpodautoscalers"
 )
@@ -31,6 +32,8 @@ func NewResource(ctx context.Context, resourceName string, config Config, logger
 		return newVMInstancesResource(ctx, config)
 	case "github-ars":
 		return newGitHubARSResource(ctx, config)
+	case "scaledobjects":
+		return newScaledObjectsResource(ctx, config)
 	default:
 		return nil, fmt.Errorf("%w: %s", ErrResourceNotFound, resourceName)
 	}
@@ -92,6 +95,18 @@ func newGitHubARSResource(ctx context.Context, config Config) (Resource, error) 
 	resource, err := ars.New(ctx, config.K8s)
 	if err != nil {
 		return nil, fmt.Errorf("error creating github-ars resource: %w", err)
+	}
+	return resource, nil
+}
+
+// newScaledObjectsResource creates a new scaledobjects resource
+func newScaledObjectsResource(ctx context.Context, config Config) (Resource, error) {
+	if config.K8s == nil {
+		return nil, fmt.Errorf("K8s config is required for scaledobjects resource")
+	}
+	resource, err := scaledobjects.New(ctx, config.K8s)
+	if err != nil {
+		return nil, fmt.Errorf("error creating scaledobjects resource: %w", err)
 	}
 	return resource, nil
 }
