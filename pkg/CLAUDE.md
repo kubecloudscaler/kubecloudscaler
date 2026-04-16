@@ -17,7 +17,7 @@ Period activation logic:
 Resource scaling factory:
 - `resources.NewResource(ctx, name, config, logger)` - Factory creating typed resource handlers
 - Each handler implements `SetState(ctx)` for scaling operations
-- Types: deployments, statefulsets, cronjobs, github-ars, hpa, vm-instances
+- Types: deployments, statefulsets, cronjobs, github-ars, hpa, vm-instances, scaledobjects
 
 ## Guidelines
 

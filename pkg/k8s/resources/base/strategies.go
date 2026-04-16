@@ -307,14 +307,19 @@ func (s *KedaPauseStrategy) applyKedaPause(resource ResourceItem, period *period
 }
 
 // applyMinMaxScaling applies standard min/max replica scaling.
+// It also removes any KEDA pause annotations, so a direct down→up transition
+// or a change from pause to min/max scaling correctly unpauses the ScaledObject.
 func (s *KedaPauseStrategy) applyMinMaxScaling(resource ResourceItem, period *periodPkg.Period) (bool, error) {
 	minReplicas, maxReplicas := s.getMinMaxReplicas(resource)
-	resource.SetAnnotations(s.annotationMgr.AddMinMaxAnnotations(
+	annotations := s.annotationMgr.AddMinMaxAnnotations(
 		resource.GetAnnotations(),
 		period,
 		minReplicas,
 		ptr.Deref(maxReplicas, 0),
-	))
+	)
+	delete(annotations, KedaPausedAnnotation)
+	delete(annotations, KedaPausedReplicasAnnotation)
+	resource.SetAnnotations(annotations)
 	s.setMinMaxReplicas(resource, ptr.To(period.MinReplicas), ptr.To(period.MaxReplicas))
 
 	return false, nil

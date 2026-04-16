@@ -119,19 +119,16 @@ func (u *scaledObjectUpdater) Update(ctx context.Context, namespace string, reso
 		return nil, base.NewTypeAssertionError("*scaledObjectItem", resource)
 	}
 
-	// Set GVK before conversion
-	item.ScaledObject.SetGroupVersionKind(scaledObjectGVK)
-
-	unstructuredObj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(item.ScaledObject)
-	if err != nil {
-		return nil, fmt.Errorf("error converting ScaledObject to unstructured: %w", err)
+	// Start from a deep copy of the full live object so all KEDA fields not
+	// mirrored in the local ScaledObject type (scaleTargetRef, triggers, etc.)
+	// are preserved. Only patch the fields we manage.
+	obj := item.unstructured.DeepCopy()
+	obj.SetAnnotations(item.ScaledObject.GetAnnotations())
+	if err := syncSpecReplicas(item.ScaledObject.Spec, obj); err != nil {
+		return nil, fmt.Errorf("error syncing spec replicas to unstructured: %w", err)
 	}
 
-	updated, err := u.client.Namespace(namespace).Update(
-		ctx,
-		&unstructured.Unstructured{Object: unstructuredObj},
-		opts,
-	)
+	updated, err := u.client.Namespace(namespace).Update(ctx, obj, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -145,6 +142,26 @@ func (u *scaledObjectUpdater) Update(ctx context.Context, namespace string, reso
 		ScaledObject: so,
 		unstructured: updated,
 	}, nil
+}
+
+// syncSpecReplicas patches only the minReplicaCount and maxReplicaCount fields
+// in an unstructured ScaledObject, leaving all other spec fields untouched.
+func syncSpecReplicas(spec ScaledObjectSpec, obj *unstructured.Unstructured) error {
+	if spec.MinReplicaCount != nil {
+		if err := unstructured.SetNestedField(obj.Object, int64(*spec.MinReplicaCount), "spec", "minReplicaCount"); err != nil {
+			return err
+		}
+	} else {
+		unstructured.RemoveNestedField(obj.Object, "spec", "minReplicaCount")
+	}
+	if spec.MaxReplicaCount != nil {
+		if err := unstructured.SetNestedField(obj.Object, int64(*spec.MaxReplicaCount), "spec", "maxReplicaCount"); err != nil {
+			return err
+		}
+	} else {
+		unstructured.RemoveNestedField(obj.Object, "spec", "maxReplicaCount")
+	}
+	return nil
 }
 
 // getMinMaxReplicas returns the min and max replicas from a ScaledObject.

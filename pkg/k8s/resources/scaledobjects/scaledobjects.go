@@ -19,12 +19,6 @@ const (
 	scaledObjectVersion = "v1alpha1"
 )
 
-var scaledObjectGVK = schema.GroupVersionKind{
-	Group:   scaledObjectGroup,
-	Version: scaledObjectVersion,
-	Kind:    "ScaledObject",
-}
-
 func (s *ScaledObjects) init(client dynamic.Interface) {
 	s.Client = client.Resource(schema.GroupVersionResource{
 		Group:    scaledObjectGroup,

@@ -180,6 +180,33 @@ var _ = Describe("ScaledObjects", func() {
 			Expect(updated.Annotations).To(HaveKeyWithValue(utils.AnnotationsPrefix+"/"+utils.AnnotationsMinOrigValue, "2"))
 			Expect(updated.Annotations).To(HaveKeyWithValue(utils.AnnotationsPrefix+"/"+utils.AnnotationsMaxOrigValue, "5"))
 		})
+
+		It("removes KEDA pause annotations when transitioning directly from a paused down period", func() {
+			mockPeriod.Type = common.PeriodTypeUp
+			mockPeriod.MinReplicas = 3
+			mockPeriod.MaxReplicas = 8
+
+			so := newScaledObject("so-unpause", "test-ns", 0, 0, map[string]string{
+				utils.AnnotationsPrefix + "/" + utils.AnnotationsMinOrigValue: "3",
+				utils.AnnotationsPrefix + "/" + utils.AnnotationsMaxOrigValue: "8",
+				base.KedaPausedAnnotation:                                     "true",
+				base.KedaPausedReplicasAnnotation:                             "0",
+			})
+
+			setupManager(so)
+
+			success, failed, err := manager.SetState(ctx)
+
+			Expect(err).ToNot(HaveOccurred())
+			Expect(failed).To(BeEmpty())
+			Expect(success).To(HaveLen(1))
+
+			updated := getScaledObject("test-ns", "so-unpause")
+			Expect(updated.Annotations).ToNot(HaveKey(base.KedaPausedAnnotation))
+			Expect(updated.Annotations).ToNot(HaveKey(base.KedaPausedReplicasAnnotation))
+			Expect(*updated.Spec.MinReplicaCount).To(Equal(int32(3)))
+			Expect(*updated.Spec.MaxReplicaCount).To(Equal(int32(8)))
+		})
 	})
 
 	Context("restoring (going out of period)", func() {
