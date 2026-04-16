@@ -50,6 +50,7 @@ func TestNewResource_K8sResourcesWithNilK8sConfig(t *testing.T) {
 		"statefulsets",
 		"cronjobs",
 		"github-ars",
+		"scaledobjects",
 	}
 
 	for _, resourceName := range k8sResources {
@@ -98,6 +99,7 @@ func TestGetAvailableResources(t *testing.T) {
 		"statefulsets",
 		"cronjobs",
 		"github-ars",
+		"scaledobjects",
 	}
 
 	assert.Equal(t, expected, resources)

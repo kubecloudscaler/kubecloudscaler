@@ -58,6 +58,15 @@ rules:
   - patch
   - update
 - apiGroups:
+  - keda.sh
+  resources:
+  - scaledobjects
+  verbs:
+  - get
+  - list
+  - patch
+  - update
+- apiGroups:
   - kubecloudscaler.cloud
   resources:
   - flows

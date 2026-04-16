@@ -3,7 +3,7 @@
 ## CRD Kinds
 
 Three CRD kinds, each with multiple API versions:
-- `K8s` - Scales Kubernetes workloads (Deployments, StatefulSets, CronJobs, HPAs)
+- `K8s` - Scales Kubernetes workloads (Deployments, StatefulSets, CronJobs, HPAs, ScaledObjects)
 - `Gcp` - Scales GCP resources (Compute Engine VM instances)
 - `Flow` - Orchestrates scaling workflows across K8s and GCP resources
 
@@ -38,7 +38,7 @@ Shared types live in `api/common/` (periods, resources, status).
 ## Resource Types
 
 Use valid `common.ResourceKind` constants (defined in `api/common/resources_type.go`):
-- K8s: `common.ResourceDeployments`, `common.ResourceStatefulSets`, etc.
+- K8s: `common.ResourceDeployments`, `common.ResourceStatefulSets`, `common.ResourceCronJobs`, `common.ResourceHPA`, `common.ResourceGithubARS`, `common.ResourceScaledObjects`
 - GCP: only `common.ResourceVMInstances` (`"vm-instances"`)
 - Do NOT use arbitrary strings like `"instance"`, `"disk"`
 

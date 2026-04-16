@@ -28,6 +28,11 @@ import (
 
 const (
 	periodTypeDown = "down"
+
+	// KedaPausedAnnotation is the KEDA annotation to pause a ScaledObject.
+	KedaPausedAnnotation = "autoscaling.keda.sh/paused"
+	// KedaPausedReplicasAnnotation is the KEDA annotation to set paused replicas count.
+	KedaPausedReplicasAnnotation = "autoscaling.keda.sh/paused-replicas"
 )
 
 // IntReplicasStrategy handles scaling for resources with integer replicas (Deployments, StatefulSets).
@@ -226,6 +231,117 @@ func (s *BoolSuspendStrategy) ApplyScaling(ctx context.Context, resource Resourc
 		s.setSuspend(resource, suspend)
 		resource.SetAnnotations(annotations)
 	}
+
+	return false, nil
+}
+
+// KedaPauseStrategy handles scaling for KEDA ScaledObjects.
+// When period is "down" and minReplicas == 0, it pauses the ScaledObject
+// via KEDA annotations instead of setting replicas.
+type KedaPauseStrategy struct {
+	kind              string
+	getMinMaxReplicas func(ResourceItem) (*int32, *int32)
+	setMinMaxReplicas func(ResourceItem, *int32, *int32)
+	logger            *zerolog.Logger
+	annotationMgr     utils.AnnotationManager
+}
+
+// NewKedaPauseStrategy creates a new KedaPauseStrategy.
+func NewKedaPauseStrategy(
+	kind string,
+	getMinMaxReplicas func(ResourceItem) (*int32, *int32),
+	setMinMaxReplicas func(ResourceItem, *int32, *int32),
+	logger *zerolog.Logger,
+	annotationMgr utils.AnnotationManager,
+) *KedaPauseStrategy {
+	return &KedaPauseStrategy{
+		kind:              kind,
+		getMinMaxReplicas: getMinMaxReplicas,
+		setMinMaxReplicas: setMinMaxReplicas,
+		logger:            logger,
+		annotationMgr:     annotationMgr,
+	}
+}
+
+// GetKind returns the resource kind.
+func (s *KedaPauseStrategy) GetKind() string {
+	return s.kind
+}
+
+// ApplyScaling applies scaling logic for KEDA ScaledObjects.
+// On "down" with minReplicas == 0, it adds KEDA pause annotations.
+// On "up", it sets min/max replicas normally.
+// On restore, it removes KEDA pause annotations and restores original values.
+func (s *KedaPauseStrategy) ApplyScaling(ctx context.Context, resource ResourceItem, periodType string, period *periodPkg.Period) (bool, error) {
+	switch periodType {
+	case periodTypeDown:
+		if period.MinReplicas == 0 {
+			return s.applyKedaPause(resource, period)
+		}
+		return s.applyMinMaxScaling(resource, period)
+
+	case "up":
+		return s.applyMinMaxScaling(resource, period)
+
+	default:
+		return s.restore(resource)
+	}
+}
+
+// applyKedaPause adds KEDA pause annotations to the ScaledObject.
+func (s *KedaPauseStrategy) applyKedaPause(resource ResourceItem, period *periodPkg.Period) (bool, error) {
+	minReplicas, maxReplicas := s.getMinMaxReplicas(resource)
+	resource.SetAnnotations(s.annotationMgr.AddMinMaxAnnotations(
+		resource.GetAnnotations(),
+		period,
+		minReplicas,
+		ptr.Deref(maxReplicas, 0),
+	))
+
+	annotations := resource.GetAnnotations()
+	annotations[KedaPausedAnnotation] = "true"
+	annotations[KedaPausedReplicasAnnotation] = "0"
+	resource.SetAnnotations(annotations)
+
+	return false, nil
+}
+
+// applyMinMaxScaling applies standard min/max replica scaling.
+// It also removes any KEDA pause annotations, so a direct down→up transition
+// or a change from pause to min/max scaling correctly unpauses the ScaledObject.
+func (s *KedaPauseStrategy) applyMinMaxScaling(resource ResourceItem, period *periodPkg.Period) (bool, error) {
+	minReplicas, maxReplicas := s.getMinMaxReplicas(resource)
+	annotations := s.annotationMgr.AddMinMaxAnnotations(
+		resource.GetAnnotations(),
+		period,
+		minReplicas,
+		ptr.Deref(maxReplicas, 0),
+	)
+	delete(annotations, KedaPausedAnnotation)
+	delete(annotations, KedaPausedReplicasAnnotation)
+	resource.SetAnnotations(annotations)
+	s.setMinMaxReplicas(resource, ptr.To(period.MinReplicas), ptr.To(period.MaxReplicas))
+
+	return false, nil
+}
+
+// restore removes KEDA pause annotations and restores original min/max values.
+func (s *KedaPauseStrategy) restore(resource ResourceItem) (bool, error) {
+	isAlreadyRestored, minReplicas, maxReplicas, annotations, err := s.annotationMgr.RestoreMinMaxAnnotations(resource.GetAnnotations())
+	if err != nil {
+		return false, err
+	}
+
+	if isAlreadyRestored {
+		return true, nil
+	}
+
+	// Remove KEDA pause annotations
+	delete(annotations, KedaPausedAnnotation)
+	delete(annotations, KedaPausedReplicasAnnotation)
+
+	s.setMinMaxReplicas(resource, minReplicas, ptr.To(maxReplicas))
+	resource.SetAnnotations(annotations)
 
 	return false, nil
 }
