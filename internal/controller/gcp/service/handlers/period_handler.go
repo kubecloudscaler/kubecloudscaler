@@ -97,7 +97,8 @@ func (h *PeriodHandler) Execute(ctx *service.ReconciliationContext) error {
 	)
 	if err != nil {
 		// Handle run-once period - requeue until the period ends
-		if errors.Is(err, utils.ErrRunOncePeriod) {
+		// During deletion (ShouldFinalize), never skip: StatusHandler must run to remove the finalizer.
+		if errors.Is(err, utils.ErrRunOncePeriod) && !ctx.ShouldFinalize {
 			requeueAfter := time.Until(period.EndTime.Add(RequeueDelaySeconds * time.Second))
 			ctx.Logger.Info().Dur("requeue_after", requeueAfter).Msg("run-once period active, requeuing")
 			ctx.RequeueAfter = requeueAfter
@@ -117,7 +118,8 @@ func (h *PeriodHandler) Execute(ctx *service.ReconciliationContext) error {
 	// Skip reconciliation only when the controller was already in "noaction" on the previous
 	// cycle. If we just transitioned from an active period the scaling handler must still run
 	// to restore resource state.
-	if prevPeriodName == periodPkg.NoactionPeriodName && period.Name == periodPkg.NoactionPeriodName {
+	// During deletion (ShouldFinalize), never skip: StatusHandler must run to remove the finalizer.
+	if !ctx.ShouldFinalize && prevPeriodName == periodPkg.NoactionPeriodName && period.Name == periodPkg.NoactionPeriodName {
 		ctx.Logger.Debug().Str("period", periodPkg.NoactionPeriodName).Msg("no action period, skipping")
 		ctx.SkipRemaining = true
 		ctx.RequeueAfter = utils.ReconcileSuccessDuration

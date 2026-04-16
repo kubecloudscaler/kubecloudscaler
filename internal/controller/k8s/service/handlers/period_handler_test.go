@@ -125,10 +125,6 @@ var _ = Describe("PeriodHandler", func() {
 			scaler.Status.CurrentPeriod = &common.ScalerStatusPeriod{
 				Name: "noaction",
 			}
-		})
-
-		It("should set SkipRemaining when current period is noaction", func() {
-			// Configure a period that would result in "noaction"
 			scaler.Spec.Periods = []common.ScalerPeriod{
 				{
 					Name: "noaction",
@@ -143,6 +139,27 @@ var _ = Describe("PeriodHandler", func() {
 					},
 				},
 			}
+		})
+
+		It("should set SkipRemaining when current period is noaction", func() {
+			nextCalled := false
+			mockNext := &testutil.MockHandler{
+				ExecuteFunc: func(ctx *service.ReconciliationContext) error {
+					nextCalled = true
+					return nil
+				},
+			}
+			handler.SetNext(mockNext)
+
+			err := handler.Execute(reconCtx)
+
+			Expect(err).ToNot(HaveOccurred())
+			Expect(reconCtx.SkipRemaining).To(BeTrue())
+			Expect(nextCalled).To(BeFalse())
+		})
+
+		It("should NOT skip remaining when ShouldFinalize is true", func() {
+			reconCtx.ShouldFinalize = true
 
 			nextCalled := false
 			mockNext := &testutil.MockHandler{
@@ -155,10 +172,9 @@ var _ = Describe("PeriodHandler", func() {
 
 			err := handler.Execute(reconCtx)
 
-			// If noaction period is detected and current status matches, chain should skip
-			if err == nil && reconCtx.SkipRemaining {
-				Expect(nextCalled).To(BeFalse())
-			}
+			Expect(err).ToNot(HaveOccurred())
+			Expect(reconCtx.SkipRemaining).To(BeFalse())
+			Expect(nextCalled).To(BeTrue())
 		})
 	})
 })

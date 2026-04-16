@@ -48,10 +48,39 @@ func NewPeriodHandler() service.Handler {
 // Behavior:
 //   - Configures resource management settings
 //   - Validates time periods and determines current period
-//   - If run-once period: Sets RequeueAfter, stops chain
-//   - If "noaction" period matches current status: Sets SkipRemaining, stops chain
+//   - If run-once period (and not finalizing): Sets RequeueAfter, stops chain
+//   - If "noaction" period matches current status (and not finalizing): Sets SkipRemaining, stops chain
+//   - During deletion (ShouldFinalize), never skips: StatusHandler must run to remove the finalizer
 func (h *PeriodHandler) Execute(ctx *service.ReconciliationContext) error {
-	// Configure resource management settings
+	h.configureResourceSettings(ctx)
+
+	prevPeriodName := previousPeriodName(ctx.Scaler.Status.CurrentPeriod)
+
+	period, err := h.resolveActivePeriod(ctx)
+	if err != nil {
+		return err
+	}
+	ctx.Period = period
+	ctx.ResourceConfig.K8s.Period = period
+
+	if h.shouldSkipNoaction(ctx, prevPeriodName) {
+		ctx.Logger.Debug().Str("period", periodPkg.NoactionPeriodName).Msg("no action period, skipping")
+		ctx.SkipRemaining = true
+		if ctx.RequeueAfter == 0 {
+			ctx.RequeueAfter = utils.ReconcileSuccessDuration
+		}
+		return nil
+	}
+
+	ctx.Logger.Info().Str("period", ctx.Period.Name).Str("type", string(ctx.Period.Type)).Msg("active period set")
+
+	if h.next != nil && !ctx.SkipRemaining {
+		return h.next.Execute(ctx)
+	}
+	return nil
+}
+
+func (h *PeriodHandler) configureResourceSettings(ctx *service.ReconciliationContext) {
 	ctx.ResourceConfig = resources.Config{
 		K8s: &k8sUtils.Config{
 			Client:                       ctx.K8sClient,
@@ -63,23 +92,23 @@ func (h *PeriodHandler) Execute(ctx *service.ReconciliationContext) error {
 			ForceExcludeSystemNamespaces: ctx.Scaler.Spec.Config.ForceExcludeSystemNamespaces,
 		},
 	}
+}
 
-	// Convert []common.ScalerPeriod to []*common.ScalerPeriod for utils.SetActivePeriod
+func previousPeriodName(cp *common.ScalerStatusPeriod) string {
+	if cp != nil {
+		return cp.Name
+	}
+	return ""
+}
+
+// resolveActivePeriod determines the active period, handling the run-once early exit
+// unless the resource is being deleted (ShouldFinalize).
+func (h *PeriodHandler) resolveActivePeriod(ctx *service.ReconciliationContext) (*periodPkg.Period, error) {
 	periods := make([]*common.ScalerPeriod, len(ctx.Scaler.Spec.Periods))
 	for i := range ctx.Scaler.Spec.Periods {
 		periods[i] = &ctx.Scaler.Spec.Periods[i]
 	}
 
-	// Capture previous period name before SetActivePeriod mutates the status in-place.
-	// This is required to correctly detect a transition from an active period (e.g. "down")
-	// to "noaction": SetActivePeriod overwrites status.CurrentPeriod immediately, so comparing
-	// ctx.Scaler.Status.CurrentPeriod.Name after the call always sees the new value.
-	prevPeriodName := ""
-	if ctx.Scaler.Status.CurrentPeriod != nil {
-		prevPeriodName = ctx.Scaler.Status.CurrentPeriod.Name
-	}
-
-	// Validate and determine the current time period for scaling operations
 	period, err := utils.SetActivePeriod(
 		ctx.Logger,
 		periods,
@@ -87,41 +116,30 @@ func (h *PeriodHandler) Execute(ctx *service.ReconciliationContext) error {
 		ctx.Scaler.Spec.Config.RestoreOnDelete && ctx.ShouldFinalize,
 	)
 	if err != nil {
-		if errors.Is(err, utils.ErrRunOncePeriod) {
+		if errors.Is(err, utils.ErrRunOncePeriod) && !ctx.ShouldFinalize {
 			ctx.Logger.Info().Msg("run-once period detected, requeuing until period ends")
 			if ctx.RequeueAfter == 0 {
 				ctx.RequeueAfter = time.Until(period.EndTime.Add(RequeueDelaySeconds * time.Second))
 			}
 			ctx.SkipRemaining = true
-			return nil
+			return period, nil
 		}
 
 		ctx.Logger.Error().Err(err).Msg("unable to validate period")
 		ctx.Scaler.Status.Comments = ptr.To(err.Error())
-		return service.NewCriticalError(err)
+		return nil, service.NewCriticalError(err)
 	}
-	ctx.Period = period
-	ctx.ResourceConfig.K8s.Period = period
+	return period, nil
+}
 
-	// Skip reconciliation only when the controller was already in "noaction" on the previous
-	// cycle (prevPeriodName). If we just transitioned from an active period the scaling handler
-	// must still run to restore replica counts.
-	if prevPeriodName == periodPkg.NoactionPeriodName && ctx.Period.Name == periodPkg.NoactionPeriodName {
-		ctx.Logger.Debug().Str("period", periodPkg.NoactionPeriodName).Msg("no action period, skipping")
-		ctx.SkipRemaining = true
-		if ctx.RequeueAfter == 0 {
-			ctx.RequeueAfter = utils.ReconcileSuccessDuration
-		}
-		return nil
+// shouldSkipNoaction returns true when we can safely skip the rest of the chain
+// because the period is still "noaction" (steady state). During deletion this
+// must always return false so that StatusHandler can remove the finalizer.
+func (h *PeriodHandler) shouldSkipNoaction(ctx *service.ReconciliationContext, prevPeriodName string) bool {
+	if ctx.ShouldFinalize {
+		return false
 	}
-
-	ctx.Logger.Info().Str("period", ctx.Period.Name).Str("type", string(ctx.Period.Type)).Msg("active period set")
-
-	// Call next handler in chain
-	if h.next != nil && !ctx.SkipRemaining {
-		return h.next.Execute(ctx)
-	}
-	return nil
+	return prevPeriodName == periodPkg.NoactionPeriodName && ctx.Period.Name == periodPkg.NoactionPeriodName
 }
 
 // SetNext establishes the next handler in the chain.

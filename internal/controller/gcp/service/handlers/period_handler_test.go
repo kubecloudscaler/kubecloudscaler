@@ -117,7 +117,6 @@ var _ = Describe("PeriodHandler", func() {
 				},
 			}
 
-			// Set status to match noaction period
 			scaler.Status = common.ScalerStatus{
 				CurrentPeriod: &common.ScalerStatusPeriod{
 					Name: "noaction",
@@ -143,9 +142,16 @@ var _ = Describe("PeriodHandler", func() {
 			err := periodHandler.Execute(reconCtx)
 
 			Expect(err).ToNot(HaveOccurred())
+			Expect(reconCtx.SkipRemaining).To(BeTrue())
+		})
 
-			// May or may not skip depending on actual period validation
-			// This test validates the handler can process noaction periods
+		It("should NOT skip remaining when ShouldFinalize is true", func() {
+			reconCtx.ShouldFinalize = true
+
+			err := periodHandler.Execute(reconCtx)
+
+			Expect(err).ToNot(HaveOccurred())
+			Expect(reconCtx.SkipRemaining).To(BeFalse())
 		})
 	})
 
