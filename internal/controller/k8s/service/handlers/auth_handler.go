@@ -40,19 +40,49 @@ type cachedClient struct {
 	dynamicClient   dynamic.Interface
 }
 
+// ClientFactory builds typed and dynamic K8s clients from an optional auth secret.
+// Nil secret means use in-cluster / default credentials.
+type ClientFactory func(secret *corev1.Secret) (kube kubernetes.Interface, dyn dynamic.Interface, err error)
+
+// defaultClientFactory adapts the concrete k8sClient.GetClient to the ClientFactory signature.
+func defaultClientFactory(secret *corev1.Secret) (kube kubernetes.Interface, dyn dynamic.Interface, err error) {
+	return k8sClient.GetClient(secret)
+}
+
+// AuthHandlerOption configures an AuthHandler at construction time.
+type AuthHandlerOption func(*AuthHandler)
+
+// WithClientFactory overrides the default client factory. Intended for tests.
+func WithClientFactory(factory ClientFactory) AuthHandlerOption {
+	return func(h *AuthHandler) {
+		if factory != nil {
+			h.clientFactory = factory
+		}
+	}
+}
+
 // AuthHandler is a handler that sets up the K8s client with authentication.
 type AuthHandler struct {
 	next              service.Handler
 	clientCache       sync.Map // map[string]*cachedClient (keyed by secret name, "" for default)
 	namespaceResolver config.NamespaceResolver
+	clientFactory     ClientFactory
 }
 
 // NewAuthHandler creates a new AuthHandler. If nsResolver is nil, uses config.DefaultNamespaceResolver().
-func NewAuthHandler(nsResolver config.NamespaceResolver) service.Handler {
+// Additional options (e.g., WithClientFactory) can be supplied for testing.
+func NewAuthHandler(nsResolver config.NamespaceResolver, opts ...AuthHandlerOption) service.Handler {
 	if nsResolver == nil {
 		nsResolver = config.DefaultNamespaceResolver()
 	}
-	return &AuthHandler{namespaceResolver: nsResolver}
+	h := &AuthHandler{
+		namespaceResolver: nsResolver,
+		clientFactory:     defaultClientFactory,
+	}
+	for _, opt := range opts {
+		opt(h)
+	}
+	return h
 }
 
 // Execute sets up the K8s client with authentication and adds it to the reconciliation context.
@@ -105,7 +135,7 @@ func (h *AuthHandler) Execute(ctx *service.ReconciliationContext) error {
 
 	if kubeClient == nil {
 		var err error
-		kubeClient, dynamicClient, err = k8sClient.GetClient(secret)
+		kubeClient, dynamicClient, err = h.clientFactory(secret)
 		if err != nil {
 			ctx.Logger.Error().Err(err).Msg("unable to create K8s client")
 			return service.NewCriticalError(fmt.Errorf("failed to create K8s client: %w", err))
