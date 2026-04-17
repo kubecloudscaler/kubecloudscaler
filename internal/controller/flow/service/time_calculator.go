@@ -56,7 +56,10 @@ func (t *TimeCalculatorService) CalculatePeriodEndTime(period *common.ScalerPeri
 	return baseEndTime.Add(delay), nil
 }
 
-// GetPeriodDuration calculates the duration of a period
+// GetPeriodDuration calculates the duration of a period.
+// For recurring periods, an end time earlier than the start time is interpreted as a
+// cross-midnight window (e.g. 22:00 → 02:00 = 4h), matching pkg/period semantics.
+// Fixed periods require end >= start since they carry full dates.
 func (t *TimeCalculatorService) GetPeriodDuration(period *common.ScalerPeriod) (time.Duration, error) {
 	startTime, err := t.parsePeriodStartTime(period)
 	if err != nil {
@@ -69,7 +72,11 @@ func (t *TimeCalculatorService) GetPeriodDuration(period *common.ScalerPeriod) (
 	}
 
 	if endTime.Before(startTime) {
-		return 0, fmt.Errorf("end time is before start time")
+		if period.Time.Recurring != nil {
+			endTime = endTime.Add(24 * time.Hour)
+		} else {
+			return 0, fmt.Errorf("end time is before start time")
+		}
 	}
 
 	return endTime.Sub(startTime), nil

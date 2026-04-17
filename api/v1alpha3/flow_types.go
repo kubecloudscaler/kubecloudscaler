@@ -42,6 +42,10 @@ type Resources struct {
 
 // K8sResource defines a Kubernetes resource configuration in a flow.
 type K8sResource struct {
+	// Name is used both as an identifier inside the Flow spec and as a component of the
+	// generated child K8s CR name. It must be a DNS-1123 label.
+	// +kubebuilder:validation:Pattern=`^[a-z0-9]([-a-z0-9]*[a-z0-9])?$`
+	// +kubebuilder:validation:MaxLength=63
 	Name      string           `json:"name"`
 	Resources common.Resources `json:"resources"`
 	Config    K8sConfig        `json:"config,omitempty"`
@@ -49,6 +53,10 @@ type K8sResource struct {
 
 // GcpResource defines a GCP resource configuration in a flow.
 type GcpResource struct {
+	// Name is used both as an identifier inside the Flow spec and as a component of the
+	// generated child Gcp CR name. It must be a DNS-1123 label.
+	// +kubebuilder:validation:Pattern=`^[a-z0-9]([-a-z0-9]*[a-z0-9])?$`
+	// +kubebuilder:validation:MaxLength=63
 	Name      string           `json:"name"`
 	Resources common.Resources `json:"resources"`
 	Config    GcpConfig        `json:"config,omitempty"`
@@ -62,6 +70,10 @@ type Flows struct {
 
 // FlowResource defines a resource within a flow.
 type FlowResource struct {
+	// Name must match a K8sResource or GcpResource declared in spec.resources. Constrained
+	// to DNS-1123 label syntax to keep generated child CR names valid.
+	// +kubebuilder:validation:Pattern=`^[a-z0-9]([-a-z0-9]*[a-z0-9])?$`
+	// +kubebuilder:validation:MaxLength=63
 	Name string `json:"name"`
 
 	// StartTimeDelay is the duration to delay the start of the period

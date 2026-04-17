@@ -53,6 +53,54 @@ var _ = Describe("TimeCalculatorService", func() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(duration).To(Equal(8 * time.Hour))
 		})
+
+		It("should treat a recurring period that crosses midnight as spanning the next day", func() {
+			period := &common.ScalerPeriod{
+				Time: common.TimePeriod{
+					Recurring: &common.RecurringPeriod{
+						StartTime: "22:00",
+						EndTime:   "02:00",
+					},
+				},
+			}
+
+			duration, err := svc.GetPeriodDuration(period)
+
+			Expect(err).ToNot(HaveOccurred())
+			Expect(duration).To(Equal(4 * time.Hour))
+		})
+
+		It("should treat an exactly-midnight cross-midnight recurring period correctly", func() {
+			period := &common.ScalerPeriod{
+				Time: common.TimePeriod{
+					Recurring: &common.RecurringPeriod{
+						StartTime: "23:30",
+						EndTime:   "00:30",
+					},
+				},
+			}
+
+			duration, err := svc.GetPeriodDuration(period)
+
+			Expect(err).ToNot(HaveOccurred())
+			Expect(duration).To(Equal(1 * time.Hour))
+		})
+
+		It("should still reject end-before-start for fixed periods (full datetimes)", func() {
+			period := &common.ScalerPeriod{
+				Time: common.TimePeriod{
+					Fixed: &common.FixedPeriod{
+						StartTime: "2026-04-17 10:00:00",
+						EndTime:   "2026-04-17 09:00:00",
+					},
+				},
+			}
+
+			_, err := svc.GetPeriodDuration(period)
+
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("end time is before start time"))
+		})
 	})
 
 	Describe("CalculatePeriodStartTime", func() {
