@@ -52,6 +52,8 @@ var _ = Describe("PeriodHandler", func() {
 		scheme = runtime.NewScheme()
 		Expect(kubecloudscalerv1alpha3.AddToScheme(scheme)).To(Succeed())
 
+		// Period spans every day across the full 24h window so it is always active
+		// regardless of when the test runs — eliminates time-based non-determinism.
 		scaler = &kubecloudscalerv1alpha3.K8s{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "test-scaler",
@@ -64,9 +66,9 @@ var _ = Describe("PeriodHandler", func() {
 						Type: common.PeriodTypeUp,
 						Time: common.TimePeriod{
 							Recurring: &common.RecurringPeriod{
-								Days:      []common.DayOfWeek{common.DayMonday, common.DayTuesday, common.DayWednesday, common.DayThursday, common.DayFriday},
-								StartTime: "09:00",
-								EndTime:   "17:00",
+								Days:      []common.DayOfWeek{common.DayAll},
+								StartTime: "00:00",
+								EndTime:   "23:59",
 								Once:      ptr.To(false),
 							},
 						},
@@ -90,40 +92,31 @@ var _ = Describe("PeriodHandler", func() {
 		}
 	})
 
-	Context("When a valid period is configured", func() {
-		It("should process period and continue chain or set skip flag", func() {
+	Context("When an always-active period is configured", func() {
+		It("should resolve the period and chain to the next handler", func() {
 			nextCalled := false
-			mockNext := &testutil.MockHandler{
+			handler.SetNext(&testutil.MockHandler{
 				ExecuteFunc: func(ctx *service.ReconciliationContext) error {
 					nextCalled = true
 					return nil
 				},
-			}
-			handler.SetNext(mockNext)
+			})
 
 			err := handler.Execute(reconCtx)
 
-			// Period validation may succeed or fail depending on current time
-			// We're testing that the handler processes correctly in all cases
-			if err != nil {
-				// If period validation fails, it should be a critical error
-				Expect(service.IsCriticalError(err)).To(BeTrue())
-			} else {
-				// Handler may continue to next, or skip remaining
-				// Both outcomes are valid depending on current time
-				if !reconCtx.SkipRemaining {
-					Expect(reconCtx.Period).ToNot(BeNil())
-					Expect(nextCalled).To(BeTrue())
-				}
-			}
+			Expect(err).ToNot(HaveOccurred())
+			Expect(reconCtx.Period).ToNot(BeNil())
+			Expect(reconCtx.Period.Name).To(Equal("test-period"))
+			Expect(reconCtx.SkipRemaining).To(BeFalse())
+			Expect(nextCalled).To(BeTrue())
 		})
-
 	})
 
 	Context("When noaction period is detected", func() {
 		BeforeEach(func() {
 			scaler.Status.CurrentPeriod = &common.ScalerStatusPeriod{
 				Name: "noaction",
+				Type: "noaction",
 			}
 			scaler.Spec.Periods = []common.ScalerPeriod{
 				{
@@ -169,6 +162,45 @@ var _ = Describe("PeriodHandler", func() {
 				},
 			}
 			handler.SetNext(mockNext)
+
+			err := handler.Execute(reconCtx)
+
+			Expect(err).ToNot(HaveOccurred())
+			Expect(reconCtx.SkipRemaining).To(BeFalse())
+			Expect(nextCalled).To(BeTrue())
+		})
+	})
+
+	Context("When the previous period name collides with 'noaction' but its Type is not", func() {
+		It("should not skip remaining (Type-based comparison, not Name)", func() {
+			// A user legitimately creates a period literally named "noaction" but typed "down".
+			// The system must not confuse it for the fallback noaction period.
+			scaler.Status.CurrentPeriod = &common.ScalerStatusPeriod{
+				Name: "noaction",
+				Type: string(common.PeriodTypeDown),
+			}
+			scaler.Spec.Periods = []common.ScalerPeriod{
+				{
+					Name: "noaction",
+					Type: common.PeriodTypeDown,
+					Time: common.TimePeriod{
+						Recurring: &common.RecurringPeriod{
+							Days:      []common.DayOfWeek{common.DayAll},
+							StartTime: "00:00",
+							EndTime:   "23:59",
+							Once:      ptr.To(false),
+						},
+					},
+				},
+			}
+
+			nextCalled := false
+			handler.SetNext(&testutil.MockHandler{
+				ExecuteFunc: func(ctx *service.ReconciliationContext) error {
+					nextCalled = true
+					return nil
+				},
+			})
 
 			err := handler.Execute(reconCtx)
 
