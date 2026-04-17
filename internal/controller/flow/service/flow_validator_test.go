@@ -51,7 +51,7 @@ var _ = Describe("FlowValidatorService.ValidatePeriodTimings", func() {
 		Expect(err).To(HaveOccurred())
 		Expect(service.IsValidationError(err)).To(BeTrue())
 		v, _ := service.AsValidationError(err)
-		Expect(v.Reason).To(Equal("UnknownPeriod"))
+		Expect(v.Reason).To(Equal(service.ReasonUnknownPeriod))
 	})
 
 	It("returns a ValidationError for an invalid delay format", func() {
@@ -78,7 +78,7 @@ var _ = Describe("FlowValidatorService.ValidatePeriodTimings", func() {
 		Expect(err).To(HaveOccurred())
 		Expect(service.IsValidationError(err)).To(BeTrue())
 		v, _ := service.AsValidationError(err)
-		Expect(v.Reason).To(Equal("InvalidDelayFormat"))
+		Expect(v.Reason).To(Equal(service.ReasonInvalidDelayFormat))
 	})
 
 	It("returns a ValidationError when delays invert the window", func() {
@@ -106,7 +106,7 @@ var _ = Describe("FlowValidatorService.ValidatePeriodTimings", func() {
 		Expect(err).To(HaveOccurred())
 		v, ok := service.AsValidationError(err)
 		Expect(ok).To(BeTrue())
-		Expect(v.Reason).To(Equal("InvertedWindow"))
+		Expect(v.Reason).To(Equal(service.ReasonInvertedWindow))
 	})
 
 	It("returns nil for a valid flow with compatible delays", func() {

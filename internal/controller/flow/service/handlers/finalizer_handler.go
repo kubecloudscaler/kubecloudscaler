@@ -19,6 +19,7 @@ package handlers
 import (
 	"fmt"
 
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -47,11 +48,19 @@ func (h *FinalizerHandler) Execute(ctx *service.FlowReconciliationContext) error
 	if flow.DeletionTimestamp.IsZero() {
 		if !controllerutil.ContainsFinalizer(flow, flowFinalizer) {
 			ctx.Logger.Info().Msg("adding finalizer")
-			if err := patchAddFlowFinalizer(ctx); err != nil {
+			latest, err := patchAddFlowFinalizer(ctx)
+			switch {
+			case apierrors.IsNotFound(err):
+				// Flow was deleted between FetchHandler and this patch — nothing to do.
+				ctx.SkipRemaining = true
+				return nil
+			case err != nil:
 				ctx.RequeueAfter = shared.TransientRequeueAfter
 				return shared.NewRecoverableError(fmt.Errorf("add finalizer: %w", err))
 			}
-			controllerutil.AddFinalizer(flow, flowFinalizer)
+			// Refresh ctx.Flow so ResourceVersion and finalizers match the persisted state;
+			// downstream handlers that read ctx.Flow (e.g. for Update) must see the latest.
+			ctx.Flow = latest
 		}
 		if h.next != nil && !ctx.SkipRemaining {
 			return h.next.Execute(ctx)
@@ -61,11 +70,19 @@ func (h *FinalizerHandler) Execute(ctx *service.FlowReconciliationContext) error
 
 	if controllerutil.ContainsFinalizer(flow, flowFinalizer) {
 		ctx.Logger.Info().Msg("removing finalizer")
-		if err := patchRemoveFlowFinalizer(ctx); err != nil {
+		latest, err := patchRemoveFlowFinalizer(ctx)
+		switch {
+		case apierrors.IsNotFound(err):
+			// Flow has already been fully deleted — cleanup is done.
+			ctx.SkipRemaining = true
+			return nil
+		case err != nil:
 			ctx.RequeueAfter = shared.TransientRequeueAfter
 			return shared.NewRecoverableError(fmt.Errorf("remove finalizer: %w", err))
 		}
-		controllerutil.RemoveFinalizer(flow, flowFinalizer)
+		if latest != nil {
+			ctx.Flow = latest
+		}
 	}
 	ctx.SkipRemaining = true
 	return nil
@@ -77,10 +94,12 @@ func (h *FinalizerHandler) SetNext(next service.Handler) {
 
 // patchAddFlowFinalizer adds flowFinalizer via an optimistic-locked merge patch, re-fetching
 // and retrying on 409 conflicts. Scoped to metadata.finalizers so neither spec nor status is
-// transmitted. No-op if the finalizer was added concurrently.
-func patchAddFlowFinalizer(ctx *service.FlowReconciliationContext) error {
-	return retry.RetryOnConflict(retry.DefaultRetry, func() error {
-		latest := &kubecloudscalerv1alpha3.Flow{}
+// transmitted. Returns the latest persisted Flow so callers can refresh their in-memory copy.
+// No-op if the finalizer was already present.
+func patchAddFlowFinalizer(ctx *service.FlowReconciliationContext) (*kubecloudscalerv1alpha3.Flow, error) {
+	latest := &kubecloudscalerv1alpha3.Flow{}
+	err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		latest = &kubecloudscalerv1alpha3.Flow{}
 		if err := ctx.Client.Get(ctx.Ctx, ctx.Request.NamespacedName, latest); err != nil {
 			return err
 		}
@@ -91,21 +110,36 @@ func patchAddFlowFinalizer(ctx *service.FlowReconciliationContext) error {
 		controllerutil.AddFinalizer(latest, flowFinalizer)
 		return ctx.Client.Patch(ctx.Ctx, latest, patch)
 	})
+	if err != nil {
+		return nil, err
+	}
+	return latest, nil
 }
 
 // patchRemoveFlowFinalizer removes flowFinalizer via an optimistic-locked merge patch,
-// re-fetching and retrying on 409 conflicts. No-op if already absent.
-func patchRemoveFlowFinalizer(ctx *service.FlowReconciliationContext) error {
-	return retry.RetryOnConflict(retry.DefaultRetry, func() error {
+// re-fetching and retrying on 409 conflicts. Returns the latest persisted Flow when the
+// finalizer was present and has been removed, nil when already absent. No-op if already absent.
+func patchRemoveFlowFinalizer(ctx *service.FlowReconciliationContext) (*kubecloudscalerv1alpha3.Flow, error) {
+	var result *kubecloudscalerv1alpha3.Flow
+	err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		latest := &kubecloudscalerv1alpha3.Flow{}
 		if err := ctx.Client.Get(ctx.Ctx, ctx.Request.NamespacedName, latest); err != nil {
 			return err
 		}
 		if !controllerutil.ContainsFinalizer(latest, flowFinalizer) {
+			result = nil
 			return nil
 		}
 		patch := client.MergeFromWithOptions(latest.DeepCopy(), client.MergeFromWithOptimisticLock{})
 		controllerutil.RemoveFinalizer(latest, flowFinalizer)
-		return ctx.Client.Patch(ctx.Ctx, latest, patch)
+		if err := ctx.Client.Patch(ctx.Ctx, latest, patch); err != nil {
+			return err
+		}
+		result = latest
+		return nil
 	})
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
 }

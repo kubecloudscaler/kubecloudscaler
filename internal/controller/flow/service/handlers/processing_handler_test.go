@@ -39,6 +39,24 @@ func (s *stubProcessor) ProcessFlow(_ context.Context, _ *kubecloudscalerv1alpha
 	return s.err
 }
 
+// recordingHandler captures whether its Execute was invoked and a snapshot of the context
+// at the time of invocation, so tests can assert the chain continued past the previous
+// handler with the expected state.
+type recordingHandler struct {
+	called      bool
+	seenCond    *metav1.Condition
+	seenProcErr error
+}
+
+func (r *recordingHandler) Execute(ctx *service.FlowReconciliationContext) error {
+	r.called = true
+	r.seenCond = ctx.Condition
+	r.seenProcErr = ctx.ProcessingError
+	return nil
+}
+
+func (r *recordingHandler) SetNext(_ service.Handler) {}
+
 var _ = Describe("ProcessingHandler", func() {
 	var (
 		logger   zerolog.Logger
@@ -69,7 +87,7 @@ var _ = Describe("ProcessingHandler", func() {
 	Context("When ProcessFlow returns a ValidationError", func() {
 		It("populates a failure condition with the validation Reason and stores ProcessingError", func() {
 			h := handlers.NewProcessingHandler(&stubProcessor{
-				err: service.NewValidationError("UnknownPeriod",
+				err: service.NewValidationError(service.ReasonUnknownPeriod,
 					fmt.Errorf("period foo referenced in flows but not defined")),
 			})
 
@@ -78,7 +96,7 @@ var _ = Describe("ProcessingHandler", func() {
 			Expect(service.IsValidationError(reconCtx.ProcessingError)).To(BeTrue())
 			Expect(reconCtx.Condition).ToNot(BeNil())
 			Expect(reconCtx.Condition.Status).To(Equal(metav1.ConditionFalse))
-			Expect(reconCtx.Condition.Reason).To(Equal("UnknownPeriod"))
+			Expect(reconCtx.Condition.Reason).To(Equal(string(service.ReasonUnknownPeriod)))
 		})
 	})
 
@@ -90,7 +108,36 @@ var _ = Describe("ProcessingHandler", func() {
 			Expect(reconCtx.ProcessingError).To(HaveOccurred())
 			Expect(service.IsValidationError(reconCtx.ProcessingError)).To(BeFalse())
 			Expect(reconCtx.Condition.Status).To(Equal(metav1.ConditionFalse))
-			Expect(reconCtx.Condition.Reason).To(Equal("ProcessingFailed"))
+			Expect(reconCtx.Condition.Reason).To(Equal(string(service.ReasonProcessingFailed)))
+		})
+	})
+
+	Context("Chain continuation contract", func() {
+		It("invokes the next handler after a processing failure (does not short-circuit)", func() {
+			h := handlers.NewProcessingHandler(&stubProcessor{
+				err: service.NewValidationError(service.ReasonUnknownPeriod,
+					fmt.Errorf("period foo referenced in flows but not defined")),
+			})
+			next := &recordingHandler{}
+			h.SetNext(next)
+
+			Expect(h.Execute(reconCtx)).To(Succeed())
+			Expect(next.called).To(BeTrue())
+			Expect(next.seenCond).ToNot(BeNil())
+			Expect(next.seenCond.Status).To(Equal(metav1.ConditionFalse))
+			Expect(next.seenProcErr).To(HaveOccurred())
+		})
+
+		It("invokes the next handler after a success", func() {
+			h := handlers.NewProcessingHandler(&stubProcessor{})
+			next := &recordingHandler{}
+			h.SetNext(next)
+
+			Expect(h.Execute(reconCtx)).To(Succeed())
+			Expect(next.called).To(BeTrue())
+			Expect(next.seenCond).ToNot(BeNil())
+			Expect(next.seenCond.Status).To(Equal(metav1.ConditionTrue))
+			Expect(next.seenProcErr).ToNot(HaveOccurred())
 		})
 	})
 })

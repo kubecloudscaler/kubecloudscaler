@@ -96,18 +96,18 @@ func (s *FlowProcessorService) processResource(
 	switch resourceInfo.Type {
 	case "k8s":
 		if resourceInfo.K8sRes == nil {
-			return NewValidationError("MissingK8sResource",
+			return NewValidationError(ReasonMissingK8sResource,
 				fmt.Errorf("K8sRes is nil for resource %s", resourceName))
 		}
 		return s.resourceCreator.CreateK8sResource(ctx, flow, resourceName, *resourceInfo.K8sRes, resourceInfo.Periods)
 	case "gcp":
 		if resourceInfo.GcpRes == nil {
-			return NewValidationError("MissingGcpResource",
+			return NewValidationError(ReasonMissingGcpResource,
 				fmt.Errorf("GcpRes is nil for resource %s", resourceName))
 		}
 		return s.resourceCreator.CreateGcpResource(ctx, flow, resourceName, *resourceInfo.GcpRes, resourceInfo.Periods)
 	default:
-		return NewValidationError("UnknownResourceType",
+		return NewValidationError(ReasonUnknownResourceType,
 			fmt.Errorf("unknown resource type: %s", resourceInfo.Type))
 	}
 }

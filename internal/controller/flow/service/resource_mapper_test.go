@@ -66,7 +66,7 @@ var _ = Describe("ResourceMapperService.CreateResourceMappings", func() {
 		Expect(err).To(HaveOccurred())
 		v, ok := service.AsValidationError(err)
 		Expect(ok).To(BeTrue())
-		Expect(v.Reason).To(Equal("AmbiguousResource"))
+		Expect(v.Reason).To(Equal(service.ReasonAmbiguousResource))
 	})
 
 	It("returns a ValidationError when a resource is referenced but not defined", func() {
@@ -84,7 +84,7 @@ var _ = Describe("ResourceMapperService.CreateResourceMappings", func() {
 		Expect(err).To(HaveOccurred())
 		v, ok := service.AsValidationError(err)
 		Expect(ok).To(BeTrue())
-		Expect(v.Reason).To(Equal("UnknownResource"))
+		Expect(v.Reason).To(Equal(service.ReasonUnknownResource))
 	})
 
 	It("returns a ValidationError when the same resource appears twice in a period", func() {
@@ -111,7 +111,7 @@ var _ = Describe("ResourceMapperService.CreateResourceMappings", func() {
 		Expect(err).To(HaveOccurred())
 		v, ok := service.AsValidationError(err)
 		Expect(ok).To(BeTrue())
-		Expect(v.Reason).To(Equal("DuplicateResourceInPeriod"))
+		Expect(v.Reason).To(Equal(service.ReasonDuplicateResourceInPeriod))
 	})
 
 	It("produces a valid K8s mapping with associated periods", func() {

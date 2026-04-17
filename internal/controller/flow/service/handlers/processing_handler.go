@@ -41,7 +41,7 @@ func NewProcessingHandler(processor service.FlowProcessor) service.Handler {
 
 func (h *ProcessingHandler) Execute(ctx *service.FlowReconciliationContext) error {
 	if err := h.processor.ProcessFlow(ctx.Ctx, ctx.Flow); err != nil {
-		reason := "ProcessingFailed"
+		reason := service.ReasonProcessingFailed
 		if v, ok := service.AsValidationError(err); ok {
 			reason = v.Reason
 		}
@@ -49,7 +49,7 @@ func (h *ProcessingHandler) Execute(ctx *service.FlowReconciliationContext) erro
 		ctx.Condition = &metav1.Condition{
 			Type:    "Processed",
 			Status:  metav1.ConditionFalse,
-			Reason:  reason,
+			Reason:  string(reason),
 			Message: err.Error(),
 		}
 	} else {

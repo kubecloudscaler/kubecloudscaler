@@ -34,17 +34,41 @@ var (
 	IsRecoverableError  = shared.IsRecoverableError
 )
 
+// ValidationReason is the closed set of reasons carried by a ValidationError. Values flow
+// through to Flow.status as condition Reason strings, so they are a public contract and
+// must remain stable — rename with care.
+type ValidationReason string
+
+const (
+	ReasonUnknownPeriod             ValidationReason = "UnknownPeriod"
+	ReasonInvalidPeriodDuration     ValidationReason = "InvalidPeriodDuration"
+	ReasonZeroPeriodDuration        ValidationReason = "ZeroPeriodDuration"
+	ReasonInvalidDelayFormat        ValidationReason = "InvalidDelayFormat"
+	ReasonInvertedWindow            ValidationReason = "InvertedWindow"
+	ReasonDuplicatePeriod           ValidationReason = "DuplicatePeriod"
+	ReasonDuplicateResource         ValidationReason = "DuplicateResource"
+	ReasonDuplicateResourceInPeriod ValidationReason = "DuplicateResourceInPeriod"
+	ReasonAmbiguousResource         ValidationReason = "AmbiguousResource"
+	ReasonUnknownResource           ValidationReason = "UnknownResource"
+	ReasonUnknownResourceType       ValidationReason = "UnknownResourceType"
+	ReasonMissingK8sResource        ValidationReason = "MissingK8sResource"
+	ReasonMissingGcpResource        ValidationReason = "MissingGcpResource"
+	// ReasonProcessingFailed is the fallback reason for non-validation errors that surface
+	// on Flow.status. Kept here so the full set of condition reasons lives in one place.
+	ReasonProcessingFailed ValidationReason = "ProcessingFailed"
+)
+
 // ValidationError marks a user-config error that will not be resolved by a retry. The Flow
 // controller surfaces these as Kubernetes conditions with a specific Reason and classifies
 // them as CriticalError so the reconcile does not hot-loop on a broken spec.
 type ValidationError struct {
-	Reason string
+	Reason ValidationReason
 	Err    error
 }
 
-// NewValidationError wraps err as a validation error with the given short Reason. The Reason
+// NewValidationError wraps err as a validation error with the given Reason. The Reason
 // becomes the condition Reason on the Flow status.
-func NewValidationError(reason string, err error) error {
+func NewValidationError(reason ValidationReason, err error) error {
 	return &ValidationError{Reason: reason, Err: err}
 }
 
@@ -62,7 +86,7 @@ func IsValidationError(err error) bool {
 	return errors.As(err, &v)
 }
 
-// AsValidationError returns the innermost *ValidationError when err wraps one.
+// AsValidationError returns the first *ValidationError found while unwrapping err.
 func AsValidationError(err error) (*ValidationError, bool) {
 	var v *ValidationError
 	if errors.As(err, &v) {

@@ -114,5 +114,32 @@ var _ = Describe("FlowProcessorService", func() {
 				Expect(err.Error()).To(ContainSubstring("failed to extract flow data"))
 			})
 		})
+
+		DescribeTable("emits the expected ValidationError when resource info is structurally wrong",
+			func(info types.ResourceInfo, expected ValidationReason) {
+				flow := &kubecloudscalerv1alpha3.Flow{}
+
+				mockValidator.ExtractFlowDataFunc = func(
+					_ *kubecloudscalerv1alpha3.Flow,
+				) (map[string]bool, map[string]bool, error) {
+					return map[string]bool{"r": true}, map[string]bool{}, nil
+				}
+				mockResourceMapper.CreateResourceMappingsFunc = func(
+					_ *kubecloudscalerv1alpha3.Flow, _ map[string]bool,
+				) (map[string]types.ResourceInfo, error) {
+					return map[string]types.ResourceInfo{"r": info}, nil
+				}
+
+				err := svc.ProcessFlow(context.Background(), flow)
+
+				Expect(err).To(HaveOccurred())
+				v, ok := AsValidationError(err)
+				Expect(ok).To(BeTrue(), "expected a ValidationError, got %T: %v", err, err)
+				Expect(v.Reason).To(Equal(expected))
+			},
+			Entry("k8s with nil K8sRes", types.ResourceInfo{Type: "k8s"}, ReasonMissingK8sResource),
+			Entry("gcp with nil GcpRes", types.ResourceInfo{Type: "gcp"}, ReasonMissingGcpResource),
+			Entry("unknown type", types.ResourceInfo{Type: "wat"}, ReasonUnknownResourceType),
+		)
 	})
 })

@@ -28,8 +28,11 @@ import (
 
 var _ service.Handler = (*StatusHandler)(nil)
 
-// StatusHandler updates the Flow status using the StatusUpdater service.
-// It sets a success condition and configures requeue timing.
+// StatusHandler persists ctx.Condition on the Flow status via the StatusUpdater service,
+// falling back to a default success condition when the chain terminated before
+// ProcessingHandler populated one. Also arms the success requeue cadence — but only when
+// processing actually succeeded, so recoverable processing failures fall through to the
+// controller's error-requeue default.
 type StatusHandler struct {
 	next          service.Handler
 	statusUpdater service.StatusUpdater
@@ -59,7 +62,10 @@ func (h *StatusHandler) Execute(ctx *service.FlowReconciliationContext) error {
 		return shared.NewRecoverableError(fmt.Errorf("update flow status: %w", err))
 	}
 
-	if ctx.RequeueAfter == 0 {
+	// Only arm the success cadence when processing actually succeeded. A recoverable
+	// processing failure must fall through to the controller's error-requeue default
+	// (ReconcileErrorDuration) rather than hot-loop every ReconcileSuccessDuration.
+	if ctx.RequeueAfter == 0 && ctx.ProcessingError == nil {
 		ctx.RequeueAfter = utils.ReconcileSuccessDuration
 	}
 

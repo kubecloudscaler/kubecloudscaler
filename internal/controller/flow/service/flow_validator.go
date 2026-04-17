@@ -39,8 +39,18 @@ func NewFlowValidatorService(timeCalculator TimeCalculator, logger *zerolog.Logg
 	}
 }
 
-// ExtractFlowData extracts all resource names and period names from flows
+// ExtractFlowData extracts all resource names and period names from flows. Duplicate
+// period definitions (same name twice in spec.periods) and in-section duplicate resource
+// definitions (same name twice in spec.resources.k8s or spec.resources.gcp) are rejected
+// here since silent first-writer-wins would produce unpredictable runtime behaviour.
 func (v *FlowValidatorService) ExtractFlowData(flow *kubecloudscalerv1alpha3.Flow) (map[string]bool, map[string]bool, error) {
+	if err := v.checkUniquePeriods(flow); err != nil {
+		return nil, nil, err
+	}
+	if err := v.checkUniqueResources(flow); err != nil {
+		return nil, nil, err
+	}
+
 	resourceNames := make(map[string]bool)
 	periodNames := make(map[string]bool)
 
@@ -55,22 +65,61 @@ func (v *FlowValidatorService) ExtractFlowData(flow *kubecloudscalerv1alpha3.Flo
 	return resourceNames, periodNames, nil
 }
 
-// ValidatePeriodTimings validates that the sum of delays for each period doesn't exceed the period duration.
-// User-config errors (unknown period reference, invalid delay format, inverted window) are returned as
-// *ValidationError so ProcessingHandler can classify them as CriticalError.
+func (v *FlowValidatorService) checkUniquePeriods(flow *kubecloudscalerv1alpha3.Flow) error {
+	seen := make(map[string]bool, len(flow.Spec.Periods))
+	for i := range flow.Spec.Periods {
+		name := flow.Spec.Periods[i].Name
+		if seen[name] {
+			return NewValidationError(ReasonDuplicatePeriod,
+				fmt.Errorf("period %s defined more than once in spec.periods", name))
+		}
+		seen[name] = true
+	}
+	return nil
+}
+
+func (v *FlowValidatorService) checkUniqueResources(flow *kubecloudscalerv1alpha3.Flow) error {
+	seenK8s := make(map[string]bool, len(flow.Spec.Resources.K8s))
+	for i := range flow.Spec.Resources.K8s {
+		name := flow.Spec.Resources.K8s[i].Name
+		if seenK8s[name] {
+			return NewValidationError(ReasonDuplicateResource,
+				fmt.Errorf("resource %s defined more than once in spec.resources.k8s", name))
+		}
+		seenK8s[name] = true
+	}
+	seenGcp := make(map[string]bool, len(flow.Spec.Resources.Gcp))
+	for i := range flow.Spec.Resources.Gcp {
+		name := flow.Spec.Resources.Gcp[i].Name
+		if seenGcp[name] {
+			return NewValidationError(ReasonDuplicateResource,
+				fmt.Errorf("resource %s defined more than once in spec.resources.gcp", name))
+		}
+		seenGcp[name] = true
+	}
+	return nil
+}
+
+// ValidatePeriodTimings validates that the sum of delays for each period doesn't exceed
+// the period duration. User-config errors are returned as *ValidationError so
+// ProcessingHandler can classify them as CriticalError. See the ReasonXxx constants in
+// errors.go for the full set of reasons this can emit.
 func (v *FlowValidatorService) ValidatePeriodTimings(flow *kubecloudscalerv1alpha3.Flow, periodNames map[string]bool) error {
 	periodsMap := v.createPeriodsMap(flow)
 
 	for periodName := range periodNames {
 		period, exists := periodsMap[periodName]
 		if !exists {
-			return NewValidationError("UnknownPeriod",
+			return NewValidationError(ReasonUnknownPeriod,
 				fmt.Errorf("period %s referenced in flows but not defined", periodName))
 		}
 
 		periodDuration, err := v.timeCalculator.GetPeriodDuration(&period)
 		if err != nil {
-			return NewValidationError("InvalidPeriodDuration",
+			if IsValidationError(err) {
+				return err
+			}
+			return NewValidationError(ReasonInvalidPeriodDuration,
 				fmt.Errorf("failed to get period duration for %s: %w", periodName, err))
 		}
 
@@ -105,7 +154,7 @@ func (v *FlowValidatorService) validateResourceDelays(flow *kubecloudscalerv1alp
 			if resource.StartTimeDelay != "" {
 				d, err := time.ParseDuration(resource.StartTimeDelay)
 				if err != nil {
-					return NewValidationError("InvalidDelayFormat",
+					return NewValidationError(ReasonInvalidDelayFormat,
 						fmt.Errorf("invalid start time delay format for resource %s: %w", resource.Name, err))
 				}
 				startDelay = d
@@ -114,7 +163,7 @@ func (v *FlowValidatorService) validateResourceDelays(flow *kubecloudscalerv1alp
 			if resource.EndTimeDelay != "" {
 				d, err := time.ParseDuration(resource.EndTimeDelay)
 				if err != nil {
-					return NewValidationError("InvalidDelayFormat",
+					return NewValidationError(ReasonInvalidDelayFormat,
 						fmt.Errorf("invalid end time delay format for resource %s: %w", resource.Name, err))
 				}
 				endDelay = d
@@ -125,7 +174,7 @@ func (v *FlowValidatorService) validateResourceDelays(flow *kubecloudscalerv1alp
 			// Must be > 0 for the window to remain valid
 			adjustedDuration := periodDuration - startDelay + endDelay
 			if adjustedDuration <= 0 {
-				return NewValidationError("InvertedWindow", fmt.Errorf(
+				return NewValidationError(ReasonInvertedWindow, fmt.Errorf(
 					"resource %s: adjusted window is invalid (duration %v) for period %s — "+
 						"startTimeDelay (%v) and endTimeDelay (%v) invert the period window (duration %v)",
 					resource.Name, adjustedDuration, periodName,
