@@ -55,19 +55,23 @@ func (v *FlowValidatorService) ExtractFlowData(flow *kubecloudscalerv1alpha3.Flo
 	return resourceNames, periodNames, nil
 }
 
-// ValidatePeriodTimings validates that the sum of delays for each period doesn't exceed the period duration
+// ValidatePeriodTimings validates that the sum of delays for each period doesn't exceed the period duration.
+// User-config errors (unknown period reference, invalid delay format, inverted window) are returned as
+// *ValidationError so ProcessingHandler can classify them as CriticalError.
 func (v *FlowValidatorService) ValidatePeriodTimings(flow *kubecloudscalerv1alpha3.Flow, periodNames map[string]bool) error {
 	periodsMap := v.createPeriodsMap(flow)
 
 	for periodName := range periodNames {
 		period, exists := periodsMap[periodName]
 		if !exists {
-			return fmt.Errorf("period %s referenced in flows but not defined", periodName)
+			return NewValidationError("UnknownPeriod",
+				fmt.Errorf("period %s referenced in flows but not defined", periodName))
 		}
 
 		periodDuration, err := v.timeCalculator.GetPeriodDuration(&period)
 		if err != nil {
-			return fmt.Errorf("failed to get period duration for %s: %w", periodName, err)
+			return NewValidationError("InvalidPeriodDuration",
+				fmt.Errorf("failed to get period duration for %s: %w", periodName, err))
 		}
 
 		if err := v.validateResourceDelays(flow, periodName, periodDuration); err != nil {
@@ -101,7 +105,8 @@ func (v *FlowValidatorService) validateResourceDelays(flow *kubecloudscalerv1alp
 			if resource.StartTimeDelay != "" {
 				d, err := time.ParseDuration(resource.StartTimeDelay)
 				if err != nil {
-					return fmt.Errorf("invalid start time delay format for resource %s: %w", resource.Name, err)
+					return NewValidationError("InvalidDelayFormat",
+						fmt.Errorf("invalid start time delay format for resource %s: %w", resource.Name, err))
 				}
 				startDelay = d
 			}
@@ -109,7 +114,8 @@ func (v *FlowValidatorService) validateResourceDelays(flow *kubecloudscalerv1alp
 			if resource.EndTimeDelay != "" {
 				d, err := time.ParseDuration(resource.EndTimeDelay)
 				if err != nil {
-					return fmt.Errorf("invalid end time delay format for resource %s: %w", resource.Name, err)
+					return NewValidationError("InvalidDelayFormat",
+						fmt.Errorf("invalid end time delay format for resource %s: %w", resource.Name, err))
 				}
 				endDelay = d
 			}
@@ -119,12 +125,12 @@ func (v *FlowValidatorService) validateResourceDelays(flow *kubecloudscalerv1alp
 			// Must be > 0 for the window to remain valid
 			adjustedDuration := periodDuration - startDelay + endDelay
 			if adjustedDuration <= 0 {
-				return fmt.Errorf(
+				return NewValidationError("InvertedWindow", fmt.Errorf(
 					"resource %s: adjusted window is invalid (duration %v) for period %s — "+
 						"startTimeDelay (%v) and endTimeDelay (%v) invert the period window (duration %v)",
 					resource.Name, adjustedDuration, periodName,
 					startDelay, endDelay, periodDuration,
-				)
+				))
 			}
 		}
 	}

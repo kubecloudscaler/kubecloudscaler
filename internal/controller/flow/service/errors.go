@@ -16,7 +16,12 @@ limitations under the License.
 
 package service
 
-import "github.com/kubecloudscaler/kubecloudscaler/internal/controller/shared"
+import (
+	"errors"
+	"fmt"
+
+	"github.com/kubecloudscaler/kubecloudscaler/internal/controller/shared"
+)
 
 // Type aliases for backward compatibility — all error logic lives in shared package.
 type CriticalError = shared.CriticalError
@@ -28,3 +33,40 @@ var (
 	IsCriticalError     = shared.IsCriticalError
 	IsRecoverableError  = shared.IsRecoverableError
 )
+
+// ValidationError marks a user-config error that will not be resolved by a retry. The Flow
+// controller surfaces these as Kubernetes conditions with a specific Reason and classifies
+// them as CriticalError so the reconcile does not hot-loop on a broken spec.
+type ValidationError struct {
+	Reason string
+	Err    error
+}
+
+// NewValidationError wraps err as a validation error with the given short Reason. The Reason
+// becomes the condition Reason on the Flow status.
+func NewValidationError(reason string, err error) error {
+	return &ValidationError{Reason: reason, Err: err}
+}
+
+func (e *ValidationError) Error() string {
+	return fmt.Sprintf("%s: %v", e.Reason, e.Err)
+}
+
+func (e *ValidationError) Unwrap() error {
+	return e.Err
+}
+
+// IsValidationError reports whether err is (wraps) a *ValidationError.
+func IsValidationError(err error) bool {
+	var v *ValidationError
+	return errors.As(err, &v)
+}
+
+// AsValidationError returns the innermost *ValidationError when err wraps one.
+func AsValidationError(err error) (*ValidationError, bool) {
+	var v *ValidationError
+	if errors.As(err, &v) {
+		return v, true
+	}
+	return nil, false
+}

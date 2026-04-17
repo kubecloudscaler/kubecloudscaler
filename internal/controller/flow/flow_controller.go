@@ -121,6 +121,16 @@ func (r *FlowReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	err := r.chain.Execute(reconCtx)
 	duration := time.Since(start).Seconds()
 
+	// If the chain completed but ProcessingHandler recorded a processing failure, classify
+	// it here. StatusHandler has already persisted the failure condition on the Flow.
+	if err == nil && reconCtx.ProcessingError != nil {
+		if service.IsValidationError(reconCtx.ProcessingError) {
+			err = shared.NewCriticalError(reconCtx.ProcessingError)
+		} else {
+			err = shared.NewRecoverableError(reconCtx.ProcessingError)
+		}
+	}
+
 	if err != nil {
 		if shared.IsCriticalError(err) {
 			rec.RecordReconcile(metrics.ControllerFlow, metrics.ResultCriticalError, duration)

@@ -41,12 +41,21 @@ func NewStatusHandler(statusUpdater service.StatusUpdater) service.Handler {
 }
 
 func (h *StatusHandler) Execute(ctx *service.FlowReconciliationContext) error {
-	if err := h.statusUpdater.UpdateFlowStatus(ctx.Ctx, ctx.Flow, metav1.Condition{
-		Type:    "Processed",
-		Status:  metav1.ConditionTrue,
-		Reason:  "ProcessingSucceeded",
-		Message: "Flow processed successfully",
-	}); err != nil {
+	// Prefer the condition populated by ProcessingHandler so both success and failure paths
+	// are reflected on Flow.status. Fall back to a default success condition only when no
+	// handler contributed one (e.g. the chain terminated before ProcessingHandler for a
+	// reason other than deletion cleanup).
+	cond := ctx.Condition
+	if cond == nil {
+		cond = &metav1.Condition{
+			Type:    "Processed",
+			Status:  metav1.ConditionTrue,
+			Reason:  "ProcessingSucceeded",
+			Message: "Flow processed successfully",
+		}
+	}
+
+	if err := h.statusUpdater.UpdateFlowStatus(ctx.Ctx, ctx.Flow, *cond); err != nil {
 		return shared.NewRecoverableError(fmt.Errorf("update flow status: %w", err))
 	}
 

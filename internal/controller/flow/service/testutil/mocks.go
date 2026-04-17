@@ -25,7 +25,6 @@ import (
 	kubecloudscalerv1alpha3 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha3"
 	"github.com/kubecloudscaler/kubecloudscaler/internal/controller/flow/types"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 // MockFlowValidator is a mock implementation of FlowValidator
@@ -108,14 +107,21 @@ func (m *MockTimeCalculator) GetPeriodDuration(period *common.ScalerPeriod) (tim
 	return time.Hour, nil
 }
 
-// MockStatusUpdater is a mock implementation of StatusUpdater
+// MockStatusUpdater is a mock implementation of the StatusUpdater interface.
+// The last condition passed to UpdateFlowStatus is kept on LastCondition so tests can
+// assert the Reason/Message recorded on the Flow even when the call succeeds.
 type MockStatusUpdater struct {
-	UpdateFlowStatusFunc func(ctx context.Context, flow *kubecloudscalerv1alpha3.Flow, condition metav1.Condition) (ctrl.Result, error)
+	UpdateFlowStatusFunc func(ctx context.Context, flow *kubecloudscalerv1alpha3.Flow, condition metav1.Condition) error
+	LastCondition        *metav1.Condition
+	CallCount            int
 }
 
-func (m *MockStatusUpdater) UpdateFlowStatus(ctx context.Context, flow *kubecloudscalerv1alpha3.Flow, condition metav1.Condition) (ctrl.Result, error) {
+func (m *MockStatusUpdater) UpdateFlowStatus(ctx context.Context, flow *kubecloudscalerv1alpha3.Flow, condition metav1.Condition) error {
+	m.CallCount++
+	copied := condition
+	m.LastCondition = &copied
 	if m.UpdateFlowStatusFunc != nil {
 		return m.UpdateFlowStatusFunc(ctx, flow, condition)
 	}
-	return ctrl.Result{}, nil
+	return nil
 }

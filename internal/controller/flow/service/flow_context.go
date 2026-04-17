@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"github.com/rs/zerolog"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -56,6 +57,19 @@ type FlowReconciliationContext struct {
 	// Flow is the resource being reconciled.
 	// Set by: FetchHandler
 	Flow *kubecloudscalerv1alpha3.Flow
+
+	// Condition is the Processed condition to persist on the Flow status.
+	// Set by: ProcessingHandler (success or failure)
+	// Used by: StatusHandler
+	Condition *metav1.Condition
+
+	// ProcessingError carries the error produced by ProcessFlow, if any. The processing
+	// handler stores it here and lets the chain continue so StatusHandler can still write
+	// the failure condition. The controller reads this after the chain to classify and
+	// return the appropriate requeue behavior.
+	// Set by: ProcessingHandler
+	// Used by: Controller (Reconcile)
+	ProcessingError error
 
 	// SkipRemaining stops the chain early (e.g., during deletion cleanup).
 	// Set by: Any handler (e.g., FinalizerHandler on deletion)
