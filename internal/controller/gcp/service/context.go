@@ -68,6 +68,13 @@ type ReconciliationContext struct {
 	// Scaler is the GCP scaler resource being reconciled (populated by fetch handler)
 	Scaler *kubecloudscalerv1alpha3.Gcp
 
+	// ScalerOriginal is a DeepCopy of the Scaler captured immediately after fetch,
+	// before any handler mutation. Used as the base for client.MergeFrom patches so
+	// mutations on Scaler do not pollute the patch diff.
+	// Set by: FetchHandler
+	// Used by: FinalizerHandler, StatusHandler (patch base, future use)
+	ScalerOriginal *kubecloudscalerv1alpha3.Gcp
+
 	// Secret is the authentication secret for GCP access (populated by auth handler, nullable)
 	Secret *corev1.Secret
 

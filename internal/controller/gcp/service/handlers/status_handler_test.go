@@ -145,7 +145,7 @@ var _ = Describe("StatusHandler", func() {
 		})
 	})
 
-	Context("When client Update fails during finalizer removal", func() {
+	Context("When client Patch fails during finalizer removal", func() {
 		BeforeEach(func() {
 			scaler.SetFinalizers([]string{handlers.ScalerFinalizer})
 
@@ -153,13 +153,14 @@ var _ = Describe("StatusHandler", func() {
 				WithScheme(scheme).
 				WithObjects(scaler).
 				WithInterceptorFuncs(interceptor.Funcs{
-					Update: func(
+					Patch: func(
 						ctx context.Context,
 						c client.WithWatch,
 						obj client.Object,
-						opts ...client.UpdateOption,
+						patch client.Patch,
+						opts ...client.PatchOption,
 					) error {
-						return fmt.Errorf("update conflict")
+						return fmt.Errorf("persistent patch failure")
 					},
 				}).
 				Build()

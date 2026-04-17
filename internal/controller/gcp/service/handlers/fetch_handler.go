@@ -67,6 +67,7 @@ func (h *FetchHandler) Execute(ctx *service.ReconciliationContext) error {
 	}
 
 	ctx.Scaler = scaler
+	ctx.ScalerOriginal = scaler.DeepCopy()
 	if h.next != nil {
 		return h.next.Execute(ctx)
 	}

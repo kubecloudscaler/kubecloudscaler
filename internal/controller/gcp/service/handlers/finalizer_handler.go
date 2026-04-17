@@ -19,8 +19,12 @@ package handlers
 import (
 	"fmt"
 
-	"github.com/kubecloudscaler/kubecloudscaler/internal/controller/gcp/service"
+	"k8s.io/client-go/util/retry"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+
+	kubecloudscalerv1alpha3 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha3"
+	"github.com/kubecloudscaler/kubecloudscaler/internal/controller/gcp/service"
 )
 
 const (
@@ -57,12 +61,12 @@ func (h *FinalizerHandler) Execute(ctx *service.ReconciliationContext) error {
 		// Object is not being deleted - ensure finalizer is present
 		if !controllerutil.ContainsFinalizer(scaler, ScalerFinalizer) {
 			ctx.Logger.Info().Msg("adding finalizer")
-			controllerutil.AddFinalizer(scaler, ScalerFinalizer)
-			if err := ctx.Client.Update(ctx.Ctx, scaler); err != nil {
+			if err := patchAddFinalizer(ctx); err != nil {
 				ctx.Logger.Error().Err(err).Msg("failed to add finalizer")
 				ctx.RequeueAfter = transientRequeueAfter
 				return service.NewRecoverableError(fmt.Errorf("add finalizer: %w", err))
 			}
+			controllerutil.AddFinalizer(scaler, ScalerFinalizer)
 		}
 		// Finalizer present or added successfully, continue chain
 		if h.next != nil && !ctx.SkipRemaining {
@@ -82,8 +86,9 @@ func (h *FinalizerHandler) Execute(ctx *service.ReconciliationContext) error {
 		return nil
 	}
 
-	// Finalizer already removed - skip remaining handlers
-	ctx.Logger.Info().Msg("finalizer already removed, skipping reconciliation")
+	// Finalizer already removed - skip remaining handlers. Debug level to avoid
+	// log spam while the object lingers awaiting garbage collection.
+	ctx.Logger.Debug().Msg("finalizer already removed, skipping reconciliation")
 	ctx.SkipRemaining = true
 	return nil
 }
@@ -91,4 +96,22 @@ func (h *FinalizerHandler) Execute(ctx *service.ReconciliationContext) error {
 // SetNext sets the next handler in the chain.
 func (h *FinalizerHandler) SetNext(next service.Handler) {
 	h.next = next
+}
+
+// patchAddFinalizer adds ScalerFinalizer via an optimistic-locked merge patch, re-fetching
+// and retrying on 409 conflicts. Scoped to metadata.finalizers so neither spec nor status is
+// transmitted. No-op if another reconcile added the finalizer concurrently.
+func patchAddFinalizer(ctx *service.ReconciliationContext) error {
+	return retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		latest := &kubecloudscalerv1alpha3.Gcp{}
+		if err := ctx.Client.Get(ctx.Ctx, ctx.Request.NamespacedName, latest); err != nil {
+			return err
+		}
+		if controllerutil.ContainsFinalizer(latest, ScalerFinalizer) {
+			return nil
+		}
+		patch := client.MergeFromWithOptions(latest.DeepCopy(), client.MergeFromWithOptimisticLock{})
+		controllerutil.AddFinalizer(latest, ScalerFinalizer)
+		return ctx.Client.Patch(ctx.Ctx, latest, patch)
+	})
 }
