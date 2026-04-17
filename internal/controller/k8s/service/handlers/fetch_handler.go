@@ -51,6 +51,7 @@ func (h *FetchHandler) Execute(ctx *service.ReconciliationContext) error {
 	}
 
 	ctx.Scaler = scaler
+	ctx.ScalerOriginal = scaler.DeepCopy()
 
 	// Call next handler in chain
 	if h.next != nil {

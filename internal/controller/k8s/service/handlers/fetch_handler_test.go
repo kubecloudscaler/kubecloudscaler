@@ -80,6 +80,27 @@ var _ = Describe("FetchHandler", func() {
 			Expect(reconCtx.Scaler.Name).To(Equal("test-scaler"))
 		})
 
+		It("should capture a pristine DeepCopy as ScalerOriginal", func() {
+			scaler := &kubecloudscalerv1alpha3.K8s{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:       "test-scaler",
+					Namespace:  "default",
+					Finalizers: []string{"example.com/existing"},
+				},
+			}
+			reconCtx.Client = fake.NewClientBuilder().WithScheme(scheme).WithObjects(scaler).Build()
+
+			err := handler.Execute(reconCtx)
+
+			Expect(err).ToNot(HaveOccurred())
+			Expect(reconCtx.ScalerOriginal).ToNot(BeNil())
+			Expect(reconCtx.ScalerOriginal).ToNot(BeIdenticalTo(reconCtx.Scaler))
+			Expect(reconCtx.ScalerOriginal.Finalizers).To(Equal([]string{"example.com/existing"}))
+
+			// Mutating Scaler must not affect ScalerOriginal (proves DeepCopy, not shallow)
+			reconCtx.Scaler.Finalizers = append(reconCtx.Scaler.Finalizers, "mutated")
+			Expect(reconCtx.ScalerOriginal.Finalizers).To(Equal([]string{"example.com/existing"}))
+		})
 	})
 
 	Context("When the Scaler resource does not exist", func() {

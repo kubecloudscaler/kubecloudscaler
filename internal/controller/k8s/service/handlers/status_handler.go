@@ -19,9 +19,11 @@ package handlers
 import (
 	"k8s.io/client-go/util/retry"
 	"k8s.io/utils/ptr"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	"github.com/kubecloudscaler/kubecloudscaler/api/common"
+	kubecloudscalerv1alpha3 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha3"
 	"github.com/kubecloudscaler/kubecloudscaler/internal/controller/k8s/service"
 	"github.com/kubecloudscaler/kubecloudscaler/internal/utils"
 )
@@ -46,12 +48,12 @@ func (h *StatusHandler) Execute(ctx *service.ReconciliationContext) error {
 	// Handle finalizer cleanup if the object is being deleted
 	if ctx.ShouldFinalize {
 		ctx.Logger.Info().Str("name", ctx.Scaler.Name).Msg("removing finalizer")
-		controllerutil.RemoveFinalizer(ctx.Scaler, ScalerFinalizer)
-		if err := ctx.Client.Update(ctx.Ctx, ctx.Scaler); err != nil {
+		if err := patchRemoveFinalizer(ctx); err != nil {
 			ctx.Logger.Error().Err(err).Msg("failed to remove finalizer")
 			ctx.RequeueAfter = utils.ReconcileErrorDuration
 			return service.NewRecoverableError(err)
 		}
+		controllerutil.RemoveFinalizer(ctx.Scaler, ScalerFinalizer)
 		// Finalizer removed successfully, no requeue needed
 		ctx.RequeueAfter = 0
 		return nil
@@ -111,4 +113,22 @@ func (h *StatusHandler) Execute(ctx *service.ReconciliationContext) error {
 // SetNext establishes the next handler in the chain.
 func (h *StatusHandler) SetNext(next service.Handler) {
 	h.next = next
+}
+
+// patchRemoveFinalizer removes ScalerFinalizer via an optimistic-locked merge patch, re-fetching
+// and retrying on 409 conflicts. Scoped to metadata.finalizers so neither spec nor status is
+// transmitted. No-op if the finalizer is already absent.
+func patchRemoveFinalizer(ctx *service.ReconciliationContext) error {
+	return retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		latest := &kubecloudscalerv1alpha3.K8s{}
+		if err := ctx.Client.Get(ctx.Ctx, ctx.Request.NamespacedName, latest); err != nil {
+			return err
+		}
+		if !controllerutil.ContainsFinalizer(latest, ScalerFinalizer) {
+			return nil
+		}
+		patch := client.MergeFromWithOptions(latest.DeepCopy(), client.MergeFromWithOptimisticLock{})
+		controllerutil.RemoveFinalizer(latest, ScalerFinalizer)
+		return ctx.Client.Patch(ctx.Ctx, latest, patch)
+	})
 }

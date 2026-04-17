@@ -121,15 +121,15 @@ var _ = Describe("StatusHandler", func() {
 		})
 	})
 
-	Context("When client Update fails during finalizer removal", func() {
+	Context("When client Patch fails during finalizer removal", func() {
 		It("should return a recoverable error and set RequeueAfter", func() {
 			controllerutil.AddFinalizer(reconCtx.Scaler, handlers.ScalerFinalizer)
-			injectedErr := fmt.Errorf("update conflict")
+			injectedErr := fmt.Errorf("persistent patch failure")
 			reconCtx.Client = fake.NewClientBuilder().
 				WithScheme(scheme).
 				WithObjects(reconCtx.Scaler).
 				WithInterceptorFuncs(interceptor.Funcs{
-					Update: func(ctx context.Context, c client.WithWatch, obj client.Object, opts ...client.UpdateOption) error {
+					Patch: func(ctx context.Context, c client.WithWatch, obj client.Object, patch client.Patch, opts ...client.PatchOption) error {
 						return injectedErr
 					},
 				}).

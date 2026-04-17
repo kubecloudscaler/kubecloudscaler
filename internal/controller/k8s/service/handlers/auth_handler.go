@@ -30,11 +30,14 @@ import (
 	k8sClient "github.com/kubecloudscaler/kubecloudscaler/pkg/k8s/utils/client"
 )
 
-// cachedClient holds a cached K8s client pair.
-// Note: cache has no eviction policy; acceptable when secret count is low.
+// cachedClient holds a cached K8s client pair together with the ResourceVersion of the
+// secret it was built from. When the secret is rotated (its ResourceVersion changes), the
+// cached entry is treated as stale and the client is rebuilt — otherwise revoked
+// credentials would remain usable until the controller restarts.
 type cachedClient struct {
-	k8sClient     kubernetes.Interface
-	dynamicClient dynamic.Interface
+	resourceVersion string
+	k8sClient       kubernetes.Interface
+	dynamicClient   dynamic.Interface
 }
 
 // AuthHandler is a handler that sets up the K8s client with authentication.
@@ -84,25 +87,37 @@ func (h *AuthHandler) Execute(ctx *service.ReconciliationContext) error {
 		secret = nil
 	}
 
-	// Check cache for existing client
+	var secretRV string
+	if secret != nil {
+		secretRV = secret.ResourceVersion
+	}
+
+	// Cache lookup: hit only when the stored entry was built from the same ResourceVersion.
+	// A mismatch means the secret was rotated since we cached the client, so we must rebuild.
+	var kubeClient kubernetes.Interface
+	var dynamicClient dynamic.Interface
 	if cached, ok := h.clientCache.Load(cacheKey); ok {
-		cc, _ := cached.(*cachedClient)
-		ctx.K8sClient = cc.k8sClient
-		ctx.DynamicClient = cc.dynamicClient
-	} else {
-		// Initialize K8s client for resource operations
-		kubeClient, dynamicClient, err := k8sClient.GetClient(secret)
+		if cc, _ := cached.(*cachedClient); cc != nil && cc.resourceVersion == secretRV {
+			kubeClient = cc.k8sClient
+			dynamicClient = cc.dynamicClient
+		}
+	}
+
+	if kubeClient == nil {
+		var err error
+		kubeClient, dynamicClient, err = k8sClient.GetClient(secret)
 		if err != nil {
 			ctx.Logger.Error().Err(err).Msg("unable to create K8s client")
 			return service.NewCriticalError(fmt.Errorf("failed to create K8s client: %w", err))
 		}
 		h.clientCache.Store(cacheKey, &cachedClient{
-			k8sClient:     kubeClient,
-			dynamicClient: dynamicClient,
+			resourceVersion: secretRV,
+			k8sClient:       kubeClient,
+			dynamicClient:   dynamicClient,
 		})
-		ctx.K8sClient = kubeClient
-		ctx.DynamicClient = dynamicClient
 	}
+	ctx.K8sClient = kubeClient
+	ctx.DynamicClient = dynamicClient
 
 	// Call next handler in chain
 	if h.next != nil && !ctx.SkipRemaining {

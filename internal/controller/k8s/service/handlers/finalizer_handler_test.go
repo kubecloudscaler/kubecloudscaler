@@ -96,14 +96,14 @@ var _ = Describe("FinalizerHandler", func() {
 
 	})
 
-	Context("When the client Update fails while adding finalizer", func() {
+	Context("When the client Patch fails while adding finalizer", func() {
 		It("should return a recoverable error and set RequeueAfter", func() {
-			injectedErr := fmt.Errorf("conflict on update")
+			injectedErr := fmt.Errorf("persistent patch failure")
 			reconCtx.Client = fake.NewClientBuilder().
 				WithScheme(scheme).
 				WithObjects(scaler).
 				WithInterceptorFuncs(interceptor.Funcs{
-					Update: func(ctx context.Context, c client.WithWatch, obj client.Object, opts ...client.UpdateOption) error {
+					Patch: func(ctx context.Context, c client.WithWatch, obj client.Object, patch client.Patch, opts ...client.PatchOption) error {
 						return injectedErr
 					},
 				}).
@@ -114,6 +114,22 @@ var _ = Describe("FinalizerHandler", func() {
 			Expect(err).To(HaveOccurred())
 			Expect(service.IsRecoverableError(err)).To(BeTrue())
 			Expect(reconCtx.RequeueAfter).To(Equal(utils.ReconcileErrorDuration))
+		})
+	})
+
+	Context("When adding a finalizer succeeds", func() {
+		It("should persist the finalizer via Patch and update ctx.Scaler", func() {
+			reconCtx.Client = fake.NewClientBuilder().WithScheme(scheme).WithObjects(scaler).Build()
+
+			err := handler.Execute(reconCtx)
+
+			Expect(err).ToNot(HaveOccurred())
+			Expect(controllerutil.ContainsFinalizer(reconCtx.Scaler, handlers.ScalerFinalizer)).To(BeTrue())
+
+			// Verify persisted on the server (not just in-memory)
+			persisted := &kubecloudscalerv1alpha3.K8s{}
+			Expect(reconCtx.Client.Get(reconCtx.Ctx, reconCtx.Request.NamespacedName, persisted)).To(Succeed())
+			Expect(controllerutil.ContainsFinalizer(persisted, handlers.ScalerFinalizer)).To(BeTrue())
 		})
 	})
 
