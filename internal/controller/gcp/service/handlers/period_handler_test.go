@@ -126,6 +126,9 @@ var _ = Describe("PeriodHandler", func() {
 			Expect(periodHandler.Execute(reconCtx)).To(Succeed())
 			Expect(reconCtx.SkipRemaining).To(BeFalse())
 			Expect(reconCtx.Period).ToNot(BeNil())
+			Expect(reconCtx.Period.Name).To(Equal("noaction"))
+			Expect(reconCtx.Scaler.Status.CurrentPeriod).ToNot(BeNil())
+			Expect(reconCtx.Scaler.Status.CurrentPeriod.Name).To(Equal("noaction"))
 		})
 	})
 
@@ -184,34 +187,6 @@ var _ = Describe("PeriodHandler", func() {
 		})
 	})
 
-	Context("When period configuration is empty", func() {
-		BeforeEach(func() {
-			scaler.Spec.Periods = []common.ScalerPeriod{}
-
-			k8sClient := fake.NewClientBuilder().
-				WithScheme(scheme).
-				WithObjects(scaler).
-				Build()
-
-			reconCtx = &service.ReconciliationContext{
-				Ctx:       context.Background(),
-				Request:   ctrl.Request{},
-				Client:    k8sClient,
-				Logger:    &logger,
-				Scaler:    scaler,
-				GCPClient: &gcpUtils.ClientSet{},
-			}
-		})
-
-		It("should handle empty periods gracefully", func() {
-			err := periodHandler.Execute(reconCtx)
-
-			// Should either succeed with default period or return appropriate result
-			// Error handling depends on implementation
-			_ = err
-		})
-	})
-
 	Context("When handling finalizer deletion", func() {
 		BeforeEach(func() {
 			scaler.Spec.Config.RestoreOnDelete = true
@@ -246,11 +221,9 @@ var _ = Describe("PeriodHandler", func() {
 			}
 		})
 
-		It("should handle restore on delete", func() {
-			err := periodHandler.Execute(reconCtx)
-
-			// Validation with restore flag should work
-			_ = err
+		It("should succeed and keep the chain alive so the scaling handler can restore state", func() {
+			Expect(periodHandler.Execute(reconCtx)).To(Succeed())
+			Expect(reconCtx.SkipRemaining).To(BeFalse())
 		})
 	})
 })

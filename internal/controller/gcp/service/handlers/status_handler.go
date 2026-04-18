@@ -19,6 +19,7 @@ package handlers
 import (
 	"fmt"
 
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/util/retry"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -59,6 +60,11 @@ func (h *StatusHandler) Execute(ctx *service.ReconciliationContext) error {
 	if ctx.ShouldFinalize {
 		ctx.Logger.Info().Str("name", scaler.Name).Msg("removing finalizer")
 		if err := patchRemoveFinalizer(ctx); err != nil {
+			if apierrors.IsNotFound(err) {
+				// Scaler has already been fully deleted — cleanup is done.
+				ctx.Logger.Debug().Msg("scaler already gone, finalizer cleanup is a no-op")
+				return nil
+			}
 			ctx.Logger.Error().Err(err).Msg("failed to remove finalizer")
 			ctx.RequeueAfter = transientRequeueAfter
 			return service.NewRecoverableError(fmt.Errorf("remove finalizer: %w", err))

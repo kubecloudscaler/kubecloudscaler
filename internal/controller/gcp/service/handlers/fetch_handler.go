@@ -58,6 +58,10 @@ func (h *FetchHandler) Execute(ctx *service.ReconciliationContext) error {
 	scaler := &kubecloudscalerv1alpha3.Gcp{}
 	if err := ctx.Client.Get(ctx.Ctx, ctx.Request.NamespacedName, scaler); err != nil {
 		if client.IgnoreNotFound(err) == nil {
+			// Scaler is gone (likely deleted). Short-circuit without an error so
+			// controller-runtime does not log a spurious "Reconciler error"; the
+			// Debug log keeps this path observable when troubleshooting.
+			ctx.Logger.Debug().Msg("scaler not found, skipping reconciliation (likely deleted)")
 			ctx.SkipRemaining = true
 			return nil
 		}
@@ -67,7 +71,6 @@ func (h *FetchHandler) Execute(ctx *service.ReconciliationContext) error {
 	}
 
 	ctx.Scaler = scaler
-	ctx.ScalerOriginal = scaler.DeepCopy()
 	if h.next != nil {
 		return h.next.Execute(ctx)
 	}

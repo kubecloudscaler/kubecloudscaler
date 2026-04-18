@@ -19,6 +19,7 @@ package handlers
 import (
 	"fmt"
 
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -62,6 +63,12 @@ func (h *FinalizerHandler) Execute(ctx *service.ReconciliationContext) error {
 		if !controllerutil.ContainsFinalizer(scaler, ScalerFinalizer) {
 			ctx.Logger.Info().Msg("adding finalizer")
 			if err := patchAddFinalizer(ctx); err != nil {
+				if apierrors.IsNotFound(err) {
+					// Scaler was deleted between FetchHandler and this patch — nothing to do.
+					ctx.Logger.Debug().Msg("scaler vanished before finalizer could be added, skipping")
+					ctx.SkipRemaining = true
+					return nil
+				}
 				ctx.Logger.Error().Err(err).Msg("failed to add finalizer")
 				ctx.RequeueAfter = transientRequeueAfter
 				return service.NewRecoverableError(fmt.Errorf("add finalizer: %w", err))

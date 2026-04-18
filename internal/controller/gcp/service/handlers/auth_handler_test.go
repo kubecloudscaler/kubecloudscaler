@@ -19,6 +19,8 @@ package handlers_test
 import (
 	"context"
 	"fmt"
+	"sync"
+	"sync/atomic"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -35,6 +37,8 @@ import (
 	"github.com/kubecloudscaler/kubecloudscaler/internal/controller/gcp/service/handlers"
 	gcpUtils "github.com/kubecloudscaler/kubecloudscaler/pkg/gcp/utils"
 )
+
+const testAuthSecretName = "gcp-secret"
 
 // stubNamespaceResolver returns a fixed namespace — keeps tests independent of POD_NAMESPACE.
 type stubNamespaceResolver struct{ ns string }
@@ -127,7 +131,7 @@ var _ = Describe("AuthHandler", func() {
 		var authSecret *corev1.Secret
 
 		BeforeEach(func() {
-			secretName := "gcp-secret"
+			secretName := testAuthSecretName
 			scaler.Spec.Config.AuthSecret = &secretName
 			authSecret = &corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
@@ -175,6 +179,109 @@ var _ = Describe("AuthHandler", func() {
 
 			Expect(authHandler.Execute(reconCtx)).To(Succeed())
 			Expect(factory.invocations).To(HaveLen(2))
+		})
+	})
+
+	Context("When the secret is rotated", func() {
+		var (
+			authSecret *corev1.Secret
+			closes     atomic.Int32
+		)
+
+		BeforeEach(func() {
+			secretName := testAuthSecretName
+			scaler.Spec.Config.AuthSecret = &secretName
+			authSecret = &corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:            secretName,
+					Namespace:       "default",
+					ResourceVersion: "1",
+				},
+				Data: map[string][]byte{"service-account-key.json": []byte(`{"type":"service_account"}`)},
+			}
+			k8sClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(scaler, authSecret).Build()
+
+			closes.Store(0)
+			factory = newStubGCPFactory()
+			authHandler = handlers.NewAuthHandler(
+				stubNamespaceResolver{ns: "default"},
+				handlers.WithClientFactory(factory.build),
+				handlers.WithClientCloserForTest(func(_ *gcpUtils.ClientSet) error {
+					closes.Add(1)
+					return nil
+				}),
+			)
+
+			reconCtx = &service.ReconciliationContext{
+				Ctx:     context.Background(),
+				Request: ctrl.Request{},
+				Client:  k8sClient,
+				Logger:  &logger,
+				Scaler:  scaler,
+			}
+		})
+
+		It("closes the stale client exactly once before storing the rebuilt client", func() {
+			Expect(authHandler.Execute(reconCtx)).To(Succeed())
+			Expect(closes.Load()).To(BeZero(), "no close on initial build")
+
+			rotated := &corev1.Secret{}
+			secretKey := types.NamespacedName{Namespace: authSecret.Namespace, Name: authSecret.Name}
+			Expect(reconCtx.Client.Get(reconCtx.Ctx, secretKey, rotated)).To(Succeed())
+			rotated.Data["service-account-key.json"] = []byte(`{"type":"rotated"}`)
+			Expect(reconCtx.Client.Update(reconCtx.Ctx, rotated)).To(Succeed())
+
+			Expect(authHandler.Execute(reconCtx)).To(Succeed())
+			Expect(factory.invocations).To(HaveLen(2))
+			Expect(closes.Load()).To(Equal(int32(1)), "close called exactly once on rotation")
+
+			// Third reconcile at the same RV must be a cache hit — no extra close, no extra build.
+			Expect(authHandler.Execute(reconCtx)).To(Succeed())
+			Expect(factory.invocations).To(HaveLen(2))
+			Expect(closes.Load()).To(Equal(int32(1)))
+		})
+	})
+
+	Context("Concurrent reconciles hitting the same cacheKey", func() {
+		It("is goroutine-safe (run with -race); factory invocations are bounded", func() {
+			secretName := testAuthSecretName
+			scaler.Spec.Config.AuthSecret = &secretName
+			authSecret := &corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:            secretName,
+					Namespace:       "default",
+					ResourceVersion: "1",
+				},
+				Data: map[string][]byte{"service-account-key.json": []byte(`{"type":"service_account"}`)},
+			}
+			k8sClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(scaler, authSecret).Build()
+
+			const workers = 20
+			var wg sync.WaitGroup
+			for range workers {
+				wg.Go(func() {
+					local := &service.ReconciliationContext{
+						Ctx:     context.Background(),
+						Request: ctrl.Request{},
+						Client:  k8sClient,
+						Logger:  &logger,
+						Scaler:  scaler,
+					}
+					Expect(authHandler.Execute(local)).To(Succeed())
+				})
+			}
+			wg.Wait()
+
+			// Under the current single-mutex cache, concurrent misses may serialise but none should
+			// exceed the worker count, and at least one build must have happened.
+			Expect(factory.invocations).ToNot(BeEmpty())
+			Expect(len(factory.invocations)).To(BeNumerically("<=", workers))
+		})
+	})
+
+	Context("WithClientFactory with a nil factory", func() {
+		It("panics immediately — mis-wired tests must fail loudly, not fall through to ADC", func() {
+			Expect(func() { handlers.WithClientFactory(nil) }).To(Panic())
 		})
 	})
 
