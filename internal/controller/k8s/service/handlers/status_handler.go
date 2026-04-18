@@ -17,6 +17,7 @@ limitations under the License.
 package handlers
 
 import (
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/util/retry"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -49,6 +50,12 @@ func (h *StatusHandler) Execute(ctx *service.ReconciliationContext) error {
 	if ctx.ShouldFinalize {
 		ctx.Logger.Info().Str("name", ctx.Scaler.Name).Msg("removing finalizer")
 		if err := patchRemoveFinalizer(ctx); err != nil {
+			if apierrors.IsNotFound(err) {
+				// Scaler has already been fully deleted — cleanup is done.
+				ctx.Logger.Debug().Msg("scaler already gone, finalizer cleanup is a no-op")
+				ctx.RequeueAfter = 0
+				return nil
+			}
 			ctx.Logger.Error().Err(err).Msg("failed to remove finalizer")
 			ctx.RequeueAfter = utils.ReconcileErrorDuration
 			return service.NewRecoverableError(err)
@@ -59,9 +66,8 @@ func (h *StatusHandler) Execute(ctx *service.ReconciliationContext) error {
 		return nil
 	}
 
-	// Build the desired status from the in-memory state set by PeriodHandler and ScalingHandler.
-	// This must be snapshotted before the retry loop because re-fetching the object from the
-	// cluster would overwrite fields like Spec/SpecSHA/Type/Name that PeriodHandler wrote.
+	// Capture desired status from in-memory state set by earlier handlers. Taken as a
+	// DeepCopy so the retry loop's fresh Get cannot alias the Successful/Failed slices.
 	if ctx.Scaler.Status.CurrentPeriod == nil {
 		ctx.Scaler.Status.CurrentPeriod = &common.ScalerStatusPeriod{}
 	}
@@ -69,20 +75,28 @@ func (h *StatusHandler) Execute(ctx *service.ReconciliationContext) error {
 	ctx.Scaler.Status.CurrentPeriod.Failed = ctx.FailedResults
 	ctx.Scaler.Status.Comments = ptr.To("time period processed")
 
-	desiredPeriod := *ctx.Scaler.Status.CurrentPeriod
+	desiredPeriod := ctx.Scaler.Status.CurrentPeriod.DeepCopy()
 	desiredComments := ctx.Scaler.Status.Comments
 
-	// Persist status updates to the cluster, retrying on conflict by re-fetching the latest version
+	// Persist status via optimistic-locked merge patch, scoped to the status subresource.
+	// Patching (not Update) transmits only the fields we changed and respects
+	// resourceVersion on conflict. Retry re-fetches the latest object inside the closure so
+	// each attempt builds its patch base from fresh state.
 	if err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
-		if err := ctx.Client.Get(ctx.Ctx, ctx.Request.NamespacedName, ctx.Scaler); err != nil {
+		latest := &kubecloudscalerv1alpha3.K8s{}
+		if err := ctx.Client.Get(ctx.Ctx, ctx.Request.NamespacedName, latest); err != nil {
 			return err
 		}
-		// Restore desired status onto the freshly-fetched object (preserves resourceVersion)
-		periodCopy := desiredPeriod
-		ctx.Scaler.Status.CurrentPeriod = &periodCopy
-		ctx.Scaler.Status.Comments = desiredComments
-		return ctx.Client.Status().Update(ctx.Ctx, ctx.Scaler)
+		patch := client.MergeFromWithOptions(latest.DeepCopy(), client.MergeFromWithOptimisticLock{})
+		latest.Status.CurrentPeriod = desiredPeriod.DeepCopy()
+		latest.Status.Comments = desiredComments
+		return ctx.Client.Status().Patch(ctx.Ctx, latest, patch)
 	}); err != nil {
+		if apierrors.IsNotFound(err) {
+			// Scaler was deleted mid-reconcile — nothing to update.
+			ctx.Logger.Debug().Msg("scaler vanished before status could be updated, skipping")
+			return nil
+		}
 		ctx.Logger.Error().Err(err).Msg("unable to update scaler status")
 		ctx.RequeueAfter = utils.ReconcileErrorDuration
 		return service.NewRecoverableError(err)

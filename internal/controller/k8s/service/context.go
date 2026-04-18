@@ -87,13 +87,6 @@ type ReconciliationContext struct {
 	// Used by: All subsequent handlers
 	Scaler *kubecloudscalerv1alpha3.K8s
 
-	// ScalerOriginal is a DeepCopy of the Scaler captured immediately after fetch,
-	// before any handler mutation. Used as the base for client.MergeFrom patches so
-	// mutations on Scaler do not pollute the patch diff.
-	// Set by: FetchHandler
-	// Used by: FinalizerHandler, StatusHandler (patch base)
-	ScalerOriginal *kubecloudscalerv1alpha3.K8s
-
 	// Secret is the authentication secret for remote cluster access (nil if not needed).
 	// Set by: AuthHandler
 	// Used by: AuthHandler only

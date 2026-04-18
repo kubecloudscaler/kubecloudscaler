@@ -171,6 +171,42 @@ var _ = Describe("PeriodHandler", func() {
 		})
 	})
 
+	Context("When period validation fails (invalid period spec)", func() {
+		It("returns a CriticalError AND persists status.comments so operators see why", func() {
+			scaler.Spec.Periods = []common.ScalerPeriod{
+				{
+					Name: "broken",
+					Type: common.PeriodTypeUp,
+					Time: common.TimePeriod{
+						Recurring: &common.RecurringPeriod{
+							Days:      []common.DayOfWeek{common.DayAll},
+							StartTime: "not-a-time",
+							EndTime:   "also-broken",
+							Once:      ptr.To(false),
+						},
+					},
+				},
+			}
+			reconCtx.Client = fakeclient.NewClientBuilder().
+				WithScheme(scheme).
+				WithObjects(scaler).
+				WithStatusSubresource(scaler).
+				Build()
+			reconCtx.Scaler = scaler
+
+			err := handler.Execute(reconCtx)
+
+			Expect(err).To(HaveOccurred())
+			Expect(service.IsCriticalError(err)).To(BeTrue())
+
+			persisted := &kubecloudscalerv1alpha3.K8s{}
+			Expect(reconCtx.Client.Get(reconCtx.Ctx, reconCtx.Request.NamespacedName, persisted)).To(Succeed())
+			Expect(persisted.Status.Comments).ToNot(BeNil(),
+				"status.comments must be persisted before CriticalError short-circuits the chain")
+			Expect(*persisted.Status.Comments).ToNot(BeEmpty())
+		})
+	})
+
 	Context("When the previous period name collides with 'noaction' but its Type is not", func() {
 		It("should not skip remaining (Type-based comparison, not Name)", func() {
 			// A user legitimately creates a period literally named "noaction" but typed "down".

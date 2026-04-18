@@ -20,11 +20,13 @@ import (
 	"errors"
 	"time"
 
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/util/retry"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kubecloudscaler/kubecloudscaler/api/common"
+	kubecloudscalerv1alpha3 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha3"
 	"github.com/kubecloudscaler/kubecloudscaler/internal/controller/k8s/service"
 	"github.com/kubecloudscaler/kubecloudscaler/internal/utils"
 	k8sUtils "github.com/kubecloudscaler/kubecloudscaler/pkg/k8s/utils"
@@ -155,12 +157,11 @@ func (h *PeriodHandler) resolveActivePeriod(ctx *service.ReconciliationContext) 
 
 // patchStatusComments persists only status.comments via a status-subresource patch with
 // optimistic locking + retry on conflict. Scoped tightly so spec is never transmitted.
+// NotFound from the inner Get is treated as a no-op (the scaler was deleted between
+// FetchHandler and here; there is nothing to patch).
 func patchStatusComments(ctx *service.ReconciliationContext, comments *string) error {
-	if ctx.ScalerOriginal == nil {
-		return nil
-	}
-	return retry.RetryOnConflict(retry.DefaultRetry, func() error {
-		latest := ctx.ScalerOriginal.DeepCopy()
+	err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		latest := &kubecloudscalerv1alpha3.K8s{}
 		if err := ctx.Client.Get(ctx.Ctx, ctx.Request.NamespacedName, latest); err != nil {
 			return err
 		}
@@ -168,6 +169,10 @@ func patchStatusComments(ctx *service.ReconciliationContext, comments *string) e
 		latest.Status.Comments = comments
 		return ctx.Client.Status().Patch(ctx.Ctx, latest, patch)
 	})
+	if apierrors.IsNotFound(err) {
+		return nil
+	}
+	return err
 }
 
 // shouldSkipNoaction returns true when we can safely skip the rest of the chain

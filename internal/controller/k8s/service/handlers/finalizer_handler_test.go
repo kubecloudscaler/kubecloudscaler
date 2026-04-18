@@ -18,13 +18,16 @@ package handlers_test
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/rs/zerolog"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -179,7 +182,7 @@ var _ = Describe("FinalizerHandler", func() {
 
 			nextCalled := false
 			mockNext := &testutil.MockHandler{
-				ExecuteFunc: func(ctx *service.ReconciliationContext) error {
+				ExecuteFunc: func(_ *service.ReconciliationContext) error {
 					nextCalled = true
 					return nil
 				},
@@ -191,6 +194,74 @@ var _ = Describe("FinalizerHandler", func() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(reconCtx.SkipRemaining).To(BeTrue())
 			Expect(nextCalled).To(BeFalse())
+		})
+	})
+
+	Context("When the scaler is deleted between Fetch and finalizer Patch", func() {
+		It("short-circuits without error and without requeue", func() {
+			// Empty client — any Get inside patchAddFinalizer returns NotFound.
+			reconCtx.Client = fake.NewClientBuilder().WithScheme(scheme).Build()
+
+			err := handler.Execute(reconCtx)
+
+			Expect(err).ToNot(HaveOccurred())
+			Expect(reconCtx.SkipRemaining).To(BeTrue())
+			Expect(reconCtx.RequeueAfter).To(BeZero())
+		})
+	})
+
+	Context("Retry-on-conflict when adding the finalizer", func() {
+		It("retries once on a 409 and succeeds on the second Patch", func() {
+			gvr := schema.GroupResource{Group: "kubecloudscaler.cloud", Resource: "k8s"}
+			var patchCalls int
+			reconCtx.Client = fake.NewClientBuilder().
+				WithScheme(scheme).
+				WithObjects(scaler).
+				WithInterceptorFuncs(interceptor.Funcs{
+					Patch: func(ctx context.Context, c client.WithWatch, obj client.Object, patch client.Patch, opts ...client.PatchOption) error {
+						patchCalls++
+						if patchCalls == 1 {
+							return apierrors.NewConflict(gvr, obj.GetName(), fmt.Errorf("conflict"))
+						}
+						return c.Patch(ctx, obj, patch, opts...)
+					},
+				}).
+				Build()
+
+			Expect(handler.Execute(reconCtx)).To(Succeed())
+			Expect(patchCalls).To(Equal(2))
+			persisted := &kubecloudscalerv1alpha3.K8s{}
+			Expect(reconCtx.Client.Get(reconCtx.Ctx, reconCtx.Request.NamespacedName, persisted)).To(Succeed())
+			Expect(controllerutil.ContainsFinalizer(persisted, handlers.ScalerFinalizer)).To(BeTrue())
+		})
+	})
+
+	Context("Finalizer-add Patch body scope", func() {
+		It("transmits only metadata (no spec, no status)", func() {
+			var capturedBody []byte
+			reconCtx.Client = fake.NewClientBuilder().
+				WithScheme(scheme).
+				WithObjects(scaler).
+				WithInterceptorFuncs(interceptor.Funcs{
+					Patch: func(ctx context.Context, c client.WithWatch, obj client.Object, patch client.Patch, opts ...client.PatchOption) error {
+						body, err := patch.Data(obj)
+						if err != nil {
+							return err
+						}
+						capturedBody = body
+						return c.Patch(ctx, obj, patch, opts...)
+					},
+				}).
+				Build()
+
+			Expect(handler.Execute(reconCtx)).To(Succeed())
+			Expect(capturedBody).ToNot(BeEmpty())
+
+			var parsed map[string]any
+			Expect(json.Unmarshal(capturedBody, &parsed)).To(Succeed())
+			Expect(parsed).To(HaveKey("metadata"))
+			Expect(parsed).ToNot(HaveKey("spec"))
+			Expect(parsed).ToNot(HaveKey("status"))
 		})
 	})
 })

@@ -19,6 +19,7 @@ package handlers_test
 import (
 	"context"
 	"fmt"
+	"sync"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -199,6 +200,49 @@ var _ = Describe("AuthHandler", func() {
 			Expect(service.IsCriticalError(err)).To(BeTrue())
 			Expect(reconCtx.Secret).To(BeNil())
 			Expect(factory.invocations).To(BeEmpty())
+		})
+	})
+
+	Context("WithClientFactory with a nil factory", func() {
+		It("panics immediately — mis-wired tests must fail loudly, not fall through to real in-cluster config", func() {
+			Expect(func() { handlers.WithClientFactory(nil) }).To(Panic())
+		})
+	})
+
+	Context("Concurrent reconciles hitting the same cacheKey", func() {
+		It("is goroutine-safe (run with -race); factory invocations are bounded", func() {
+			secretName := "k8s-secret"
+			scaler.Spec.Config.AuthSecret = ptr.To(secretName)
+			authSecret := &corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:            secretName,
+					Namespace:       "default",
+					ResourceVersion: "1",
+				},
+				Data: map[string][]byte{"kubeconfig": []byte("fake")},
+			}
+			reconCtx.Client = fake.NewClientBuilder().WithScheme(scheme).WithObjects(scaler, authSecret).Build()
+
+			const workers = 20
+			var wg sync.WaitGroup
+			for range workers {
+				wg.Go(func() {
+					local := &service.ReconciliationContext{
+						Ctx:     context.Background(),
+						Request: reconCtx.Request,
+						Client:  reconCtx.Client,
+						Logger:  reconCtx.Logger,
+						Scaler:  scaler,
+					}
+					Expect(handler.Execute(local)).To(Succeed())
+				})
+			}
+			wg.Wait()
+
+			// Under the current single-mutex cache, concurrent misses may serialise but none
+			// should exceed the worker count, and at least one build must have happened.
+			Expect(factory.invocations).ToNot(BeEmpty())
+			Expect(len(factory.invocations)).To(BeNumerically("<=", workers))
 		})
 	})
 })
