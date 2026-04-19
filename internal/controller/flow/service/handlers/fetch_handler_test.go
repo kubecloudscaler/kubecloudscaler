@@ -74,13 +74,12 @@ var _ = Describe("FetchHandler", func() {
 	})
 
 	Context("When the Flow resource is not found", func() {
-		It("returns a CriticalError so the controller ignores NotFound without requeue", func() {
+		It("returns nil without chaining (deleted object, nothing to reconcile)", func() {
 			reconCtx.Client = fake.NewClientBuilder().WithScheme(scheme).Build()
 
 			err := handler.Execute(reconCtx)
 
-			Expect(err).To(HaveOccurred())
-			Expect(shared.IsCriticalError(err)).To(BeTrue())
+			Expect(err).To(Succeed())
 			Expect(reconCtx.Flow).To(BeNil())
 		})
 	})
