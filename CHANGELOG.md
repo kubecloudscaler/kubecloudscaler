@@ -1,5 +1,25 @@
 # Changelog
 
+## [1.10.0](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.9.5...v1.10.0) (2026-04-19)
+
+
+### Features
+
+* **scaledobjects:** support pausing KEDA autoscaling on scheduled do… ([#254](https://github.com/kubecloudscaler/kubecloudscaler/issues/254)) ([302bdcb](https://github.com/kubecloudscaler/kubecloudscaler/commit/302bdcb6c32aa0259fcf1c5f1675bd50452d9428))
+
+
+### Bug Fixes
+
+* align codebase with golangci-lint (0 issues) ([#261](https://github.com/kubecloudscaler/kubecloudscaler/issues/261)) ([a8c4fb9](https://github.com/kubecloudscaler/kubecloudscaler/commit/a8c4fb976aac370d14e2d309feac9d19c0e03989))
+* **deps:** update all non-major dependencies ([#247](https://github.com/kubecloudscaler/kubecloudscaler/issues/247)) ([d79e421](https://github.com/kubecloudscaler/kubecloudscaler/commit/d79e4212dfc4a13b186a44a75a30537440bf7dbd))
+* **deps:** update github.com/actions/actions-runner-controller digest to 74cfc38 ([#246](https://github.com/kubecloudscaler/kubecloudscaler/issues/246)) ([3763683](https://github.com/kubecloudscaler/kubecloudscaler/commit/3763683b29034fa2cecace329f2186f9eccae85b))
+* **deps:** update k8s.io/utils digest to 28399d8 ([#240](https://github.com/kubecloudscaler/kubecloudscaler/issues/240)) ([566ad91](https://github.com/kubecloudscaler/kubecloudscaler/commit/566ad91e7663dc07a3dfa67e21fc933b5a51736b))
+* **flow:** classify config errors, reflect them on status, harden finalizer + child names ([#258](https://github.com/kubecloudscaler/kubecloudscaler/issues/258)) ([00355d6](https://github.com/kubecloudscaler/kubecloudscaler/commit/00355d6ab16bb9cd0e9103e2d943002225831172))
+* **gcp:** harden controller to match k8s controller patterns ([#257](https://github.com/kubecloudscaler/kubecloudscaler/issues/257)) ([2596a9f](https://github.com/kubecloudscaler/kubecloudscaler/commit/2596a9f369560261cb41c2eb556e1f5c214a0b6f))
+* **k8s:** harden controller reconciliation and make tests deterministic ([#256](https://github.com/kubecloudscaler/kubecloudscaler/issues/256)) ([06a5311](https://github.com/kubecloudscaler/kubecloudscaler/commit/06a5311bb4eff7bc7b3d5ab67c07c136ca07f8e1))
+* **period:** clarify fixed-period comment and getTime error returns ([9699467](https://github.com/kubecloudscaler/kubecloudscaler/commit/9699467e49b9816f12d6f6cf508cefbbdee0715a))
+* remove finalizer during delete when period is stable noaction ([4db0412](https://github.com/kubecloudscaler/kubecloudscaler/commit/4db0412a53850bc67164485e80f39775fa1962f3))
+
 ## [1.9.5](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.9.4...v1.9.5) (2026-03-20)
 
 
