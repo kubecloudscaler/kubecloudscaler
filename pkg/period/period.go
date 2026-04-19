@@ -35,7 +35,7 @@ func NewWithClock(period *common.ScalerPeriod, clock Clock) (*Period, error) {
 		Name:     period.Name,
 	}
 
-	// first check for the fixed period by converting to recuuring one
+	// First check for a fixed period by converting it to a recurring-shaped spec.
 	convertedPeriod := convertFixedToRecurring(period.Time.Fixed)
 	periodType := PeriodFixedName
 
@@ -116,7 +116,7 @@ func getTime(period, periodType string, now time.Time, timeLocation *time.Locati
 	case PeriodRecurringName:
 		timeOnly, err := time.ParseInLocation(time.TimeOnly, period+":00", timeLocation)
 		if err != nil {
-			return timeOnly, ErrRecurringTimeFormat
+			return time.Time{}, ErrRecurringTimeFormat
 		}
 
 		outTime = time.Date(
@@ -132,7 +132,7 @@ func getTime(period, periodType string, now time.Time, timeLocation *time.Locati
 	case PeriodFixedName:
 		outTime, err = time.ParseInLocation(time.DateTime, period, timeLocation)
 		if err != nil {
-			return outTime, ErrFixedTimeFormat
+			return time.Time{}, ErrFixedTimeFormat
 		}
 	default:
 		return time.Time{}, fmt.Errorf("%w: %s", ErrUnknownPeriodType, periodType)
