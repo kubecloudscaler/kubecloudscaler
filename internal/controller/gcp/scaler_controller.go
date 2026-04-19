@@ -107,12 +107,8 @@ func (r *ScalerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	err := r.chain.Execute(reconCtx)
 	duration := time.Since(start).Seconds()
 
-	// Close GCP client connections to prevent resource leaks
-	if reconCtx.GCPClient != nil {
-		if closeErr := reconCtx.GCPClient.Close(); closeErr != nil {
-			logger.Warn().Err(closeErr).Msg("failed to close GCP client")
-		}
-	}
+	// Note: GCPClient is owned by the AuthHandler cache (keyed by secret + ResourceVersion).
+	// Do NOT close it here — the cache handles lifecycle, closing stale entries on rotation.
 
 	// Handle chain execution result with proper error classification
 	if err != nil {

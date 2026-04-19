@@ -58,46 +58,78 @@ var _ = Describe("PeriodHandler", func() {
 		periodHandler = handlers.NewPeriodHandler()
 	})
 
-	Context("When period configuration is valid", func() {
+	Context("When an always-active period is configured", func() {
 		BeforeEach(func() {
+			// Every day across the full 24h window — eliminates time-based non-determinism.
 			scaler.Spec.Periods = []common.ScalerPeriod{
 				{
-					Name: "business-hours",
+					Name: "always-up",
 					Type: common.PeriodTypeUp,
 					Time: common.TimePeriod{
 						Recurring: &common.RecurringPeriod{
-							Days:      []common.DayOfWeek{common.DayMonday, common.DayTuesday, common.DayWednesday, common.DayThursday, common.DayFriday},
-							StartTime: "09:00",
-							EndTime:   "17:00",
+							Days:      []common.DayOfWeek{common.DayAll},
+							StartTime: "00:00",
+							EndTime:   "23:59",
 							Once:      ptr.To(false),
 						},
 					},
 				},
 			}
 
-			k8sClient := fake.NewClientBuilder().
-				WithScheme(scheme).
-				WithObjects(scaler).
-				Build()
-
+			k8sClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(scaler).Build()
 			reconCtx = &service.ReconciliationContext{
 				Ctx:       context.Background(),
 				Request:   ctrl.Request{},
 				Client:    k8sClient,
 				Logger:    &logger,
 				Scaler:    scaler,
-				GCPClient: &gcpUtils.ClientSet{}, // Mock GCP client
+				GCPClient: &gcpUtils.ClientSet{},
 			}
 		})
 
-		It("should validate period and populate context", func() {
-			err := periodHandler.Execute(reconCtx)
+		It("should resolve the period and populate the context deterministically", func() {
+			Expect(periodHandler.Execute(reconCtx)).To(Succeed())
+			Expect(reconCtx.Period).ToNot(BeNil())
+			Expect(reconCtx.Period.Name).To(Equal("always-up"))
+			Expect(reconCtx.SkipRemaining).To(BeFalse())
+		})
+	})
 
-			// Period validation should succeed (or return appropriate result)
-			// The actual validation depends on current time
-			Expect(err).ToNot(HaveOccurred())
+	Context("When transitioning from an active period to noaction", func() {
+		BeforeEach(func() {
+			// Empty Spec.Periods forces SetActivePeriod to return the system-fallback noaction.
+			// Status.CurrentPeriod captures the previous active period so prevPeriodName != "noaction".
+			scaler.Spec.Periods = []common.ScalerPeriod{}
+			scaler.Status = common.ScalerStatus{
+				CurrentPeriod: &common.ScalerStatusPeriod{
+					Name: "business-hours",
+					Type: string(common.PeriodTypeUp),
+				},
+			}
+
+			k8sClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(scaler).Build()
+			reconCtx = &service.ReconciliationContext{
+				Ctx:       context.Background(),
+				Request:   ctrl.Request{},
+				Client:    k8sClient,
+				Logger:    &logger,
+				Scaler:    scaler,
+				GCPClient: &gcpUtils.ClientSet{},
+			}
 		})
 
+		It("should NOT skip remaining — scaling handler must run to restore resource state", func() {
+			// Regression guard for the 4db0412 fix: prevPeriodName must be snapshotted BEFORE
+			// SetActivePeriod rewrites status.CurrentPeriod. If the snapshot moves after the
+			// call, every reconcile sees prevPeriodName == "noaction" and the chain skips
+			// silently, leaving resources in the wrong state.
+			Expect(periodHandler.Execute(reconCtx)).To(Succeed())
+			Expect(reconCtx.SkipRemaining).To(BeFalse())
+			Expect(reconCtx.Period).ToNot(BeNil())
+			Expect(reconCtx.Period.Name).To(Equal("noaction"))
+			Expect(reconCtx.Scaler.Status.CurrentPeriod).ToNot(BeNil())
+			Expect(reconCtx.Scaler.Status.CurrentPeriod.Name).To(Equal("noaction"))
+		})
 	})
 
 	Context("When period is 'noaction' and status matches", func() {
@@ -155,34 +187,6 @@ var _ = Describe("PeriodHandler", func() {
 		})
 	})
 
-	Context("When period configuration is empty", func() {
-		BeforeEach(func() {
-			scaler.Spec.Periods = []common.ScalerPeriod{}
-
-			k8sClient := fake.NewClientBuilder().
-				WithScheme(scheme).
-				WithObjects(scaler).
-				Build()
-
-			reconCtx = &service.ReconciliationContext{
-				Ctx:       context.Background(),
-				Request:   ctrl.Request{},
-				Client:    k8sClient,
-				Logger:    &logger,
-				Scaler:    scaler,
-				GCPClient: &gcpUtils.ClientSet{},
-			}
-		})
-
-		It("should handle empty periods gracefully", func() {
-			err := periodHandler.Execute(reconCtx)
-
-			// Should either succeed with default period or return appropriate result
-			// Error handling depends on implementation
-			_ = err
-		})
-	})
-
 	Context("When handling finalizer deletion", func() {
 		BeforeEach(func() {
 			scaler.Spec.Config.RestoreOnDelete = true
@@ -217,11 +221,9 @@ var _ = Describe("PeriodHandler", func() {
 			}
 		})
 
-		It("should handle restore on delete", func() {
-			err := periodHandler.Execute(reconCtx)
-
-			// Validation with restore flag should work
-			_ = err
+		It("should succeed and keep the chain alive so the scaling handler can restore state", func() {
+			Expect(periodHandler.Execute(reconCtx)).To(Succeed())
+			Expect(reconCtx.SkipRemaining).To(BeFalse())
 		})
 	})
 })

@@ -58,9 +58,8 @@ var _ = Describe("Backward Compatibility", func() {
 
 			result, err := reconciler.Reconcile(ctx, req)
 
-			// FetchHandler returns CriticalError when resource is not found.
-			// The controller wraps with client.IgnoreNotFound, which suppresses
-			// K8s NotFound errors — so the reconcile returns no error.
+			// FetchHandler returns nil on NotFound (controller-runtime would otherwise log a
+			// spurious "Reconciler error"). So the reconcile returns no error and no requeue.
 			Expect(err).ToNot(HaveOccurred())
 			Expect(result).To(Equal(ctrl.Result{}))
 		})
@@ -185,17 +184,19 @@ var _ = Describe("Backward Compatibility", func() {
 				},
 			}
 
-			// First reconciliation adds finalizer; auth may or may not fail depending on env
+			// First reconciliation adds finalizer; auth may or may not fail depending on env.
+			// Either way, FinalizerHandler runs before AuthHandler in the chain so the finalizer
+			// must be persisted on the server regardless of what AuthHandler does next.
 			_, err := reconciler.Reconcile(ctx, req)
-			_ = err // error is environment-dependent (GCP credentials may or may not be available)
+			if err != nil {
+				Expect(service.IsCriticalError(err)).To(BeTrue())
+			}
 
-			// Verify finalizer was added before the auth handler failed
 			updatedScaler := &kubecloudscalerv1alpha3.Gcp{}
-			err = k8sClient.Get(ctx, types.NamespacedName{
+			Expect(k8sClient.Get(ctx, types.NamespacedName{
 				Name:      scaler.Name,
 				Namespace: scaler.Namespace,
-			}, updatedScaler)
-			Expect(err).ToNot(HaveOccurred())
+			}, updatedScaler)).To(Succeed())
 			Expect(updatedScaler.Finalizers).To(ContainElement("kubecloudscaler.cloud/finalizer"))
 		})
 	})

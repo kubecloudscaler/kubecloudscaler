@@ -30,7 +30,6 @@ import (
 
 	"github.com/kubecloudscaler/kubecloudscaler/api/common"
 	kubecloudscalerv1alpha3 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha3"
-	"github.com/kubecloudscaler/kubecloudscaler/internal/controller/gcp/service"
 )
 
 var _ = Describe("Scaler Controller", func() {
@@ -122,13 +121,23 @@ var _ = Describe("Scaler Controller", func() {
 				},
 			}
 			err := k8sClient.Get(ctx, typeNamespacedName, resource)
+			if err != nil && errors.IsNotFound(err) {
+				// Resource was deleted by the test itself; nothing to clean up.
+				return
+			}
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Cleanup the specific resource instance Scaler")
 			Expect(k8sClient.Delete(ctx, resource)).To(Succeed())
 		})
-		It("should handle reconciliation with proper error handling", func() {
-			By("Reconciling the created resource")
+
+		It("should gracefully handle a NotFound via the handler chain", func() {
+			By("Deleting the resource before reconciling")
+			existing := &kubecloudscalerv1alpha3.Gcp{}
+			Expect(k8sClient.Get(ctx, typeNamespacedName, existing)).To(Succeed())
+			Expect(k8sClient.Delete(ctx, existing)).To(Succeed())
+
+			By("Reconciling the deleted resource")
 			controllerReconciler := &ScalerReconciler{
 				Client: k8sClient,
 				Scheme: k8sClient.Scheme(),
@@ -139,11 +148,10 @@ var _ = Describe("Scaler Controller", func() {
 				NamespacedName: typeNamespacedName,
 			})
 
-			// GCP auth may or may not fail depending on credentials availability in the test environment.
-			if err != nil {
-				Expect(service.IsCriticalError(err)).To(BeTrue())
-				Expect(result.RequeueAfter).To(BeZero())
-			}
+			// FetchHandler must swallow NotFound without requeue or error, so controller-runtime
+			// does not log a spurious "Reconciler error".
+			Expect(err).ToNot(HaveOccurred())
+			Expect(result.RequeueAfter).To(BeZero())
 		})
 	})
 })

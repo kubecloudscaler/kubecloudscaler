@@ -24,12 +24,17 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/rs/zerolog"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
+
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	kubecloudscalerv1alpha3 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha3"
 	"github.com/kubecloudscaler/kubecloudscaler/internal/controller/gcp/service"
@@ -59,14 +64,10 @@ var _ = Describe("FinalizerHandler", func() {
 
 	Context("When scaler is not being deleted and has no finalizer", func() {
 		BeforeEach(func() {
-			k8sClient := fake.NewClientBuilder().
-				WithScheme(scheme).
-				WithObjects(scaler).
-				Build()
-
+			k8sClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(scaler).Build()
 			reconCtx = &service.ReconciliationContext{
 				Ctx:     context.Background(),
-				Request: ctrl.Request{},
+				Request: ctrl.Request{NamespacedName: types.NamespacedName{Name: scaler.Name, Namespace: scaler.Namespace}},
 				Client:  k8sClient,
 				Logger:  &logger,
 				Scaler:  scaler,
@@ -81,26 +82,27 @@ var _ = Describe("FinalizerHandler", func() {
 		})
 	})
 
-	Context("When client Update fails while adding finalizer", func() {
+	Context("When client Patch fails while adding finalizer", func() {
 		BeforeEach(func() {
 			k8sClient := fake.NewClientBuilder().
 				WithScheme(scheme).
 				WithObjects(scaler).
 				WithInterceptorFuncs(interceptor.Funcs{
-					Update: func(
+					Patch: func(
 						ctx context.Context,
 						c client.WithWatch,
 						obj client.Object,
-						opts ...client.UpdateOption,
+						patch client.Patch,
+						opts ...client.PatchOption,
 					) error {
-						return fmt.Errorf("conflict on update")
+						return fmt.Errorf("persistent patch failure")
 					},
 				}).
 				Build()
 
 			reconCtx = &service.ReconciliationContext{
 				Ctx:     context.Background(),
-				Request: ctrl.Request{},
+				Request: ctrl.Request{NamespacedName: types.NamespacedName{Name: scaler.Name, Namespace: scaler.Namespace}},
 				Client:  k8sClient,
 				Logger:  &logger,
 				Scaler:  scaler,
@@ -113,6 +115,29 @@ var _ = Describe("FinalizerHandler", func() {
 			Expect(err).To(HaveOccurred())
 			Expect(service.IsRecoverableError(err)).To(BeTrue())
 			Expect(reconCtx.RequeueAfter).To(Equal(5 * time.Second))
+		})
+	})
+
+	Context("When adding the finalizer succeeds", func() {
+		BeforeEach(func() {
+			k8sClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(scaler).Build()
+			reconCtx = &service.ReconciliationContext{
+				Ctx:     context.Background(),
+				Request: ctrl.Request{NamespacedName: types.NamespacedName{Name: scaler.Name, Namespace: scaler.Namespace}},
+				Client:  k8sClient,
+				Logger:  &logger,
+				Scaler:  scaler,
+			}
+		})
+
+		It("should persist the finalizer via Patch and update ctx.Scaler", func() {
+			Expect(finalizerHandler.Execute(reconCtx)).To(Succeed())
+			Expect(controllerutil.ContainsFinalizer(reconCtx.Scaler, handlers.ScalerFinalizer)).To(BeTrue())
+
+			// Verify persisted on the server (not just in-memory).
+			persisted := &kubecloudscalerv1alpha3.Gcp{}
+			Expect(reconCtx.Client.Get(reconCtx.Ctx, reconCtx.Request.NamespacedName, persisted)).To(Succeed())
+			Expect(controllerutil.ContainsFinalizer(persisted, handlers.ScalerFinalizer)).To(BeTrue())
 		})
 	})
 
@@ -170,6 +195,60 @@ var _ = Describe("FinalizerHandler", func() {
 
 			Expect(err).ToNot(HaveOccurred())
 			Expect(reconCtx.SkipRemaining).To(BeTrue())
+		})
+	})
+
+	Context("When the scaler is deleted between Fetch and finalizer Patch", func() {
+		It("short-circuits without error and without requeue", func() {
+			// Empty fake client — any Get inside patchAddFinalizer returns NotFound.
+			k8sClient := fake.NewClientBuilder().WithScheme(scheme).Build()
+			reconCtx = &service.ReconciliationContext{
+				Ctx:     context.Background(),
+				Request: ctrl.Request{NamespacedName: types.NamespacedName{Name: scaler.Name, Namespace: scaler.Namespace}},
+				Client:  k8sClient,
+				Logger:  &logger,
+				Scaler:  scaler,
+			}
+
+			err := finalizerHandler.Execute(reconCtx)
+
+			Expect(err).ToNot(HaveOccurred())
+			Expect(reconCtx.SkipRemaining).To(BeTrue())
+			Expect(reconCtx.RequeueAfter).To(BeZero())
+		})
+	})
+
+	Context("Retry-on-conflict when adding the finalizer", func() {
+		It("retries once on a 409 and succeeds on the second Patch", func() {
+			gvr := schema.GroupResource{Group: "kubecloudscaler.cloud", Resource: "gcps"}
+			var patchCalls int
+			k8sClient := fake.NewClientBuilder().
+				WithScheme(scheme).
+				WithObjects(scaler).
+				WithInterceptorFuncs(interceptor.Funcs{
+					Patch: func(ctx context.Context, c client.WithWatch, obj client.Object, patch client.Patch, opts ...client.PatchOption) error {
+						patchCalls++
+						if patchCalls == 1 {
+							return apierrors.NewConflict(gvr, obj.GetName(), fmt.Errorf("conflict"))
+						}
+						return c.Patch(ctx, obj, patch, opts...)
+					},
+				}).
+				Build()
+
+			reconCtx = &service.ReconciliationContext{
+				Ctx:     context.Background(),
+				Request: ctrl.Request{NamespacedName: types.NamespacedName{Name: scaler.Name, Namespace: scaler.Namespace}},
+				Client:  k8sClient,
+				Logger:  &logger,
+				Scaler:  scaler,
+			}
+
+			Expect(finalizerHandler.Execute(reconCtx)).To(Succeed())
+			Expect(patchCalls).To(Equal(2))
+			persisted := &kubecloudscalerv1alpha3.Gcp{}
+			Expect(k8sClient.Get(reconCtx.Ctx, reconCtx.Request.NamespacedName, persisted)).To(Succeed())
+			Expect(controllerutil.ContainsFinalizer(persisted, handlers.ScalerFinalizer)).To(BeTrue())
 		})
 	})
 })

@@ -19,11 +19,14 @@ package handlers
 import (
 	"fmt"
 
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/util/retry"
 	"k8s.io/utils/ptr"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	"github.com/kubecloudscaler/kubecloudscaler/api/common"
+	kubecloudscalerv1alpha3 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha3"
 	"github.com/kubecloudscaler/kubecloudscaler/internal/controller/gcp/service"
 	"github.com/kubecloudscaler/kubecloudscaler/internal/utils"
 )
@@ -56,19 +59,25 @@ func (h *StatusHandler) Execute(ctx *service.ReconciliationContext) error {
 
 	if ctx.ShouldFinalize {
 		ctx.Logger.Info().Str("name", scaler.Name).Msg("removing finalizer")
-		controllerutil.RemoveFinalizer(scaler, ScalerFinalizer)
-		if err := ctx.Client.Update(ctx.Ctx, scaler); err != nil {
+		if err := patchRemoveFinalizer(ctx); err != nil {
+			if apierrors.IsNotFound(err) {
+				// Scaler has already been fully deleted — cleanup is done.
+				ctx.Logger.Debug().Msg("scaler already gone, finalizer cleanup is a no-op")
+				return nil
+			}
 			ctx.Logger.Error().Err(err).Msg("failed to remove finalizer")
 			ctx.RequeueAfter = transientRequeueAfter
 			return service.NewRecoverableError(fmt.Errorf("remove finalizer: %w", err))
 		}
+		controllerutil.RemoveFinalizer(scaler, ScalerFinalizer)
 		// Finalizer removed successfully, stop chain
 		return nil
 	}
 
 	// Build the desired status from the in-memory state set by PeriodHandler and ScalingHandler.
-	// This must be snapshotted before the retry loop because re-fetching the object from the
-	// cluster would overwrite fields like Spec/SpecSHA/Type/Name that PeriodHandler wrote.
+	// Snapshot via DeepCopy before the retry loop: re-fetching overwrites fields like
+	// Spec/SpecSHA/Type/Name that PeriodHandler wrote, and a shallow *scaler.Status.CurrentPeriod
+	// would alias the `Spec *TimePeriod` pointer and the Successful/Failed slices.
 	if scaler.Status.CurrentPeriod == nil {
 		scaler.Status.CurrentPeriod = &common.ScalerStatusPeriod{}
 	}
@@ -76,7 +85,7 @@ func (h *StatusHandler) Execute(ctx *service.ReconciliationContext) error {
 	scaler.Status.CurrentPeriod.Failed = ctx.FailedResults
 	scaler.Status.Comments = ptr.To("time period processed")
 
-	desiredPeriod := *scaler.Status.CurrentPeriod
+	desiredPeriod := scaler.Status.CurrentPeriod.DeepCopy()
 	desiredComments := scaler.Status.Comments
 
 	// Persist status updates to the cluster, retrying on conflict by re-fetching the latest version
@@ -84,9 +93,8 @@ func (h *StatusHandler) Execute(ctx *service.ReconciliationContext) error {
 		if err := ctx.Client.Get(ctx.Ctx, ctx.Request.NamespacedName, scaler); err != nil {
 			return err
 		}
-		// Restore desired status onto the freshly-fetched object (preserves resourceVersion)
-		periodCopy := desiredPeriod
-		scaler.Status.CurrentPeriod = &periodCopy
+		// Restore desired status onto the freshly-fetched object (preserves resourceVersion).
+		scaler.Status.CurrentPeriod = desiredPeriod.DeepCopy()
 		scaler.Status.Comments = desiredComments
 		return ctx.Client.Status().Update(ctx.Ctx, scaler)
 	}); err != nil {
@@ -114,4 +122,22 @@ func (h *StatusHandler) Execute(ctx *service.ReconciliationContext) error {
 // SetNext sets the next handler in the chain.
 func (h *StatusHandler) SetNext(next service.Handler) {
 	h.next = next
+}
+
+// patchRemoveFinalizer removes ScalerFinalizer via an optimistic-locked merge patch, re-fetching
+// and retrying on 409 conflicts. Scoped to metadata.finalizers so neither spec nor status is
+// transmitted. No-op if the finalizer is already absent.
+func patchRemoveFinalizer(ctx *service.ReconciliationContext) error {
+	return retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		latest := &kubecloudscalerv1alpha3.Gcp{}
+		if err := ctx.Client.Get(ctx.Ctx, ctx.Request.NamespacedName, latest); err != nil {
+			return err
+		}
+		if !controllerutil.ContainsFinalizer(latest, ScalerFinalizer) {
+			return nil
+		}
+		patch := client.MergeFromWithOptions(latest.DeepCopy(), client.MergeFromWithOptimisticLock{})
+		controllerutil.RemoveFinalizer(latest, ScalerFinalizer)
+		return ctx.Client.Patch(ctx.Ctx, latest, patch)
+	})
 }
