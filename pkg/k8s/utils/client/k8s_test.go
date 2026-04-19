@@ -23,8 +23,6 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 )
@@ -208,21 +206,3 @@ var _ = Describe("GetClient", func() {
 		})
 	})
 })
-
-// Helper function to create a mock rest.Config for testing
-func createMockConfig() *rest.Config {
-	return &rest.Config{
-		Host:        "https://test-cluster.example.com",
-		BearerToken: "test-token",
-		TLSClientConfig: rest.TLSClientConfig{
-			CAData: []byte("test-ca-data"),
-		},
-	}
-}
-
-// Helper function to create a mock kubernetes.Clientset for testing
-func createMockClientset() *kubernetes.Clientset {
-	config := createMockConfig()
-	clientset, _ := kubernetes.NewForConfig(config)
-	return clientset
-}

@@ -24,6 +24,8 @@ import (
 	"github.com/kubecloudscaler/kubecloudscaler/pkg/period"
 )
 
+const periodTypeRestore = "restore"
+
 var (
 	gvr = schema.GroupVersionResource{
 		Group:    "actions.github.com",
@@ -161,7 +163,7 @@ var _ = Describe("GithubAutoscalingRunnersets", func() {
 		})
 
 		It("restores original runners", func() {
-			mockPeriod.Type = "restore"
+			mockPeriod.Type = periodTypeRestore
 
 			rs := newRunnerSet("rs-restore", "test-ns", 2, 5)
 			rs.Annotations = map[string]string{
@@ -185,15 +187,15 @@ var _ = Describe("GithubAutoscalingRunnersets", func() {
 		})
 
 		It("ignores already restored runner sets", func() {
-			mockPeriod.Type = "restore"
+			mockPeriod.Type = periodTypeRestore
 
 			setupManager(newRunnerSet("rs-restored", "test-ns", 2, 5))
 
 			success, failed, err := manager.SetState(ctx)
 
 			Expect(err).ToNot(HaveOccurred())
-			Expect(success).To(HaveLen(0))
-			Expect(failed).To(HaveLen(0))
+			Expect(success).To(BeEmpty())
+			Expect(failed).To(BeEmpty())
 		})
 	})
 
@@ -201,7 +203,7 @@ var _ = Describe("GithubAutoscalingRunnersets", func() {
 		It("returns list error", func() {
 			setupManager()
 
-			dynClient.Fake.PrependReactor("list", "autoscalingrunnersets", func(action testing.Action) (bool, runtime.Object, error) {
+			dynClient.PrependReactor("list", "autoscalingrunnersets", func(action testing.Action) (bool, runtime.Object, error) {
 				return true, nil, errors.New("boom")
 			})
 
@@ -214,7 +216,7 @@ var _ = Describe("GithubAutoscalingRunnersets", func() {
 		})
 
 		It("returns validation error when annotations invalid", func() {
-			mockPeriod.Type = "restore"
+			mockPeriod.Type = periodTypeRestore
 
 			rs := newRunnerSet("rs-bad", "test-ns", 1, 2)
 			rs.Annotations = map[string]string{
@@ -235,7 +237,7 @@ var _ = Describe("GithubAutoscalingRunnersets", func() {
 		It("records update failures", func() {
 			setupManager(newRunnerSet("rs-update", "test-ns", 2, 3))
 
-			dynClient.Fake.PrependReactor("update", "autoscalingrunnersets", func(action testing.Action) (bool, runtime.Object, error) {
+			dynClient.PrependReactor("update", "autoscalingrunnersets", func(action testing.Action) (bool, runtime.Object, error) {
 				return true, nil, errors.New("update failure")
 			})
 

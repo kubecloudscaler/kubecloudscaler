@@ -244,7 +244,14 @@ var _ = Describe("StatusHandler", func() {
 				WithObjects(scaler).
 				WithStatusSubresource(scaler).
 				WithInterceptorFuncs(interceptor.Funcs{
-					SubResourcePatch: func(ctx context.Context, c client.Client, subResourceName string, obj client.Object, patch client.Patch, opts ...client.SubResourcePatchOption) error {
+					SubResourcePatch: func(
+						ctx context.Context,
+						c client.Client,
+						subResourceName string,
+						obj client.Object,
+						patch client.Patch,
+						opts ...client.SubResourcePatchOption,
+					) error {
 						calls++
 						if calls == 1 {
 							return apierrors.NewConflict(gvr, obj.GetName(), fmt.Errorf("conflict"))

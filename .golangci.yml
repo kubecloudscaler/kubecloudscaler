@@ -88,6 +88,12 @@ linters:
         - octalLiteral
         - whyNoLint
         - singleCaseSwitch # Sometimes useful for readability
+        # Kubernetes / controller-runtime patterns: large structs, client.Client params, API types
+        - hugeParam
+        - importShadow
+        - rangeValCopy
+        - unnamedResult
+        - paramTypeCombine
       enabled-tags:
         - diagnostic
         - experimental
@@ -97,8 +103,6 @@ linters:
       settings:
         captLocal:
           paramsOnly: true
-        hugeParam:
-          sizeThreshold: 80
 
     # Gocyclo configuration
     gocyclo:
@@ -121,6 +125,11 @@ linters:
         - condition
         - operation
         - return
+      ignored-numbers:
+        - "24" # hours per day (time-of-day window math)
+        - "0.001" # Prometheus exponential bucket start
+        - "2.5" # Prometheus exponential bucket factor
+        - "12" # Prometheus exponential bucket count
       # ignored-numbers: <- We don't want Magic Number
       #   - "0"
       #   - "1"
@@ -149,7 +158,7 @@ linters:
         - name: blank-imports
         - name: context-as-argument
         - name: context-keys-type
-        - name: dot-imports
+        # Ginkgo/Gomega convention uses dot-imports in specs; enabling this flags every *_test.go
         - name: error-return
         - name: error-strings
         - name: error-naming
@@ -214,6 +223,21 @@ linters:
       # Allow embedding interfaces in internal packages
       - path: internal/
         text: "exported.*should have comment"
+        linters:
+          - revive
+
+      # CreateK8sResource / CreateGcpResource are intentionally parallel distinct CR shapes.
+      - path: internal/controller/flow/service/resource_creator\.go
+        linters:
+          - dupl
+
+      # Test doubles and reactor stubs often need matching signatures with unused parameters.
+      - path: _test\.go
+        text: "unused-parameter"
+        linters:
+          - revive
+      - path: _test\.go
+        text: "redefines-builtin-id"
         linters:
           - revive
 

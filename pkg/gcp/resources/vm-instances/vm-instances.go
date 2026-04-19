@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	compute "cloud.google.com/go/compute/apiv1"
 	computepb "cloud.google.com/go/compute/apiv1/computepb"
 
 	"github.com/kubecloudscaler/kubecloudscaler/api/common"
@@ -148,14 +149,7 @@ func (c *VMInstances) startInstance(ctx context.Context, instance *computepb.Ins
 		Zone:     zone,
 		Instance: instance.GetName(),
 	})
-	if err != nil {
-		return fmt.Errorf("failed to start instance %q in zone %q (check compute.instances.start permission): %w",
-			instance.GetName(), zone, err)
-	}
-	if c.Config.WaitForOperation {
-		return c.waitForOperation(ctx, op.Name(), zone)
-	}
-	return nil
+	return c.finalizeInstanceMutation(ctx, op, zone, instance.GetName(), "start", "compute.instances.start", err)
 }
 
 // stopInstance stops a running instance.
@@ -168,9 +162,18 @@ func (c *VMInstances) stopInstance(ctx context.Context, instance *computepb.Inst
 		Zone:     zone,
 		Instance: instance.GetName(),
 	})
+	return c.finalizeInstanceMutation(ctx, op, zone, instance.GetName(), "stop", "compute.instances.stop", err)
+}
+
+func (c *VMInstances) finalizeInstanceMutation(
+	ctx context.Context,
+	op *compute.Operation,
+	zone, instanceName, actionVerb, permissionHint string,
+	err error,
+) error {
 	if err != nil {
-		return fmt.Errorf("failed to stop instance %q in zone %q (check compute.instances.stop permission): %w",
-			instance.GetName(), zone, err)
+		return fmt.Errorf("failed to %s instance %q in zone %q (check %s permission): %w",
+			actionVerb, instanceName, zone, permissionHint, err)
 	}
 	if c.Config.WaitForOperation {
 		return c.waitForOperation(ctx, op.Name(), zone)

@@ -19,6 +19,7 @@ package ars
 import (
 	"context"
 	"fmt"
+	"math"
 
 	actionsV1alpha1 "github.com/actions/actions-runner-controller/apis/actions.github.com/v1alpha1"
 	"github.com/rs/zerolog"
@@ -45,19 +46,19 @@ type runnerSetItem struct {
 }
 
 func (r *runnerSetItem) GetName() string {
-	return r.AutoscalingRunnerSet.Name
+	return r.Name
 }
 
 func (r *runnerSetItem) GetNamespace() string {
-	return r.AutoscalingRunnerSet.Namespace
+	return r.Namespace
 }
 
 func (r *runnerSetItem) GetAnnotations() map[string]string {
-	return r.AutoscalingRunnerSet.Annotations
+	return r.Annotations
 }
 
 func (r *runnerSetItem) SetAnnotations(annotations map[string]string) {
-	r.AutoscalingRunnerSet.Annotations = annotations
+	r.Annotations = annotations
 }
 
 // runnerSetLister implements ResourceLister for autoscaling runner sets.
@@ -121,14 +122,19 @@ type runnerSetUpdater struct {
 	client dynamic.NamespaceableResourceInterface
 }
 
-func (u *runnerSetUpdater) Update(ctx context.Context, namespace string, resource base.ResourceItem, opts metaV1.UpdateOptions) (base.ResourceItem, error) {
+func (u *runnerSetUpdater) Update(
+	ctx context.Context,
+	namespace string,
+	resource base.ResourceItem,
+	opts metaV1.UpdateOptions,
+) (base.ResourceItem, error) {
 	item, ok := resource.(*runnerSetItem)
 	if !ok {
 		return nil, base.NewTypeAssertionError("*runnerSetItem", resource)
 	}
 
 	// Set GVK before conversion
-	item.AutoscalingRunnerSet.SetGroupVersionKind(runnerSetGVK)
+	item.SetGroupVersionKind(runnerSetGVK)
 
 	unstructuredObj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(item.AutoscalingRunnerSet)
 	if err != nil {
@@ -161,8 +167,14 @@ func getMinMaxReplicas(item base.ResourceItem) (*int32, *int32) {
 	if !ok {
 		return nil, nil
 	}
-	minReplicas := intPtrToInt32Ptr(r.AutoscalingRunnerSet.Spec.MinRunners)
-	maxReplicas := int32(ptr.Deref(r.AutoscalingRunnerSet.Spec.MaxRunners, 0))
+	minReplicas := intPtrToInt32Ptr(r.Spec.MinRunners)
+	maxVal := ptr.Deref(r.Spec.MaxRunners, 0)
+	if maxVal > math.MaxInt32 {
+		maxVal = math.MaxInt32
+	} else if maxVal < math.MinInt32 {
+		maxVal = math.MinInt32
+	}
+	maxReplicas := int32(maxVal)
 	return minReplicas, &maxReplicas
 }
 
@@ -172,9 +184,9 @@ func setMinMaxReplicas(item base.ResourceItem, minReplicas *int32, maxReplicas *
 	if !ok {
 		return
 	}
-	r.AutoscalingRunnerSet.Spec.MinRunners = int32PtrToIntPtr(minReplicas)
+	r.Spec.MinRunners = int32PtrToIntPtr(minReplicas)
 	if maxReplicas != nil {
-		r.AutoscalingRunnerSet.Spec.MaxRunners = int32ToIntPtr(*maxReplicas)
+		r.Spec.MaxRunners = int32ToIntPtr(*maxReplicas)
 	}
 }
 
@@ -183,8 +195,14 @@ func intPtrToInt32Ptr(value *int) *int32 {
 	if value == nil {
 		return nil
 	}
-	v := int32(*value)
-	return &v
+	v := *value
+	if v > math.MaxInt32 {
+		v = math.MaxInt32
+	} else if v < math.MinInt32 {
+		v = math.MinInt32
+	}
+	conv := int32(v)
+	return &conv
 }
 
 // int32PtrToIntPtr converts *int32 to *int.

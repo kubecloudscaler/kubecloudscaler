@@ -22,6 +22,8 @@ import (
 	"github.com/kubecloudscaler/kubecloudscaler/pkg/period"
 )
 
+const periodTypeDown = "down"
+
 var _ = Describe("HPA", func() {
 	var (
 		ctx           context.Context
@@ -44,7 +46,7 @@ var _ = Describe("HPA", func() {
 
 		BeforeEach(func() {
 			mockPeriod = &period.Period{
-				Type:        "down",
+				Type:        periodTypeDown,
 				MinReplicas: 1,
 				MaxReplicas: 5,
 				IsActive:    true,
@@ -72,7 +74,7 @@ var _ = Describe("HPA", func() {
 
 		Context("when scaling down HPAs", func() {
 			BeforeEach(func() {
-				mockPeriod.Type = "down"
+				mockPeriod.Type = periodTypeDown
 				mockPeriod.MinReplicas = 1
 				mockPeriod.MaxReplicas = 3
 
@@ -98,7 +100,7 @@ var _ = Describe("HPA", func() {
 
 				Expect(err).ToNot(HaveOccurred())
 				Expect(success).To(HaveLen(1))
-				Expect(failed).To(HaveLen(0))
+				Expect(failed).To(BeEmpty())
 				Expect(success[0].Kind).To(Equal("hpa"))
 				Expect(success[0].Name).To(Equal(testHPA))
 
@@ -151,7 +153,7 @@ var _ = Describe("HPA", func() {
 
 				Expect(err).ToNot(HaveOccurred())
 				Expect(success).To(HaveLen(1))
-				Expect(failed).To(HaveLen(0))
+				Expect(failed).To(BeEmpty())
 				Expect(success[0].Kind).To(Equal("hpa"))
 				Expect(success[0].Name).To(Equal(testHPA))
 
@@ -206,7 +208,7 @@ var _ = Describe("HPA", func() {
 
 				Expect(err).ToNot(HaveOccurred())
 				Expect(success).To(HaveLen(1))
-				Expect(failed).To(HaveLen(0))
+				Expect(failed).To(BeEmpty())
 				Expect(success[0].Kind).To(Equal("hpa"))
 				Expect(success[0].Name).To(Equal(testHPA))
 
@@ -226,7 +228,7 @@ var _ = Describe("HPA", func() {
 				// Second restore should not change anything since annotations are removed
 				success, _, err = hpaResource.SetState(ctx)
 				Expect(err).ToNot(HaveOccurred())
-				Expect(success).To(HaveLen(0)) // No action needed
+				Expect(success).To(BeEmpty()) // No action needed
 			})
 		})
 
@@ -241,8 +243,8 @@ var _ = Describe("HPA", func() {
 
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("error listing hpas"))
-				Expect(success).To(HaveLen(0))
-				Expect(failed).To(HaveLen(0))
+				Expect(success).To(BeEmpty())
+				Expect(failed).To(BeEmpty())
 			})
 
 			It("should handle HPA get error", func() {
@@ -269,7 +271,7 @@ var _ = Describe("HPA", func() {
 				success, failed, err := hpaResource.SetState(ctx)
 
 				Expect(err).ToNot(HaveOccurred())
-				Expect(success).To(HaveLen(0))
+				Expect(success).To(BeEmpty())
 				Expect(failed).To(HaveLen(1))
 				Expect(failed[0].Kind).To(Equal("hpa"))
 				Expect(failed[0].Name).To(Equal(testHPA))
@@ -300,7 +302,7 @@ var _ = Describe("HPA", func() {
 				success, failed, err := hpaResource.SetState(ctx)
 
 				Expect(err).ToNot(HaveOccurred())
-				Expect(success).To(HaveLen(0))
+				Expect(success).To(BeEmpty())
 				Expect(failed).To(HaveLen(1))
 				Expect(failed[0].Kind).To(Equal("hpa"))
 				Expect(failed[0].Name).To(Equal(testHPA))
@@ -331,7 +333,7 @@ var _ = Describe("HPA", func() {
 				success, failed, err := hpaResource.SetState(ctx)
 
 				Expect(err).ToNot(HaveOccurred())
-				Expect(success).To(HaveLen(0))
+				Expect(success).To(BeEmpty())
 				Expect(failed).To(HaveLen(1))
 				Expect(failed[0].Kind).To(Equal("hpa"))
 				Expect(failed[0].Name).To(Equal(testHPA))
@@ -341,7 +343,7 @@ var _ = Describe("HPA", func() {
 
 		Context("with multiple HPAs", func() {
 			BeforeEach(func() {
-				mockPeriod.Type = "down"
+				mockPeriod.Type = periodTypeDown
 				mockPeriod.MinReplicas = 1
 				mockPeriod.MaxReplicas = 3
 
@@ -369,7 +371,7 @@ var _ = Describe("HPA", func() {
 
 				Expect(err).ToNot(HaveOccurred())
 				Expect(success).To(HaveLen(3))
-				Expect(failed).To(HaveLen(0))
+				Expect(failed).To(BeEmpty())
 
 				// Verify all HPAs were scaled down
 				for _, name := range []string{"hpa1", "hpa2", "hpa3"} {
@@ -403,7 +405,7 @@ var _ = Describe("HPA", func() {
 			var secondNamespace = "second-namespace"
 
 			BeforeEach(func() {
-				mockPeriod.Type = "down"
+				mockPeriod.Type = periodTypeDown
 				mockPeriod.MinReplicas = 1
 				mockPeriod.MaxReplicas = 3
 
@@ -433,7 +435,7 @@ var _ = Describe("HPA", func() {
 
 				Expect(err).ToNot(HaveOccurred())
 				Expect(success).To(HaveLen(2))
-				Expect(failed).To(HaveLen(0))
+				Expect(failed).To(BeEmpty())
 
 				// Verify HPAs in both namespaces were processed
 				for _, ns := range []string{testNamespace, secondNamespace} {
@@ -447,7 +449,7 @@ var _ = Describe("HPA", func() {
 
 		Context("edge cases", func() {
 			It("should handle HPA with nil minReplicas", func() {
-				mockPeriod.Type = "down"
+				mockPeriod.Type = periodTypeDown
 				mockPeriod.MinReplicas = 1
 				mockPeriod.MaxReplicas = 3
 
@@ -470,7 +472,7 @@ var _ = Describe("HPA", func() {
 
 				Expect(err).ToNot(HaveOccurred())
 				Expect(success).To(HaveLen(1))
-				Expect(failed).To(HaveLen(0))
+				Expect(failed).To(BeEmpty())
 
 				// Verify the HPA was updated
 				updatedHPA, err := fakeClient.AutoscalingV2().HorizontalPodAutoscalers(testNamespace).Get(ctx, testHPA, metaV1.GetOptions{})
@@ -485,8 +487,8 @@ var _ = Describe("HPA", func() {
 				success, failed, err := hpaResource.SetState(ctx)
 
 				Expect(err).ToNot(HaveOccurred())
-				Expect(success).To(HaveLen(0))
-				Expect(failed).To(HaveLen(0))
+				Expect(success).To(BeEmpty())
+				Expect(failed).To(BeEmpty())
 			})
 		})
 	})

@@ -139,7 +139,7 @@ var _ = Describe("FinalizerHandler", func() {
 	Context("When the scaler is being deleted with finalizer", func() {
 		BeforeEach(func() {
 			now := metav1.Now()
-			scaler.ObjectMeta.DeletionTimestamp = &now
+			scaler.DeletionTimestamp = &now
 			controllerutil.AddFinalizer(scaler, handlers.ScalerFinalizer)
 			reconCtx.Client = fake.NewClientBuilder().WithScheme(scheme).WithObjects(scaler).Build()
 		})

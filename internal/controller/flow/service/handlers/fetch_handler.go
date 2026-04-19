@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+// Package handlers implements discrete reconciliation steps for the Flow controller.
 package handlers
 
 import (

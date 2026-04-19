@@ -65,7 +65,6 @@ func (c *ResourceCreatorService) CreateK8sResource(
 	periodsWithDelay []types.PeriodWithDelay,
 ) error {
 	allPeriods := c.buildPeriods(periodsWithDelay)
-
 	k8sObj := &kubecloudscalerv1alpha3.K8s{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: childResourceName(flow.Name, resourceName),
@@ -81,21 +80,7 @@ func (c *ResourceCreatorService) CreateK8sResource(
 			Config:    k8sResource.Config,
 		},
 	}
-
-	if err := controllerutil.SetControllerReference(flow, k8sObj, c.scheme); err != nil {
-		return fmt.Errorf("failed to set owner reference: %w", err)
-	}
-
-	if err := c.createOrUpdateResource(ctx, k8sObj); err != nil {
-		return fmt.Errorf("failed to create/update K8s object: %w", err)
-	}
-
-	c.logger.Info().
-		Str("name", k8sObj.Name).
-		Int("periods", len(allPeriods)).
-		Msg("created/updated K8s resource")
-
-	return nil
+	return c.persistFlowChildResource(ctx, flow, allPeriods, k8sObj, "K8s")
 }
 
 // CreateGcpResource creates a GCP resource CR with all associated periods
@@ -107,7 +92,6 @@ func (c *ResourceCreatorService) CreateGcpResource(
 	periodsWithDelay []types.PeriodWithDelay,
 ) error {
 	allPeriods := c.buildPeriods(periodsWithDelay)
-
 	gcpObj := &kubecloudscalerv1alpha3.Gcp{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: childResourceName(flow.Name, resourceName),
@@ -123,20 +107,26 @@ func (c *ResourceCreatorService) CreateGcpResource(
 			Config:    gcpResource.Config,
 		},
 	}
+	return c.persistFlowChildResource(ctx, flow, allPeriods, gcpObj, "GCP")
+}
 
-	if err := controllerutil.SetControllerReference(flow, gcpObj, c.scheme); err != nil {
+func (c *ResourceCreatorService) persistFlowChildResource(
+	ctx context.Context,
+	flow *kubecloudscalerv1alpha3.Flow,
+	allPeriods []common.ScalerPeriod,
+	obj client.Object,
+	kindLabel string,
+) error {
+	if err := controllerutil.SetControllerReference(flow, obj, c.scheme); err != nil {
 		return fmt.Errorf("failed to set owner reference: %w", err)
 	}
-
-	if err := c.createOrUpdateResource(ctx, gcpObj); err != nil {
-		return fmt.Errorf("failed to create/update GCP object: %w", err)
+	if err := c.createOrUpdateResource(ctx, obj); err != nil {
+		return fmt.Errorf("failed to create/update %s object: %w", kindLabel, err)
 	}
-
 	c.logger.Info().
-		Str("name", gcpObj.Name).
+		Str("name", obj.GetName()).
 		Int("periods", len(allPeriods)).
-		Msg("created/updated GCP resource")
-
+		Msgf("created/updated %s resource", kindLabel)
 	return nil
 }
 
@@ -183,7 +173,11 @@ func childResourceName(flowName, resourceName string) string {
 // createOrUpdateResource creates or updates a resource using controllerutil.CreateOrUpdate
 // to avoid TOCTOU races between Get and Update.
 func (c *ResourceCreatorService) createOrUpdateResource(ctx context.Context, obj client.Object) error {
-	desired := obj.DeepCopyObject().(client.Object)
+	desiredObj := obj.DeepCopyObject()
+	desired, ok := desiredObj.(client.Object)
+	if !ok {
+		return fmt.Errorf("DeepCopy returned unexpected type %T", desiredObj)
+	}
 	_, err := controllerutil.CreateOrUpdate(ctx, c.client, obj, func() error {
 		// After Get, obj may have been overwritten with cluster state.
 		// Merge desired labels and annotations with existing ones (preserve existing, overlay desired).
@@ -206,9 +200,17 @@ func (c *ResourceCreatorService) createOrUpdateResource(ctx context.Context, obj
 		obj.SetAnnotations(mergedAnnotations)
 		switch o := obj.(type) {
 		case *kubecloudscalerv1alpha3.K8s:
-			o.Spec = desired.(*kubecloudscalerv1alpha3.K8s).Spec
+			k8sDesired, ok := desired.(*kubecloudscalerv1alpha3.K8s)
+			if !ok {
+				return fmt.Errorf("desired object: expected *K8s, got %T", desired)
+			}
+			o.Spec = k8sDesired.Spec
 		case *kubecloudscalerv1alpha3.Gcp:
-			o.Spec = desired.(*kubecloudscalerv1alpha3.Gcp).Spec
+			gcpDesired, ok := desired.(*kubecloudscalerv1alpha3.Gcp)
+			if !ok {
+				return fmt.Errorf("desired object: expected *Gcp, got %T", desired)
+			}
+			o.Spec = gcpDesired.Spec
 		default:
 			return fmt.Errorf("unsupported object type %T", obj)
 		}

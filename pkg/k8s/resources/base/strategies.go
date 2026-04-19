@@ -67,7 +67,12 @@ func (s *IntReplicasStrategy) GetKind() string {
 }
 
 // ApplyScaling applies scaling logic for integer replicas.
-func (s *IntReplicasStrategy) ApplyScaling(ctx context.Context, resource ResourceItem, periodType string, period *periodPkg.Period) (bool, error) {
+func (s *IntReplicasStrategy) ApplyScaling(
+	_ context.Context,
+	resource ResourceItem,
+	periodType string,
+	period *periodPkg.Period,
+) (bool, error) {
 	switch periodType {
 	case periodTypeDown:
 		currentReplicas := s.getReplicas(resource)
@@ -128,7 +133,12 @@ func (s *MinMaxReplicasStrategy) GetKind() string {
 }
 
 // ApplyScaling applies scaling logic for min/max replicas.
-func (s *MinMaxReplicasStrategy) ApplyScaling(ctx context.Context, resource ResourceItem, periodType string, period *periodPkg.Period) (bool, error) {
+func (s *MinMaxReplicasStrategy) ApplyScaling(
+	_ context.Context,
+	resource ResourceItem,
+	periodType string,
+	period *periodPkg.Period,
+) (bool, error) {
 	switch periodType {
 	case periodTypeDown, "up":
 		minReplicas, maxReplicas := s.getMinMaxReplicas(resource)
@@ -195,7 +205,12 @@ func (s *BoolSuspendStrategy) GetKind() string {
 }
 
 // ApplyScaling applies scaling logic for boolean suspend.
-func (s *BoolSuspendStrategy) ApplyScaling(ctx context.Context, resource ResourceItem, periodType string, period *periodPkg.Period) (bool, error) {
+func (s *BoolSuspendStrategy) ApplyScaling(
+	_ context.Context,
+	resource ResourceItem,
+	periodType string,
+	period *periodPkg.Period,
+) (bool, error) {
 	switch periodType {
 	case periodTypeDown:
 		currentSuspend := s.getSuspend(resource)
@@ -272,7 +287,12 @@ func (s *KedaPauseStrategy) GetKind() string {
 // On "down" with minReplicas == 0, it adds KEDA pause annotations.
 // On "up", it sets min/max replicas normally.
 // On restore, it removes KEDA pause annotations and restores original values.
-func (s *KedaPauseStrategy) ApplyScaling(ctx context.Context, resource ResourceItem, periodType string, period *periodPkg.Period) (bool, error) {
+func (s *KedaPauseStrategy) ApplyScaling(
+	_ context.Context,
+	resource ResourceItem,
+	periodType string,
+	period *periodPkg.Period,
+) (bool, error) {
 	switch periodType {
 	case periodTypeDown:
 		if period.MinReplicas == 0 {

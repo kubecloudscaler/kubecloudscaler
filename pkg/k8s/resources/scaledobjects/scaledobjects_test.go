@@ -23,6 +23,8 @@ import (
 	"github.com/kubecloudscaler/kubecloudscaler/pkg/period"
 )
 
+const periodTypeRestore = "restore"
+
 var (
 	gvr = schema.GroupVersionResource{
 		Group:    "keda.sh",
@@ -211,7 +213,7 @@ var _ = Describe("ScaledObjects", func() {
 
 	Context("restoring (going out of period)", func() {
 		It("restores original values and removes KEDA pause annotations", func() {
-			mockPeriod.Type = "restore"
+			mockPeriod.Type = periodTypeRestore
 
 			so := newScaledObject("so-restore", "test-ns", 0, 0, map[string]string{
 				utils.AnnotationsPrefix + "/" + utils.AnnotationsMinOrigValue: "3",
@@ -238,7 +240,7 @@ var _ = Describe("ScaledObjects", func() {
 		})
 
 		It("restores original values when no KEDA pause annotations present", func() {
-			mockPeriod.Type = "restore"
+			mockPeriod.Type = periodTypeRestore
 
 			so := newScaledObject("so-restore-nopause", "test-ns", 2, 4, map[string]string{
 				utils.AnnotationsPrefix + "/" + utils.AnnotationsMinOrigValue: "5",
@@ -259,7 +261,7 @@ var _ = Describe("ScaledObjects", func() {
 		})
 
 		It("ignores already restored scaled objects", func() {
-			mockPeriod.Type = "restore"
+			mockPeriod.Type = periodTypeRestore
 
 			setupManager(newScaledObject("so-already", "test-ns", 2, 5, nil))
 
@@ -275,7 +277,7 @@ var _ = Describe("ScaledObjects", func() {
 		It("returns list error", func() {
 			setupManager()
 
-			dynClient.Fake.PrependReactor("list", "scaledobjects", func(action testing.Action) (bool, runtime.Object, error) {
+			dynClient.PrependReactor("list", "scaledobjects", func(action testing.Action) (bool, runtime.Object, error) {
 				return true, nil, errors.New("boom")
 			})
 
@@ -288,7 +290,7 @@ var _ = Describe("ScaledObjects", func() {
 		})
 
 		It("returns validation error when annotations invalid", func() {
-			mockPeriod.Type = "restore"
+			mockPeriod.Type = periodTypeRestore
 
 			so := newScaledObject("so-bad", "test-ns", 1, 2, map[string]string{
 				utils.AnnotationsPrefix + "/" + utils.AnnotationsMinOrigValue: "invalid",
@@ -308,7 +310,7 @@ var _ = Describe("ScaledObjects", func() {
 		It("records update failures", func() {
 			setupManager(newScaledObject("so-update", "test-ns", 2, 3, nil))
 
-			dynClient.Fake.PrependReactor("update", "scaledobjects", func(action testing.Action) (bool, runtime.Object, error) {
+			dynClient.PrependReactor("update", "scaledobjects", func(action testing.Action) (bool, runtime.Object, error) {
 				return true, nil, errors.New("update failure")
 			})
 

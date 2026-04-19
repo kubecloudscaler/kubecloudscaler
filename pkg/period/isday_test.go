@@ -10,6 +10,11 @@ import (
 	"k8s.io/utils/ptr"
 )
 
+const (
+	recurringDayStart = "10:00"
+	recurringDayEnd   = "18:00"
+)
+
 // mockClock implements period.Clock for deterministic time control.
 type mockClock struct {
 	now time.Time
@@ -217,8 +222,8 @@ var _ = Describe("isDay via NewWithClock", func() {
 	Context("period active/inactive boundary conditions", func() {
 		It("should be inactive before start time", func() {
 			p := basePeriod([]common.DayOfWeek{common.DayAll})
-			p.Time.Recurring.StartTime = "10:00"
-			p.Time.Recurring.EndTime = "18:00"
+			p.Time.Recurring.StartTime = recurringDayStart
+			p.Time.Recurring.EndTime = recurringDayEnd
 			p.Time.Recurring.Timezone = ptr.To("UTC")
 
 			clock := mockClock{now: time.Date(2024, 1, 1, 9, 59, 59, 0, time.UTC)}
@@ -229,8 +234,8 @@ var _ = Describe("isDay via NewWithClock", func() {
 
 		It("should be active after start time", func() {
 			p := basePeriod([]common.DayOfWeek{common.DayAll})
-			p.Time.Recurring.StartTime = "10:00"
-			p.Time.Recurring.EndTime = "18:00"
+			p.Time.Recurring.StartTime = recurringDayStart
+			p.Time.Recurring.EndTime = recurringDayEnd
 			p.Time.Recurring.Timezone = ptr.To("UTC")
 
 			clock := mockClock{now: time.Date(2024, 1, 1, 10, 0, 1, 0, time.UTC)}
@@ -241,8 +246,8 @@ var _ = Describe("isDay via NewWithClock", func() {
 
 		It("should be active just before end time (inclusive with 59s)", func() {
 			p := basePeriod([]common.DayOfWeek{common.DayAll})
-			p.Time.Recurring.StartTime = "10:00"
-			p.Time.Recurring.EndTime = "18:00"
+			p.Time.Recurring.StartTime = recurringDayStart
+			p.Time.Recurring.EndTime = recurringDayEnd
 			p.Time.Recurring.Timezone = ptr.To("UTC")
 
 			clock := mockClock{now: time.Date(2024, 1, 1, 18, 0, 58, 0, time.UTC)}
@@ -253,8 +258,8 @@ var _ = Describe("isDay via NewWithClock", func() {
 
 		It("should be inactive after end time plus 59 seconds", func() {
 			p := basePeriod([]common.DayOfWeek{common.DayAll})
-			p.Time.Recurring.StartTime = "10:00"
-			p.Time.Recurring.EndTime = "18:00"
+			p.Time.Recurring.StartTime = recurringDayStart
+			p.Time.Recurring.EndTime = recurringDayEnd
 			p.Time.Recurring.Timezone = ptr.To("UTC")
 
 			// End time is 18:00 + 59s = 18:00:59; at 18:01:00 should be inactive
@@ -268,8 +273,8 @@ var _ = Describe("isDay via NewWithClock", func() {
 	Context("reverse period", func() {
 		It("should invert active status with reverse=true", func() {
 			p := basePeriod([]common.DayOfWeek{common.DayAll})
-			p.Time.Recurring.StartTime = "10:00"
-			p.Time.Recurring.EndTime = "18:00"
+			p.Time.Recurring.StartTime = recurringDayStart
+			p.Time.Recurring.EndTime = recurringDayEnd
 			p.Time.Recurring.Timezone = ptr.To("UTC")
 			p.Time.Recurring.Reverse = ptr.To(true)
 
@@ -282,8 +287,8 @@ var _ = Describe("isDay via NewWithClock", func() {
 
 		It("should be active outside the window with reverse=true", func() {
 			p := basePeriod([]common.DayOfWeek{common.DayAll})
-			p.Time.Recurring.StartTime = "10:00"
-			p.Time.Recurring.EndTime = "18:00"
+			p.Time.Recurring.StartTime = recurringDayStart
+			p.Time.Recurring.EndTime = recurringDayEnd
 			p.Time.Recurring.Timezone = ptr.To("UTC")
 			p.Time.Recurring.Reverse = ptr.To(true)
 

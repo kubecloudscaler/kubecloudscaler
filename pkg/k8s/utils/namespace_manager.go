@@ -56,8 +56,6 @@ type namespaceManager struct {
 
 // NewNamespaceManager creates a new namespace manager.
 // If envProvider is nil, a default provider using os.Getenv is used.
-//
-//nolint:gocritic // zerolog.Logger is designed to be passed by value
 func NewNamespaceManager(client KubernetesClient, logger zerolog.Logger, envProvider EnvProvider) NamespaceManager {
 	if envProvider == nil {
 		envProvider = defaultEnvProvider{}
@@ -71,7 +69,7 @@ func NewNamespaceManager(client KubernetesClient, logger zerolog.Logger, envProv
 
 // SetNamespaceList sets the namespace list based on configuration
 func (nm *namespaceManager) SetNamespaceList(ctx context.Context, config *Config) ([]string, error) {
-	nsList := []string{}
+	var nsList []string
 
 	if len(config.Namespaces) > 0 {
 		nsList = config.Namespaces
@@ -120,7 +118,7 @@ func (nm *namespaceManager) refreshNamespaceCache(ctx context.Context, excludeNa
 	}
 
 	allNames := make([]string, 0, len(nsListItems.Items))
-	//nolint:gocritic // Range iteration of struct is acceptable, using index would reduce readability
+
 	for _, ns := range nsListItems.Items {
 		allNames = append(allNames, ns.Name)
 	}

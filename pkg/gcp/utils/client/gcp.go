@@ -30,17 +30,29 @@ func GetClient(ctx context.Context, secret *corev1.Secret) (*gcpUtils.ClientSet,
 			return nil, fmt.Errorf("service-account-key.json not found in secret")
 		}
 
-		instancesClient, err = compute.NewInstancesRESTClient(ctx, option.WithCredentialsJSON(serviceAccountKey))
+		//nolint:staticcheck // SA1019: deprecated; JSON-from-Secret auth until migration
+		instancesClient, err = compute.NewInstancesRESTClient(
+			ctx,
+			option.WithCredentialsJSON(serviceAccountKey),
+		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create Instances client: %w", err)
 		}
 
-		regionsClient, err = compute.NewRegionsRESTClient(ctx, option.WithCredentialsJSON(serviceAccountKey))
+		//nolint:staticcheck // SA1019: deprecated; JSON-from-Secret auth until migration
+		regionsClient, err = compute.NewRegionsRESTClient(
+			ctx,
+			option.WithCredentialsJSON(serviceAccountKey),
+		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create Regions client: %w", err)
 		}
 
-		zoneOperationsClient, err = compute.NewZoneOperationsRESTClient(ctx, option.WithCredentialsJSON(serviceAccountKey))
+		//nolint:staticcheck // SA1019: deprecated; JSON-from-Secret auth until migration
+		zoneOperationsClient, err = compute.NewZoneOperationsRESTClient(
+			ctx,
+			option.WithCredentialsJSON(serviceAccountKey),
+		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create ZoneOperations client: %w", err)
 		}

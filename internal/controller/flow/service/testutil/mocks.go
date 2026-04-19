@@ -49,10 +49,16 @@ func (m *MockFlowValidator) ValidatePeriodTimings(flow *kubecloudscalerv1alpha3.
 
 // MockResourceMapper is a mock implementation of ResourceMapper
 type MockResourceMapper struct {
-	CreateResourceMappingsFunc func(flow *kubecloudscalerv1alpha3.Flow, resourceNames map[string]bool) (map[string]types.ResourceInfo, error)
+	CreateResourceMappingsFunc func(
+		flow *kubecloudscalerv1alpha3.Flow,
+		resourceNames map[string]bool,
+	) (map[string]types.ResourceInfo, error)
 }
 
-func (m *MockResourceMapper) CreateResourceMappings(flow *kubecloudscalerv1alpha3.Flow, resourceNames map[string]bool) (map[string]types.ResourceInfo, error) {
+func (m *MockResourceMapper) CreateResourceMappings(
+	flow *kubecloudscalerv1alpha3.Flow,
+	resourceNames map[string]bool,
+) (map[string]types.ResourceInfo, error) {
 	if m.CreateResourceMappingsFunc != nil {
 		return m.CreateResourceMappingsFunc(flow, resourceNames)
 	}
@@ -61,18 +67,42 @@ func (m *MockResourceMapper) CreateResourceMappings(flow *kubecloudscalerv1alpha
 
 // MockResourceCreator is a mock implementation of ResourceCreator
 type MockResourceCreator struct {
-	CreateK8sResourceFunc func(ctx context.Context, flow *kubecloudscalerv1alpha3.Flow, resourceName string, k8sResource kubecloudscalerv1alpha3.K8sResource, periodsWithDelay []types.PeriodWithDelay) error
-	CreateGcpResourceFunc func(ctx context.Context, flow *kubecloudscalerv1alpha3.Flow, resourceName string, gcpResource kubecloudscalerv1alpha3.GcpResource, periodsWithDelay []types.PeriodWithDelay) error
+	CreateK8sResourceFunc func(
+		ctx context.Context,
+		flow *kubecloudscalerv1alpha3.Flow,
+		resourceName string,
+		k8sResource kubecloudscalerv1alpha3.K8sResource,
+		periodsWithDelay []types.PeriodWithDelay,
+	) error
+	CreateGcpResourceFunc func(
+		ctx context.Context,
+		flow *kubecloudscalerv1alpha3.Flow,
+		resourceName string,
+		gcpResource kubecloudscalerv1alpha3.GcpResource,
+		periodsWithDelay []types.PeriodWithDelay,
+	) error
 }
 
-func (m *MockResourceCreator) CreateK8sResource(ctx context.Context, flow *kubecloudscalerv1alpha3.Flow, resourceName string, k8sResource kubecloudscalerv1alpha3.K8sResource, periodsWithDelay []types.PeriodWithDelay) error {
+func (m *MockResourceCreator) CreateK8sResource(
+	ctx context.Context,
+	flow *kubecloudscalerv1alpha3.Flow,
+	resourceName string,
+	k8sResource kubecloudscalerv1alpha3.K8sResource,
+	periodsWithDelay []types.PeriodWithDelay,
+) error {
 	if m.CreateK8sResourceFunc != nil {
 		return m.CreateK8sResourceFunc(ctx, flow, resourceName, k8sResource, periodsWithDelay)
 	}
 	return nil
 }
 
-func (m *MockResourceCreator) CreateGcpResource(ctx context.Context, flow *kubecloudscalerv1alpha3.Flow, resourceName string, gcpResource kubecloudscalerv1alpha3.GcpResource, periodsWithDelay []types.PeriodWithDelay) error {
+func (m *MockResourceCreator) CreateGcpResource(
+	ctx context.Context,
+	flow *kubecloudscalerv1alpha3.Flow,
+	resourceName string,
+	gcpResource kubecloudscalerv1alpha3.GcpResource,
+	periodsWithDelay []types.PeriodWithDelay,
+) error {
 	if m.CreateGcpResourceFunc != nil {
 		return m.CreateGcpResourceFunc(ctx, flow, resourceName, gcpResource, periodsWithDelay)
 	}

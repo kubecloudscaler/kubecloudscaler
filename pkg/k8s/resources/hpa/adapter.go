@@ -32,19 +32,19 @@ type hpaItem struct {
 }
 
 func (h *hpaItem) GetName() string {
-	return h.HorizontalPodAutoscaler.Name
+	return h.Name
 }
 
 func (h *hpaItem) GetNamespace() string {
-	return h.HorizontalPodAutoscaler.Namespace
+	return h.Namespace
 }
 
 func (h *hpaItem) GetAnnotations() map[string]string {
-	return h.HorizontalPodAutoscaler.Annotations
+	return h.Annotations
 }
 
 func (h *hpaItem) SetAnnotations(annotations map[string]string) {
-	h.HorizontalPodAutoscaler.Annotations = annotations
+	h.Annotations = annotations
 }
 
 // hpaLister implements ResourceLister for HPAs.
@@ -85,7 +85,12 @@ type hpaUpdater struct {
 	client v2.AutoscalingV2Interface
 }
 
-func (u *hpaUpdater) Update(ctx context.Context, namespace string, resource base.ResourceItem, opts metaV1.UpdateOptions) (base.ResourceItem, error) {
+func (u *hpaUpdater) Update(
+	ctx context.Context,
+	namespace string,
+	resource base.ResourceItem,
+	opts metaV1.UpdateOptions,
+) (base.ResourceItem, error) {
 	item, ok := resource.(*hpaItem)
 	if !ok {
 		return nil, base.NewTypeAssertionError("*hpaItem", resource)
@@ -105,7 +110,7 @@ func getMinMaxReplicas(item base.ResourceItem) (*int32, *int32) {
 	if !ok {
 		return nil, nil
 	}
-	return h.HorizontalPodAutoscaler.Spec.MinReplicas, &h.HorizontalPodAutoscaler.Spec.MaxReplicas
+	return h.Spec.MinReplicas, &h.Spec.MaxReplicas
 }
 
 // setMinMaxReplicas sets the min and max replicas on an HPA.
@@ -114,8 +119,8 @@ func setMinMaxReplicas(item base.ResourceItem, minReplicas *int32, maxReplicas *
 	if !ok {
 		return
 	}
-	h.HorizontalPodAutoscaler.Spec.MinReplicas = minReplicas
+	h.Spec.MinReplicas = minReplicas
 	if maxReplicas != nil {
-		h.HorizontalPodAutoscaler.Spec.MaxReplicas = *maxReplicas
+		h.Spec.MaxReplicas = *maxReplicas
 	}
 }

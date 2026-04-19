@@ -1,3 +1,5 @@
+// Package common defines shared period and time types for kubecloudscaler APIs.
+//
 // +kubebuilder:object:generate=true
 package common
 
@@ -15,6 +17,7 @@ const (
 // DayOfWeek represents a day of the week for recurring periods.
 type DayOfWeek string
 
+// Weekday and special day selectors for recurring periods (mon–sun, or all).
 const (
 	DayMonday    DayOfWeek = "mon"
 	DayTuesday   DayOfWeek = "tue"

@@ -92,7 +92,7 @@ func (am *annotationManager) AddMinMaxAnnotations(
 
 // RestoreMinMaxAnnotations restores min/max values from annotations
 //
-//nolint:gocritic // Multiple return values needed for clear API interface
+
 func (am *annotationManager) RestoreMinMaxAnnotations(annot map[string]string) (bool, *int32, int32, map[string]string, error) {
 	var (
 		minAsInt      int
@@ -143,7 +143,7 @@ func (am *annotationManager) AddBoolAnnotations(annot map[string]string, curPeri
 
 // RestoreBoolAnnotations restores bool value from annotations
 //
-//nolint:gocritic // Multiple return values needed for clear API interface
+
 func (am *annotationManager) RestoreBoolAnnotations(annot map[string]string) (bool, *bool, map[string]string, error) {
 	var (
 		repAsBool  bool
@@ -180,7 +180,7 @@ func (am *annotationManager) AddIntAnnotations(annot map[string]string, curPerio
 
 // RestoreIntAnnotations restores int value from annotations
 //
-//nolint:gocritic // Multiple return values needed for clear API interface
+
 func (am *annotationManager) RestoreIntAnnotations(annot map[string]string) (bool, *int32, map[string]string, error) {
 	var (
 		repAsInt   int
