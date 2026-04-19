@@ -1,3 +1,5 @@
+// Package scaledobjects includes local KEDA type shims for listers and adapters.
+//
 // +kubebuilder:object:generate=false
 // +kubebuilder:skip
 package scaledobjects
@@ -59,7 +61,7 @@ func (s *ScaledObject) DeepCopyObject() runtime.Object {
 		return nil
 	}
 	out := *s
-	s.ObjectMeta.DeepCopyInto(&out.ObjectMeta)
+	s.DeepCopyInto(&out.ObjectMeta)
 	out.Spec = *s.Spec.DeepCopy()
 	return &out
 }

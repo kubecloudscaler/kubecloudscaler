@@ -59,7 +59,7 @@ type NamespaceManager interface {
 
 // AnnotationManager defines the interface for managing annotations on Kubernetes resources
 //
-//nolint:dupl,revive // Mock implementation in mocks.go intentionally duplicates this interface structure, max parameter is clearer
+//nolint:revive // Mock implementation in mocks.go intentionally duplicates this interface structure, max parameter is clearer
 type AnnotationManager interface {
 	AddAnnotations(annotations map[string]string, period *periodPkg.Period) map[string]string
 	RemoveAnnotations(annotations map[string]string) map[string]string

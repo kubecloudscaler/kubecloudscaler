@@ -22,6 +22,8 @@ import (
 	"github.com/kubecloudscaler/kubecloudscaler/pkg/period"
 )
 
+const periodTypeDown = "down"
+
 var _ = Describe("StatefulSets", func() {
 	var (
 		ctx             context.Context
@@ -44,7 +46,7 @@ var _ = Describe("StatefulSets", func() {
 
 		BeforeEach(func() {
 			mockPeriod = &period.Period{
-				Type:        "down",
+				Type:        periodTypeDown,
 				MinReplicas: 1,
 				MaxReplicas: 5,
 				IsActive:    true,
@@ -72,7 +74,7 @@ var _ = Describe("StatefulSets", func() {
 
 		Context("when scaling down statefulsets", func() {
 			BeforeEach(func() {
-				mockPeriod.Type = "down"
+				mockPeriod.Type = periodTypeDown
 				mockPeriod.MinReplicas = 1
 
 				// Create a test statefulset
@@ -96,7 +98,7 @@ var _ = Describe("StatefulSets", func() {
 
 				Expect(err).ToNot(HaveOccurred())
 				Expect(success).To(HaveLen(1))
-				Expect(failed).To(HaveLen(0))
+				Expect(failed).To(BeEmpty())
 				Expect(success[0].Kind).To(Equal("statefulset"))
 				Expect(success[0].Name).To(Equal(testStatefulSet))
 
@@ -145,7 +147,7 @@ var _ = Describe("StatefulSets", func() {
 
 				Expect(err).ToNot(HaveOccurred())
 				Expect(success).To(HaveLen(1))
-				Expect(failed).To(HaveLen(0))
+				Expect(failed).To(BeEmpty())
 				Expect(success[0].Kind).To(Equal("statefulset"))
 				Expect(success[0].Name).To(Equal(testStatefulSet))
 
@@ -196,7 +198,7 @@ var _ = Describe("StatefulSets", func() {
 
 				Expect(err).ToNot(HaveOccurred())
 				Expect(success).To(HaveLen(1))
-				Expect(failed).To(HaveLen(0))
+				Expect(failed).To(BeEmpty())
 				Expect(success[0].Kind).To(Equal("statefulset"))
 				Expect(success[0].Name).To(Equal(testStatefulSet))
 
@@ -215,7 +217,7 @@ var _ = Describe("StatefulSets", func() {
 				// Second restore should not change anything since annotations are removed
 				success, _, err = statefulsets.SetState(ctx)
 				Expect(err).ToNot(HaveOccurred())
-				Expect(success).To(HaveLen(0)) // No action needed
+				Expect(success).To(BeEmpty()) // No action needed
 			})
 		})
 
@@ -230,8 +232,8 @@ var _ = Describe("StatefulSets", func() {
 
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("error listing statefulsets"))
-				Expect(success).To(HaveLen(0))
-				Expect(failed).To(HaveLen(0))
+				Expect(success).To(BeEmpty())
+				Expect(failed).To(BeEmpty())
 			})
 
 			It("should handle statefulset get error", func() {
@@ -257,7 +259,7 @@ var _ = Describe("StatefulSets", func() {
 				success, failed, err := statefulsets.SetState(ctx)
 
 				Expect(err).ToNot(HaveOccurred())
-				Expect(success).To(HaveLen(0))
+				Expect(success).To(BeEmpty())
 				Expect(failed).To(HaveLen(1))
 				Expect(failed[0].Kind).To(Equal("statefulset"))
 				Expect(failed[0].Name).To(Equal(testStatefulSet))
@@ -287,7 +289,7 @@ var _ = Describe("StatefulSets", func() {
 				success, failed, err := statefulsets.SetState(ctx)
 
 				Expect(err).ToNot(HaveOccurred())
-				Expect(success).To(HaveLen(0))
+				Expect(success).To(BeEmpty())
 				Expect(failed).To(HaveLen(1))
 				Expect(failed[0].Kind).To(Equal("statefulset"))
 				Expect(failed[0].Name).To(Equal(testStatefulSet))
@@ -317,7 +319,7 @@ var _ = Describe("StatefulSets", func() {
 				success, failed, err := statefulsets.SetState(ctx)
 
 				Expect(err).ToNot(HaveOccurred())
-				Expect(success).To(HaveLen(0))
+				Expect(success).To(BeEmpty())
 				Expect(failed).To(HaveLen(1))
 				Expect(failed[0].Kind).To(Equal("statefulset"))
 				Expect(failed[0].Name).To(Equal(testStatefulSet))
@@ -327,7 +329,7 @@ var _ = Describe("StatefulSets", func() {
 
 		Context("with multiple statefulsets", func() {
 			BeforeEach(func() {
-				mockPeriod.Type = "down"
+				mockPeriod.Type = periodTypeDown
 				mockPeriod.MinReplicas = 1
 
 				// Create multiple test statefulsets
@@ -353,7 +355,7 @@ var _ = Describe("StatefulSets", func() {
 
 				Expect(err).ToNot(HaveOccurred())
 				Expect(success).To(HaveLen(3))
-				Expect(failed).To(HaveLen(0))
+				Expect(failed).To(BeEmpty())
 
 				// Verify all statefulsets were scaled down
 				for _, name := range []string{"statefulset1", "statefulset2", "statefulset3"} {
@@ -386,7 +388,7 @@ var _ = Describe("StatefulSets", func() {
 			var secondNamespace = "second-namespace"
 
 			BeforeEach(func() {
-				mockPeriod.Type = "down"
+				mockPeriod.Type = periodTypeDown
 				mockPeriod.MinReplicas = 1
 
 				// Add second namespace
@@ -414,7 +416,7 @@ var _ = Describe("StatefulSets", func() {
 
 				Expect(err).ToNot(HaveOccurred())
 				Expect(success).To(HaveLen(2))
-				Expect(failed).To(HaveLen(0))
+				Expect(failed).To(BeEmpty())
 
 				// Verify statefulsets in both namespaces were processed
 				for _, ns := range []string{testNamespace, secondNamespace} {
@@ -427,7 +429,7 @@ var _ = Describe("StatefulSets", func() {
 
 		Context("edge cases", func() {
 			It("should handle statefulset with nil replicas", func() {
-				mockPeriod.Type = "down"
+				mockPeriod.Type = periodTypeDown
 				mockPeriod.MinReplicas = 1
 
 				// Create a statefulset with nil replicas (defaults to 1)
@@ -448,7 +450,7 @@ var _ = Describe("StatefulSets", func() {
 
 				Expect(err).ToNot(HaveOccurred())
 				Expect(success).To(HaveLen(1))
-				Expect(failed).To(HaveLen(0))
+				Expect(failed).To(BeEmpty())
 
 				// Verify the statefulset was updated
 				updatedStatefulSet, err := fakeClient.AppsV1().StatefulSets(testNamespace).Get(ctx, testStatefulSet, metaV1.GetOptions{})
@@ -462,8 +464,8 @@ var _ = Describe("StatefulSets", func() {
 				success, failed, err := statefulsets.SetState(ctx)
 
 				Expect(err).ToNot(HaveOccurred())
-				Expect(success).To(HaveLen(0))
-				Expect(failed).To(HaveLen(0))
+				Expect(success).To(BeEmpty())
+				Expect(failed).To(BeEmpty())
 			})
 		})
 	})

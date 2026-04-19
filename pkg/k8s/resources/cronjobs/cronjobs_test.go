@@ -95,14 +95,14 @@ var _ = Describe("Cronjobs", func() {
 
 				Expect(err).ToNot(HaveOccurred())
 				Expect(success).To(HaveLen(1))
-				Expect(failed).To(HaveLen(0))
+				Expect(failed).To(BeEmpty())
 				Expect(success[0].Kind).To(Equal("cronjob"))
 				Expect(success[0].Name).To(Equal(testCronjob))
 
 				// Verify the cronjob was suspended
 				updatedCronJob, err := fakeClient.BatchV1().CronJobs(testNamespace).Get(ctx, testCronjob, metaV1.GetOptions{})
 				Expect(err).ToNot(HaveOccurred())
-				Expect(*updatedCronJob.Spec.Suspend).To(Equal(true))
+				Expect(*updatedCronJob.Spec.Suspend).To(BeTrue())
 			})
 
 			It("should add annotations when suspending", func() {
@@ -143,7 +143,7 @@ var _ = Describe("Cronjobs", func() {
 				success, failed, err := cronjobs.SetState(ctx)
 
 				Expect(err).ToNot(HaveOccurred())
-				Expect(success).To(HaveLen(0))
+				Expect(success).To(BeEmpty())
 				Expect(failed).To(HaveLen(1))
 				Expect(failed[0].Kind).To(Equal("cronjob"))
 				Expect(failed[0].Name).To(Equal(testCronjob))
@@ -179,14 +179,14 @@ var _ = Describe("Cronjobs", func() {
 
 				Expect(err).ToNot(HaveOccurred())
 				Expect(success).To(HaveLen(1))
-				Expect(failed).To(HaveLen(0))
+				Expect(failed).To(BeEmpty())
 				Expect(success[0].Kind).To(Equal("cronjob"))
 				Expect(success[0].Name).To(Equal(testCronjob))
 
 				// Verify the cronjob was restored
 				updatedCronJob, err := fakeClient.BatchV1().CronJobs(testNamespace).Get(ctx, testCronjob, metaV1.GetOptions{})
 				Expect(err).ToNot(HaveOccurred())
-				Expect(*updatedCronJob.Spec.Suspend).To(Equal(false))
+				Expect(*updatedCronJob.Spec.Suspend).To(BeFalse())
 			})
 
 			It("should handle already restored cronjobs", func() {
@@ -198,7 +198,7 @@ var _ = Describe("Cronjobs", func() {
 				// Second restore should not change anything since annotations are removed
 				success, _, err = cronjobs.SetState(ctx)
 				Expect(err).ToNot(HaveOccurred())
-				Expect(success).To(HaveLen(0)) // No action needed
+				Expect(success).To(BeEmpty()) // No action needed
 			})
 		})
 
@@ -213,8 +213,8 @@ var _ = Describe("Cronjobs", func() {
 
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("error listing cronjobs"))
-				Expect(success).To(HaveLen(0))
-				Expect(failed).To(HaveLen(0))
+				Expect(success).To(BeEmpty())
+				Expect(failed).To(BeEmpty())
 			})
 
 			It("should handle cronjob get error", func() {
@@ -240,7 +240,7 @@ var _ = Describe("Cronjobs", func() {
 				success, failed, err := cronjobs.SetState(ctx)
 
 				Expect(err).ToNot(HaveOccurred())
-				Expect(success).To(HaveLen(0))
+				Expect(success).To(BeEmpty())
 				Expect(failed).To(HaveLen(1))
 				Expect(failed[0].Kind).To(Equal("cronjob"))
 				Expect(failed[0].Name).To(Equal(testCronjob))
@@ -270,7 +270,7 @@ var _ = Describe("Cronjobs", func() {
 				success, failed, err := cronjobs.SetState(ctx)
 
 				Expect(err).ToNot(HaveOccurred())
-				Expect(success).To(HaveLen(0))
+				Expect(success).To(BeEmpty())
 				Expect(failed).To(HaveLen(1))
 				Expect(failed[0].Kind).To(Equal("cronjob"))
 				Expect(failed[0].Name).To(Equal(testCronjob))
@@ -300,7 +300,7 @@ var _ = Describe("Cronjobs", func() {
 				success, failed, err := cronjobs.SetState(ctx)
 
 				Expect(err).ToNot(HaveOccurred())
-				Expect(success).To(HaveLen(0))
+				Expect(success).To(BeEmpty())
 				Expect(failed).To(HaveLen(1))
 				Expect(failed[0].Kind).To(Equal("cronjob"))
 				Expect(failed[0].Name).To(Equal(testCronjob))
@@ -335,13 +335,13 @@ var _ = Describe("Cronjobs", func() {
 
 				Expect(err).ToNot(HaveOccurred())
 				Expect(success).To(HaveLen(3))
-				Expect(failed).To(HaveLen(0))
+				Expect(failed).To(BeEmpty())
 
 				// Verify all cronjobs were suspended
 				for _, name := range []string{"cronjob1", "cronjob2", "cronjob3"} {
 					cronjob, err := fakeClient.BatchV1().CronJobs(testNamespace).Get(ctx, name, metaV1.GetOptions{})
 					Expect(err).ToNot(HaveOccurred())
-					Expect(*cronjob.Spec.Suspend).To(Equal(true))
+					Expect(*cronjob.Spec.Suspend).To(BeTrue())
 				}
 			})
 
@@ -395,13 +395,13 @@ var _ = Describe("Cronjobs", func() {
 
 				Expect(err).ToNot(HaveOccurred())
 				Expect(success).To(HaveLen(2))
-				Expect(failed).To(HaveLen(0))
+				Expect(failed).To(BeEmpty())
 
 				// Verify cronjobs in both namespaces were processed
 				for _, ns := range []string{testNamespace, secondNamespace} {
 					cronjob, err := fakeClient.BatchV1().CronJobs(ns).Get(ctx, fmt.Sprintf("cronjob-%s", ns), metaV1.GetOptions{})
 					Expect(err).ToNot(HaveOccurred())
-					Expect(*cronjob.Spec.Suspend).To(Equal(true))
+					Expect(*cronjob.Spec.Suspend).To(BeTrue())
 				}
 			})
 		})
@@ -428,12 +428,12 @@ var _ = Describe("Cronjobs", func() {
 
 				Expect(err).ToNot(HaveOccurred())
 				Expect(success).To(HaveLen(1))
-				Expect(failed).To(HaveLen(0))
+				Expect(failed).To(BeEmpty())
 
 				// Verify the cronjob was updated
 				updatedCronJob, err := fakeClient.BatchV1().CronJobs(testNamespace).Get(ctx, testCronjob, metaV1.GetOptions{})
 				Expect(err).ToNot(HaveOccurred())
-				Expect(*updatedCronJob.Spec.Suspend).To(Equal(true))
+				Expect(*updatedCronJob.Spec.Suspend).To(BeTrue())
 			})
 
 			It("should handle empty namespace list", func() {
@@ -442,8 +442,8 @@ var _ = Describe("Cronjobs", func() {
 				success, failed, err := cronjobs.SetState(ctx)
 
 				Expect(err).ToNot(HaveOccurred())
-				Expect(success).To(HaveLen(0))
-				Expect(failed).To(HaveLen(0))
+				Expect(success).To(BeEmpty())
+				Expect(failed).To(BeEmpty())
 			})
 		})
 	})

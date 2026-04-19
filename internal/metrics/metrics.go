@@ -27,20 +27,26 @@ import (
 const (
 	metricNamespace = "kubecloudscaler"
 
-	// Controller label values.
+	// ControllerK8sScaler is the Prometheus controller label for the K8s scaler.
 	ControllerK8sScaler = "k8s_scaler"
+	// ControllerGcpScaler is the Prometheus controller label for the GCP scaler.
 	ControllerGcpScaler = "gcp_scaler"
-	ControllerFlow      = "flow"
+	// ControllerFlow is the Prometheus controller label for the Flow controller.
+	ControllerFlow = "flow"
 
-	// Result label values for reconciliation.
-	ResultSuccess           = "success"
-	ResultCriticalError     = "critical_error"
-	ResultRecoverableError  = "recoverable_error"
+	// ResultSuccess is the reconciliation result label for success.
+	ResultSuccess = "success"
+	// ResultCriticalError is the reconciliation result label for critical errors.
+	ResultCriticalError = "critical_error"
+	// ResultRecoverableError is the reconciliation result label for recoverable errors.
+	ResultRecoverableError = "recoverable_error"
+	// ResultUnclassifiedError is the reconciliation result label for unclassified errors.
 	ResultUnclassifiedError = "unclassified_error"
 
-	// Result label values for scaling operations.
+	// ScalingSuccess is the scaling operation result label for success.
 	ScalingSuccess = "success"
-	ScalingFailed  = "failed"
+	// ScalingFailed is the scaling operation result label for failure.
+	ScalingFailed = "failed"
 )
 
 var (

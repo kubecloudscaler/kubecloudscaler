@@ -100,7 +100,10 @@ func (m *ResourceMapperService) mapResource(
 }
 
 // findK8sResource finds a K8s resource by name
-func (m *ResourceMapperService) findK8sResource(flow *kubecloudscalerv1alpha3.Flow, resourceName string) *kubecloudscalerv1alpha3.K8sResource {
+func (m *ResourceMapperService) findK8sResource(
+	flow *kubecloudscalerv1alpha3.Flow,
+	resourceName string,
+) *kubecloudscalerv1alpha3.K8sResource {
 	for _, resource := range flow.Spec.Resources.K8s {
 		if resource.Name == resourceName {
 			return &resource
@@ -110,7 +113,10 @@ func (m *ResourceMapperService) findK8sResource(flow *kubecloudscalerv1alpha3.Fl
 }
 
 // findGcpResource finds a GCP resource by name
-func (m *ResourceMapperService) findGcpResource(flow *kubecloudscalerv1alpha3.Flow, resourceName string) *kubecloudscalerv1alpha3.GcpResource {
+func (m *ResourceMapperService) findGcpResource(
+	flow *kubecloudscalerv1alpha3.Flow,
+	resourceName string,
+) *kubecloudscalerv1alpha3.GcpResource {
 	for _, resource := range flow.Spec.Resources.Gcp {
 		if resource.Name == resourceName {
 			return &resource

@@ -32,19 +32,19 @@ type statefulSetItem struct {
 }
 
 func (s *statefulSetItem) GetName() string {
-	return s.StatefulSet.Name
+	return s.Name
 }
 
 func (s *statefulSetItem) GetNamespace() string {
-	return s.StatefulSet.Namespace
+	return s.Namespace
 }
 
 func (s *statefulSetItem) GetAnnotations() map[string]string {
-	return s.StatefulSet.Annotations
+	return s.Annotations
 }
 
 func (s *statefulSetItem) SetAnnotations(annotations map[string]string) {
-	s.StatefulSet.Annotations = annotations
+	s.Annotations = annotations
 }
 
 // statefulSetLister implements ResourceLister for statefulsets.
@@ -85,7 +85,12 @@ type statefulSetUpdater struct {
 	client v1.AppsV1Interface
 }
 
-func (u *statefulSetUpdater) Update(ctx context.Context, namespace string, resource base.ResourceItem, opts metaV1.UpdateOptions) (base.ResourceItem, error) {
+func (u *statefulSetUpdater) Update(
+	ctx context.Context,
+	namespace string,
+	resource base.ResourceItem,
+	opts metaV1.UpdateOptions,
+) (base.ResourceItem, error) {
 	item, ok := resource.(*statefulSetItem)
 	if !ok {
 		return nil, base.NewTypeAssertionError("*statefulSetItem", resource)
@@ -105,7 +110,7 @@ func getReplicas(item base.ResourceItem) *int32 {
 	if !ok {
 		return nil
 	}
-	return s.StatefulSet.Spec.Replicas
+	return s.Spec.Replicas
 }
 
 // setReplicas sets the replicas on a statefulset.
@@ -114,5 +119,5 @@ func setReplicas(item base.ResourceItem, replicas *int32) {
 	if !ok {
 		return
 	}
-	s.StatefulSet.Spec.Replicas = replicas
+	s.Spec.Replicas = replicas
 }

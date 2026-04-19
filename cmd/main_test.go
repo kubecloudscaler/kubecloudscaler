@@ -205,7 +205,7 @@ var _ = Describe("Main Package", func() {
 
 	Describe("Webhook Server Configuration", func() {
 		It("should create webhook server with TLS options", func() {
-			var tlsOpts []func(*tls.Config)
+			tlsOpts := make([]func(*tls.Config), 0, 1)
 			disableHTTP2 := func(c *tls.Config) {
 				c.NextProtos = []string{"http/1.1"}
 			}

@@ -32,19 +32,19 @@ type deploymentItem struct {
 }
 
 func (d *deploymentItem) GetName() string {
-	return d.Deployment.Name
+	return d.Name
 }
 
 func (d *deploymentItem) GetNamespace() string {
-	return d.Deployment.Namespace
+	return d.Namespace
 }
 
 func (d *deploymentItem) GetAnnotations() map[string]string {
-	return d.Deployment.Annotations
+	return d.Annotations
 }
 
 func (d *deploymentItem) SetAnnotations(annotations map[string]string) {
-	d.Deployment.Annotations = annotations
+	d.Annotations = annotations
 }
 
 // deploymentLister implements ResourceLister for deployments.
@@ -52,7 +52,6 @@ type deploymentLister struct {
 	client v1.AppsV1Interface
 }
 
-//nolint:gocritic // hugeParam: Kubernetes API types are passed by value for immutability
 func (l *deploymentLister) List(ctx context.Context, namespace string, opts metaV1.ListOptions) ([]base.ResourceItem, error) {
 	list, err := l.client.Deployments(namespace).List(ctx, opts)
 	if err != nil {
@@ -86,8 +85,12 @@ type deploymentUpdater struct {
 	client v1.AppsV1Interface
 }
 
-//nolint:gocritic // hugeParam: Kubernetes API types are passed by value for immutability
-func (u *deploymentUpdater) Update(ctx context.Context, namespace string, resource base.ResourceItem, opts metaV1.UpdateOptions) (base.ResourceItem, error) {
+func (u *deploymentUpdater) Update(
+	ctx context.Context,
+	namespace string,
+	resource base.ResourceItem,
+	opts metaV1.UpdateOptions,
+) (base.ResourceItem, error) {
 	item, ok := resource.(*deploymentItem)
 	if !ok {
 		return nil, base.NewTypeAssertionError("*deploymentItem", resource)
@@ -107,7 +110,7 @@ func getReplicas(item base.ResourceItem) *int32 {
 	if !ok {
 		return nil
 	}
-	return d.Deployment.Spec.Replicas
+	return d.Spec.Replicas
 }
 
 // setReplicas sets the replicas on a deployment.
@@ -116,5 +119,5 @@ func setReplicas(item base.ResourceItem, replicas *int32) {
 	if !ok {
 		return
 	}
-	d.Deployment.Spec.Replicas = replicas
+	d.Spec.Replicas = replicas
 }

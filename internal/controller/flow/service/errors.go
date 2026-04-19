@@ -23,8 +23,10 @@ import (
 	"github.com/kubecloudscaler/kubecloudscaler/internal/controller/shared"
 )
 
-// Type aliases for backward compatibility — all error logic lives in shared package.
+// CriticalError is a non-retryable reconciliation failure (alias to shared).
 type CriticalError = shared.CriticalError
+
+// RecoverableError is a retryable reconciliation failure (alias to shared).
 type RecoverableError = shared.RecoverableError
 
 var (

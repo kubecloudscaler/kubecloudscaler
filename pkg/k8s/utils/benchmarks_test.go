@@ -104,13 +104,13 @@ func BenchmarkAddMinMaxAnnotations(b *testing.B) {
 		EndTime:   time.Date(2024, 1, 1, 1, 0, 0, 0, time.UTC),
 	}
 
-	min := int32(2)
-	max := int32(10)
+	minReplicas := int32(2)
+	maxReplicas := int32(10)
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		annotations := make(map[string]string)
-		annotationMgr.AddMinMaxAnnotations(annotations, period, &min, max)
+		annotationMgr.AddMinMaxAnnotations(annotations, period, &minReplicas, maxReplicas)
 	}
 }
 

@@ -33,19 +33,19 @@ type cronJobItem struct {
 }
 
 func (c *cronJobItem) GetName() string {
-	return c.CronJob.Name
+	return c.Name
 }
 
 func (c *cronJobItem) GetNamespace() string {
-	return c.CronJob.Namespace
+	return c.Namespace
 }
 
 func (c *cronJobItem) GetAnnotations() map[string]string {
-	return c.CronJob.Annotations
+	return c.Annotations
 }
 
 func (c *cronJobItem) SetAnnotations(annotations map[string]string) {
-	c.CronJob.Annotations = annotations
+	c.Annotations = annotations
 }
 
 // cronJobLister implements ResourceLister for cronjobs.
@@ -53,7 +53,6 @@ type cronJobLister struct {
 	client v1.BatchV1Interface
 }
 
-//nolint:gocritic // hugeParam: Kubernetes API types are passed by value for immutability
 func (l *cronJobLister) List(ctx context.Context, namespace string, opts metaV1.ListOptions) ([]base.ResourceItem, error) {
 	list, err := l.client.CronJobs(namespace).List(ctx, opts)
 	if err != nil {
@@ -87,8 +86,12 @@ type cronJobUpdater struct {
 	client v1.BatchV1Interface
 }
 
-//nolint:gocritic // hugeParam: Kubernetes API types are passed by value for immutability
-func (u *cronJobUpdater) Update(ctx context.Context, namespace string, resource base.ResourceItem, opts metaV1.UpdateOptions) (base.ResourceItem, error) {
+func (u *cronJobUpdater) Update(
+	ctx context.Context,
+	namespace string,
+	resource base.ResourceItem,
+	opts metaV1.UpdateOptions,
+) (base.ResourceItem, error) {
 	item, ok := resource.(*cronJobItem)
 	if !ok {
 		return nil, base.NewTypeAssertionError("*cronJobItem", resource)
@@ -108,7 +111,7 @@ func getSuspend(item base.ResourceItem) *bool {
 	if !ok {
 		return nil
 	}
-	return c.CronJob.Spec.Suspend
+	return c.Spec.Suspend
 }
 
 // setSuspend sets the suspend value on a cronjob.
@@ -117,10 +120,10 @@ func setSuspend(item base.ResourceItem, suspend *bool) {
 	if !ok {
 		return
 	}
-	c.CronJob.Spec.Suspend = suspend
+	c.Spec.Suspend = suspend
 }
 
 // onUpError returns an error when trying to scale up a cronjob (not supported).
-func onUpError(item base.ResourceItem) error {
+func onUpError(_ base.ResourceItem) error {
 	return fmt.Errorf("cronjob can only be scaled down")
 }

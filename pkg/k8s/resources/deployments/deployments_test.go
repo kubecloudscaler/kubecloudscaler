@@ -96,7 +96,7 @@ var _ = Describe("Deployments", func() {
 
 				Expect(err).ToNot(HaveOccurred())
 				Expect(success).To(HaveLen(1))
-				Expect(failed).To(HaveLen(0))
+				Expect(failed).To(BeEmpty())
 				Expect(success[0].Kind).To(Equal("deployment"))
 				Expect(success[0].Name).To(Equal(testDeploy))
 
@@ -145,7 +145,7 @@ var _ = Describe("Deployments", func() {
 
 				Expect(err).ToNot(HaveOccurred())
 				Expect(success).To(HaveLen(1))
-				Expect(failed).To(HaveLen(0))
+				Expect(failed).To(BeEmpty())
 				Expect(success[0].Kind).To(Equal("deployment"))
 				Expect(success[0].Name).To(Equal(testDeploy))
 
@@ -196,7 +196,7 @@ var _ = Describe("Deployments", func() {
 
 				Expect(err).ToNot(HaveOccurred())
 				Expect(success).To(HaveLen(1))
-				Expect(failed).To(HaveLen(0))
+				Expect(failed).To(BeEmpty())
 				Expect(success[0].Kind).To(Equal("deployment"))
 				Expect(success[0].Name).To(Equal(testDeploy))
 
@@ -215,7 +215,7 @@ var _ = Describe("Deployments", func() {
 				// Second restore should not change anything since annotations are removed
 				success, _, err = deployments.SetState(ctx)
 				Expect(err).ToNot(HaveOccurred())
-				Expect(success).To(HaveLen(0)) // No action needed
+				Expect(success).To(BeEmpty()) // No action needed
 			})
 		})
 
@@ -230,8 +230,8 @@ var _ = Describe("Deployments", func() {
 
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("error listing deployments"))
-				Expect(success).To(HaveLen(0))
-				Expect(failed).To(HaveLen(0))
+				Expect(success).To(BeEmpty())
+				Expect(failed).To(BeEmpty())
 			})
 
 			It("should handle deployment get error", func() {
@@ -257,7 +257,7 @@ var _ = Describe("Deployments", func() {
 				success, failed, err := deployments.SetState(ctx)
 
 				Expect(err).ToNot(HaveOccurred())
-				Expect(success).To(HaveLen(0))
+				Expect(success).To(BeEmpty())
 				Expect(failed).To(HaveLen(1))
 				Expect(failed[0].Kind).To(Equal("deployment"))
 				Expect(failed[0].Name).To(Equal(testDeploy))
@@ -287,7 +287,7 @@ var _ = Describe("Deployments", func() {
 				success, failed, err := deployments.SetState(ctx)
 
 				Expect(err).ToNot(HaveOccurred())
-				Expect(success).To(HaveLen(0))
+				Expect(success).To(BeEmpty())
 				Expect(failed).To(HaveLen(1))
 				Expect(failed[0].Kind).To(Equal("deployment"))
 				Expect(failed[0].Name).To(Equal(testDeploy))
@@ -317,7 +317,7 @@ var _ = Describe("Deployments", func() {
 				success, failed, err := deployments.SetState(ctx)
 
 				Expect(err).ToNot(HaveOccurred())
-				Expect(success).To(HaveLen(0))
+				Expect(success).To(BeEmpty())
 				Expect(failed).To(HaveLen(1))
 				Expect(failed[0].Kind).To(Equal("deployment"))
 				Expect(failed[0].Name).To(Equal(testDeploy))
@@ -353,7 +353,7 @@ var _ = Describe("Deployments", func() {
 
 				Expect(err).ToNot(HaveOccurred())
 				Expect(success).To(HaveLen(3))
-				Expect(failed).To(HaveLen(0))
+				Expect(failed).To(BeEmpty())
 
 				// Verify all deployments were scaled down
 				for _, name := range []string{"deploy1", "deploy2", "deploy3"} {
@@ -414,7 +414,7 @@ var _ = Describe("Deployments", func() {
 
 				Expect(err).ToNot(HaveOccurred())
 				Expect(success).To(HaveLen(2))
-				Expect(failed).To(HaveLen(0))
+				Expect(failed).To(BeEmpty())
 
 				// Verify deployments in both namespaces were processed
 				for _, ns := range []string{testNamespace, secondNamespace} {
@@ -448,7 +448,7 @@ var _ = Describe("Deployments", func() {
 
 				Expect(err).ToNot(HaveOccurred())
 				Expect(success).To(HaveLen(1))
-				Expect(failed).To(HaveLen(0))
+				Expect(failed).To(BeEmpty())
 
 				// Verify the deployment was updated
 				updatedDeployment, err := fakeClient.AppsV1().Deployments(testNamespace).Get(ctx, testDeploy, metaV1.GetOptions{})
@@ -478,7 +478,7 @@ var _ = Describe("Deployments", func() {
 
 				Expect(err).ToNot(HaveOccurred())
 				Expect(success).To(HaveLen(1))
-				Expect(failed).To(HaveLen(0))
+				Expect(failed).To(BeEmpty())
 
 				// Verify the deployment was updated
 				updatedDeployment, err := fakeClient.AppsV1().Deployments(testNamespace).Get(ctx, testDeploy, metaV1.GetOptions{})
@@ -492,8 +492,8 @@ var _ = Describe("Deployments", func() {
 				success, failed, err := deployments.SetState(ctx)
 
 				Expect(err).ToNot(HaveOccurred())
-				Expect(success).To(HaveLen(0))
-				Expect(failed).To(HaveLen(0))
+				Expect(success).To(BeEmpty())
+				Expect(failed).To(BeEmpty())
 			})
 		})
 	})

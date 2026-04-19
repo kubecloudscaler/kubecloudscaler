@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+// Package types holds reconciliation types shared within the Flow controller.
 package types
 
 import (

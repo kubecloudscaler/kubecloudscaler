@@ -38,7 +38,10 @@ import (
 	gcpUtils "github.com/kubecloudscaler/kubecloudscaler/pkg/gcp/utils"
 )
 
-const testAuthSecretName = "gcp-secret"
+const (
+	testAuthSecretName = "gcp-secret"
+	testGCPProjectID   = "test-project"
+)
 
 // stubNamespaceResolver returns a fixed namespace — keeps tests independent of POD_NAMESPACE.
 type stubNamespaceResolver struct{ ns string }
@@ -85,7 +88,7 @@ var _ = Describe("AuthHandler", func() {
 		scaler = &kubecloudscalerv1alpha3.Gcp{}
 		scaler.SetName("test-scaler")
 		scaler.SetNamespace("default")
-		scaler.Spec.Config.ProjectID = "test-project"
+		scaler.Spec.Config.ProjectID = testGCPProjectID
 
 		factory = newStubGCPFactory()
 		authHandler = handlers.NewAuthHandler(

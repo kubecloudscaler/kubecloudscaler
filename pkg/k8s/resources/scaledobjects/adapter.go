@@ -37,19 +37,19 @@ type scaledObjectItem struct {
 }
 
 func (s *scaledObjectItem) GetName() string {
-	return s.ScaledObject.Name
+	return s.Name
 }
 
 func (s *scaledObjectItem) GetNamespace() string {
-	return s.ScaledObject.Namespace
+	return s.Namespace
 }
 
 func (s *scaledObjectItem) GetAnnotations() map[string]string {
-	return s.ScaledObject.Annotations
+	return s.Annotations
 }
 
 func (s *scaledObjectItem) SetAnnotations(annotations map[string]string) {
-	s.ScaledObject.Annotations = annotations
+	s.Annotations = annotations
 }
 
 // scaledObjectLister implements ResourceLister for KEDA ScaledObjects.
@@ -113,7 +113,12 @@ type scaledObjectUpdater struct {
 	client dynamic.NamespaceableResourceInterface
 }
 
-func (u *scaledObjectUpdater) Update(ctx context.Context, namespace string, resource base.ResourceItem, opts metaV1.UpdateOptions) (base.ResourceItem, error) {
+func (u *scaledObjectUpdater) Update(
+	ctx context.Context,
+	namespace string,
+	resource base.ResourceItem,
+	opts metaV1.UpdateOptions,
+) (base.ResourceItem, error) {
 	item, ok := resource.(*scaledObjectItem)
 	if !ok {
 		return nil, base.NewTypeAssertionError("*scaledObjectItem", resource)
@@ -124,7 +129,7 @@ func (u *scaledObjectUpdater) Update(ctx context.Context, namespace string, reso
 	// are preserved. Only patch the fields we manage.
 	obj := item.unstructured.DeepCopy()
 	obj.SetAnnotations(item.ScaledObject.GetAnnotations())
-	if err := syncSpecReplicas(item.ScaledObject.Spec, obj); err != nil {
+	if err := syncSpecReplicas(item.Spec, obj); err != nil {
 		return nil, fmt.Errorf("error syncing spec replicas to unstructured: %w", err)
 	}
 
@@ -170,7 +175,7 @@ func getMinMaxReplicas(item base.ResourceItem) (*int32, *int32) {
 	if !ok {
 		return nil, nil
 	}
-	return s.ScaledObject.Spec.MinReplicaCount, s.ScaledObject.Spec.MaxReplicaCount
+	return s.Spec.MinReplicaCount, s.Spec.MaxReplicaCount
 }
 
 // setMinMaxReplicas sets the min and max replicas on a ScaledObject.
@@ -179,8 +184,8 @@ func setMinMaxReplicas(item base.ResourceItem, minReplicas, maxReplicas *int32) 
 	if !ok {
 		return
 	}
-	s.ScaledObject.Spec.MinReplicaCount = ptr.To(ptr.Deref(minReplicas, 0))
+	s.Spec.MinReplicaCount = ptr.To(ptr.Deref(minReplicas, 0))
 	if maxReplicas != nil {
-		s.ScaledObject.Spec.MaxReplicaCount = ptr.To(*maxReplicas)
+		s.Spec.MaxReplicaCount = ptr.To(*maxReplicas)
 	}
 }
