@@ -19,6 +19,7 @@ package controller
 
 import (
 	"context"
+	"errors"
 	"sync"
 	"time"
 
@@ -118,8 +119,23 @@ func (r *FlowReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		}
 	})
 
-	err := r.chain.Execute(reconCtx)
+	chainErr := r.chain.Execute(reconCtx)
 	duration := time.Since(start).Seconds()
+
+	// ProcessingError classification dominates the chain's returned error: a user-config
+	// ValidationError must surface as Critical (no requeue) even when StatusHandler itself
+	// failed to persist the condition, otherwise the controller would hot-loop on a spec it
+	// knows is broken. When both errors are present we aggregate via errors.Join so neither
+	// is lost for logging; classification is driven by ProcessingError.
+	var err error
+	switch {
+	case reconCtx.ProcessingError != nil && service.IsValidationError(reconCtx.ProcessingError):
+		err = shared.NewCriticalError(errors.Join(reconCtx.ProcessingError, chainErr))
+	case reconCtx.ProcessingError != nil:
+		err = shared.NewRecoverableError(errors.Join(reconCtx.ProcessingError, chainErr))
+	default:
+		err = chainErr
+	}
 
 	if err != nil {
 		if shared.IsCriticalError(err) {

@@ -56,7 +56,17 @@ func (t *TimeCalculatorService) CalculatePeriodEndTime(period *common.ScalerPeri
 	return baseEndTime.Add(delay), nil
 }
 
-// GetPeriodDuration calculates the duration of a period
+// GetPeriodDuration calculates the duration of a period. For recurring periods, an end
+// time earlier than the start time is interpreted as a cross-midnight window (e.g.
+// 22:00 → 02:00 = 4h) so downstream delay math stays meaningful; fixed periods carry full
+// datetimes and require end >= start. A period whose start equals its end is rejected as
+// ZeroPeriodDuration rather than silently returning 0 — zero-length periods never match a
+// real moment and surface as misleading InvertedWindow errors downstream.
+//
+// Note: pkg/period currently refuses cross-midnight recurring windows at activation time
+// (see pkg/period/period.go). Accepting them here for validator/mapper math only means the
+// Flow will pass structural checks but still fail activation on a 22:00→02:00 period until
+// pkg/period is aligned.
 func (t *TimeCalculatorService) GetPeriodDuration(period *common.ScalerPeriod) (time.Duration, error) {
 	startTime, err := t.parsePeriodStartTime(period)
 	if err != nil {
@@ -68,8 +78,17 @@ func (t *TimeCalculatorService) GetPeriodDuration(period *common.ScalerPeriod) (
 		return 0, fmt.Errorf("failed to parse end time: %w", err)
 	}
 
+	if endTime.Equal(startTime) {
+		return 0, NewValidationError(ReasonZeroPeriodDuration,
+			fmt.Errorf("period has zero duration (start equals end)"))
+	}
+
 	if endTime.Before(startTime) {
-		return 0, fmt.Errorf("end time is before start time")
+		if period.Time.Recurring != nil {
+			endTime = endTime.Add(24 * time.Hour)
+		} else {
+			return 0, fmt.Errorf("end time is before start time")
+		}
 	}
 
 	return endTime.Sub(startTime), nil

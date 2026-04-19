@@ -59,6 +59,11 @@ spec:
                             pattern: ^\d*m$
                             type: string
                           name:
+                            description: |-
+                              Name must match a K8sResource or GcpResource declared in spec.resources. Constrained
+                              to DNS-1123 label syntax to keep generated child CR names valid.
+                            maxLength: 63
+                            pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                             type: string
                           startTimeDelay:
                             default: 0m
@@ -218,6 +223,11 @@ spec:
                           - restoreOnDelete
                           type: object
                         name:
+                          description: |-
+                            Name is used both as an identifier inside the Flow spec and as a component of the
+                            generated child Gcp CR name. It must be a DNS-1123 label.
+                          maxLength: 63
+                          pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                           type: string
                         resources:
                           description: Resources defines the configuration for managed
@@ -333,6 +343,11 @@ spec:
                           - restoreOnDelete
                           type: object
                         name:
+                          description: |-
+                            Name is used both as an identifier inside the Flow spec and as a component of the
+                            generated child K8s CR name. It must be a DNS-1123 label.
+                          maxLength: 63
+                          pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                           type: string
                         resources:
                           description: Resources defines the configuration for managed

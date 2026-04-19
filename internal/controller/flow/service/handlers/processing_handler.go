@@ -17,14 +17,18 @@ limitations under the License.
 package handlers
 
 import (
-	"fmt"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/kubecloudscaler/kubecloudscaler/internal/controller/flow/service"
-	"github.com/kubecloudscaler/kubecloudscaler/internal/controller/shared"
 )
 
 // ProcessingHandler delegates flow processing to the FlowProcessor service.
 // It validates the flow, maps resources, and creates K8s/GCP child resources.
+//
+// On processing error it populates ctx.Condition (Status=False, Reason classified) and
+// ctx.ProcessingError, then returns nil so StatusHandler still runs and persists the
+// failure condition. The controller inspects ctx.ProcessingError after the chain and
+// classifies it as CriticalError (ValidationError) or RecoverableError (transient).
 type ProcessingHandler struct {
 	next      service.Handler
 	processor service.FlowProcessor
@@ -37,7 +41,24 @@ func NewProcessingHandler(processor service.FlowProcessor) service.Handler {
 
 func (h *ProcessingHandler) Execute(ctx *service.FlowReconciliationContext) error {
 	if err := h.processor.ProcessFlow(ctx.Ctx, ctx.Flow); err != nil {
-		return shared.NewRecoverableError(fmt.Errorf("process flow: %w", err))
+		reason := service.ReasonProcessingFailed
+		if v, ok := service.AsValidationError(err); ok {
+			reason = v.Reason
+		}
+		ctx.ProcessingError = err
+		ctx.Condition = &metav1.Condition{
+			Type:    "Processed",
+			Status:  metav1.ConditionFalse,
+			Reason:  string(reason),
+			Message: err.Error(),
+		}
+	} else {
+		ctx.Condition = &metav1.Condition{
+			Type:    "Processed",
+			Status:  metav1.ConditionTrue,
+			Reason:  "ProcessingSucceeded",
+			Message: "Flow processed successfully",
+		}
 	}
 
 	if h.next != nil && !ctx.SkipRemaining {

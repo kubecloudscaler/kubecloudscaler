@@ -17,8 +17,6 @@ limitations under the License.
 package handlers
 
 import (
-	"fmt"
-
 	kubecloudscalerv1alpha3 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha3"
 	"github.com/kubecloudscaler/kubecloudscaler/internal/controller/flow/service"
 	"github.com/kubecloudscaler/kubecloudscaler/internal/controller/shared"
@@ -26,7 +24,10 @@ import (
 )
 
 // FetchHandler fetches the Flow resource from the Kubernetes API server.
-// Returns CriticalError if the resource is not found (deleted during reconciliation).
+//
+// On success: sets ctx.Flow and continues the chain.
+// On NotFound: returns nil — the Flow was deleted; reconcile has nothing to do (no error log).
+// On other errors: returns RecoverableError for requeue.
 type FetchHandler struct {
 	next service.Handler
 }
@@ -40,9 +41,9 @@ func (h *FetchHandler) Execute(ctx *service.FlowReconciliationContext) error {
 	flow := &kubecloudscalerv1alpha3.Flow{}
 	if err := ctx.Client.Get(ctx.Ctx, ctx.Request.NamespacedName, flow); err != nil {
 		if client.IgnoreNotFound(err) == nil {
-			return shared.NewCriticalError(fmt.Errorf("flow not found: %w", err))
+			return nil
 		}
-		return shared.NewRecoverableError(fmt.Errorf("fetch flow: %w", err))
+		return shared.NewRecoverableError(err)
 	}
 
 	ctx.Flow = flow

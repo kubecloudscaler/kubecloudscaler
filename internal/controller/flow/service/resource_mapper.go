@@ -127,7 +127,8 @@ func (m *ResourceMapperService) determineResourceType(
 	gcpResource *kubecloudscalerv1alpha3.GcpResource,
 ) (string, *kubecloudscalerv1alpha3.K8sResource, *kubecloudscalerv1alpha3.GcpResource, error) {
 	if k8sResource != nil && gcpResource != nil {
-		return "", nil, nil, fmt.Errorf("resource %s is defined in both K8s and GCP resources", resourceName)
+		return "", nil, nil, NewValidationError(ReasonAmbiguousResource,
+			fmt.Errorf("resource %s is defined in both K8s and GCP resources", resourceName))
 	}
 
 	if k8sResource != nil {
@@ -138,7 +139,8 @@ func (m *ResourceMapperService) determineResourceType(
 		return "gcp", nil, gcpResource, nil
 	}
 
-	return "", nil, nil, fmt.Errorf("resource %s referenced in flows but not defined in resources", resourceName)
+	return "", nil, nil, NewValidationError(ReasonUnknownResource,
+		fmt.Errorf("resource %s referenced in flows but not defined in resources", resourceName))
 }
 
 // findAssociatedPeriods finds all periods associated with a resource
@@ -158,16 +160,17 @@ func (m *ResourceMapperService) findAssociatedPeriods(
 
 			key := flowItem.PeriodName + "/" + resource.Name
 			if seen[key] {
-				return nil, fmt.Errorf(
+				return nil, NewValidationError(ReasonDuplicateResourceInPeriod, fmt.Errorf(
 					"resource %s appears more than once for period %s in flows",
 					resource.Name, flowItem.PeriodName,
-				)
+				))
 			}
 			seen[key] = true
 
 			period, exists := periodsMap[flowItem.PeriodName]
 			if !exists {
-				return nil, fmt.Errorf("period %s referenced in flows but not defined", flowItem.PeriodName)
+				return nil, NewValidationError(ReasonUnknownPeriod,
+					fmt.Errorf("period %s referenced in flows but not defined", flowItem.PeriodName))
 			}
 
 			periodWithDelay, err := m.createPeriodWithDelay(&period, &resource)
@@ -189,12 +192,14 @@ func (m *ResourceMapperService) createPeriodWithDelay(
 ) (types.PeriodWithDelay, error) {
 	startTimeDelay, err := m.parseDelay(resource.StartTimeDelay)
 	if err != nil {
-		return types.PeriodWithDelay{}, fmt.Errorf("invalid start time delay format for resource %s: %w", resource.Name, err)
+		return types.PeriodWithDelay{}, NewValidationError(ReasonInvalidDelayFormat,
+			fmt.Errorf("invalid start time delay format for resource %s: %w", resource.Name, err))
 	}
 
 	endTimeDelay, err := m.parseDelay(resource.EndTimeDelay)
 	if err != nil {
-		return types.PeriodWithDelay{}, fmt.Errorf("invalid end time delay format for resource %s: %w", resource.Name, err)
+		return types.PeriodWithDelay{}, NewValidationError(ReasonInvalidDelayFormat,
+			fmt.Errorf("invalid end time delay format for resource %s: %w", resource.Name, err))
 	}
 
 	startTime, err := m.timeCalculator.CalculatePeriodStartTime(period, startTimeDelay)

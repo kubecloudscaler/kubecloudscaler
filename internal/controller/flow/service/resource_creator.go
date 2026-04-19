@@ -18,6 +18,8 @@ package service
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 
 	"github.com/rs/zerolog"
@@ -30,6 +32,9 @@ import (
 	kubecloudscalerv1alpha3 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha3"
 	"github.com/kubecloudscaler/kubecloudscaler/internal/controller/flow/types"
 )
+
+// maxDNS1123SubdomainLength is the upper bound on a Kubernetes resource name.
+const maxDNS1123SubdomainLength = 253
 
 // ResourceCreatorService handles creation of K8s and GCP resources
 type ResourceCreatorService struct {
@@ -63,7 +68,7 @@ func (c *ResourceCreatorService) CreateK8sResource(
 
 	k8sObj := &kubecloudscalerv1alpha3.K8s{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: fmt.Sprintf("flow-%s-%s", flow.Name, resourceName),
+			Name: childResourceName(flow.Name, resourceName),
 			Labels: map[string]string{
 				"flow":     flow.Name,
 				"resource": resourceName,
@@ -105,7 +110,7 @@ func (c *ResourceCreatorService) CreateGcpResource(
 
 	gcpObj := &kubecloudscalerv1alpha3.Gcp{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: fmt.Sprintf("flow-%s-%s", flow.Name, resourceName),
+			Name: childResourceName(flow.Name, resourceName),
 			Labels: map[string]string{
 				"flow":     flow.Name,
 				"resource": resourceName,
@@ -155,6 +160,24 @@ func (c *ResourceCreatorService) buildPeriods(periodsWithDelay []types.PeriodWit
 		allPeriods = append(allPeriods, curPeriod)
 	}
 	return allPeriods
+}
+
+// childResourceName builds the name of a child K8s/Gcp CR created for a given flow+resource.
+// Under the CRD validation both inputs are DNS-1123 labels ≤ 63 chars, so the naive
+// "flow-<flow>-<resource>" is well-formed and ≤ 132 chars. As a defensive guard against
+// future relaxation or conversion from older API versions (where no MaxLength existed), if
+// the combined name exceeds maxDNS1123SubdomainLength it is truncated and disambiguated
+// with a short SHA-256 suffix of the raw inputs so the child name stays both valid and
+// deterministically tied to its origin.
+func childResourceName(flowName, resourceName string) string {
+	name := fmt.Sprintf("flow-%s-%s", flowName, resourceName)
+	if len(name) <= maxDNS1123SubdomainLength {
+		return name
+	}
+	sum := sha256.Sum256([]byte(flowName + "\x00" + resourceName))
+	suffix := "-" + hex.EncodeToString(sum[:5]) // 10 hex chars
+	keep := maxDNS1123SubdomainLength - len(suffix)
+	return name[:keep] + suffix
 }
 
 // createOrUpdateResource creates or updates a resource using controllerutil.CreateOrUpdate
