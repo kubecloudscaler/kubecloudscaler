@@ -18,7 +18,6 @@ package handlers
 
 import (
 	"fmt"
-	"sync"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -30,26 +29,62 @@ import (
 	k8sClient "github.com/kubecloudscaler/kubecloudscaler/pkg/k8s/utils/client"
 )
 
-// cachedClient holds a cached K8s client pair.
-// Note: cache has no eviction policy; acceptable when secret count is low.
-type cachedClient struct {
-	k8sClient     kubernetes.Interface
-	dynamicClient dynamic.Interface
+// ClientFactory builds typed and dynamic K8s clients from an optional auth secret.
+// Nil secret means use in-cluster / default credentials.
+type ClientFactory func(secret *corev1.Secret) (kube kubernetes.Interface, dyn dynamic.Interface, err error)
+
+// defaultClientFactory adapts the concrete k8sClient.GetClient to the ClientFactory signature.
+func defaultClientFactory(secret *corev1.Secret) (kube kubernetes.Interface, dyn dynamic.Interface, err error) {
+	return k8sClient.GetClient(secret)
 }
 
-// AuthHandler is a handler that sets up the K8s client with authentication.
+// AuthHandlerOption configures an AuthHandler at construction time.
+type AuthHandlerOption func(*AuthHandler)
+
+// WithClientFactory overrides the default client factory. Intended for tests. Passing a
+// nil factory is a programmer error and panics immediately — silently keeping the default
+// would make a mis-wired test fail mysteriously when it hits real in-cluster config instead
+// of the stub.
+func WithClientFactory(factory ClientFactory) AuthHandlerOption {
+	if factory == nil {
+		panic("handlers.WithClientFactory: factory must not be nil")
+	}
+	return func(h *AuthHandler) {
+		h.clientFactory = factory
+	}
+}
+
+// AuthHandler sets up the K8s client with authentication.
+// This handler manages authentication secrets and initializes the K8s API clients.
+//
+// Responsibilities:
+//   - Fetch authentication secret if specified
+//   - Cache typed + dynamic clients keyed by (secret namespace, secret name) +
+//     ResourceVersion so a rotation invalidates stale credentials, and successive
+//     reconciliations reuse the same clients
+//   - Populate K8sClient, DynamicClient, and Secret in context
 type AuthHandler struct {
 	next              service.Handler
-	clientCache       sync.Map // map[string]*cachedClient (keyed by secret name, "" for default)
+	clientCache       *k8sClientCache
 	namespaceResolver config.NamespaceResolver
+	clientFactory     ClientFactory
 }
 
 // NewAuthHandler creates a new AuthHandler. If nsResolver is nil, uses config.DefaultNamespaceResolver().
-func NewAuthHandler(nsResolver config.NamespaceResolver) service.Handler {
+// Additional options (e.g., WithClientFactory) can be supplied for testing.
+func NewAuthHandler(nsResolver config.NamespaceResolver, opts ...AuthHandlerOption) service.Handler {
 	if nsResolver == nil {
 		nsResolver = config.DefaultNamespaceResolver()
 	}
-	return &AuthHandler{namespaceResolver: nsResolver}
+	h := &AuthHandler{
+		namespaceResolver: nsResolver,
+		clientCache:       newK8sClientCache(),
+		clientFactory:     defaultClientFactory,
+	}
+	for _, opt := range opts {
+		opt(h)
+	}
+	return h
 }
 
 // Execute sets up the K8s client with authentication and adds it to the reconciliation context.
@@ -59,52 +94,43 @@ func NewAuthHandler(nsResolver config.NamespaceResolver) service.Handler {
 //   - If no AuthSecret: Creates K8s client with default credentials
 //   - On success: Sets ctx.K8sClient, ctx.DynamicClient, ctx.Secret
 func (h *AuthHandler) Execute(ctx *service.ReconciliationContext) error {
-	// Handle authentication secret for K8s access
 	var secret *corev1.Secret
-	cacheKey := "" // default client
+	var key cacheKey // zero value = default in-cluster credentials
+
 	if ctx.Scaler.Spec.Config.AuthSecret != nil {
-		// Use operator namespace since K8s CRD is cluster-scoped (ctx.Request.Namespace is empty)
+		// K8s CRD is cluster-scoped; the secret namespace comes from the operator resolver.
 		secretNamespace := h.namespaceResolver.Resolve()
 		namespacedSecret := types.NamespacedName{
 			Namespace: secretNamespace,
 			Name:      *ctx.Scaler.Spec.Config.AuthSecret,
 		}
-
-		// Fetch the secret from the cluster
 		secret = &corev1.Secret{}
 		if err := ctx.Client.Get(ctx.Ctx, namespacedSecret, secret); err != nil {
 			ctx.Logger.Error().Err(err).Msg("unable to fetch secret")
 			return service.NewCriticalError(fmt.Errorf("unable to fetch auth secret: %w", err))
 		}
 		ctx.Secret = secret
-		cacheKey = *ctx.Scaler.Spec.Config.AuthSecret
+		key = cacheKey{namespace: secretNamespace, name: *ctx.Scaler.Spec.Config.AuthSecret}
 	} else {
-		// No authentication secret specified, use default K8s access
 		ctx.Secret = nil
-		secret = nil
 	}
 
-	// Check cache for existing client
-	if cached, ok := h.clientCache.Load(cacheKey); ok {
-		cc, _ := cached.(*cachedClient)
-		ctx.K8sClient = cc.k8sClient
-		ctx.DynamicClient = cc.dynamicClient
-	} else {
-		// Initialize K8s client for resource operations
-		kubeClient, dynamicClient, err := k8sClient.GetClient(secret)
-		if err != nil {
-			ctx.Logger.Error().Err(err).Msg("unable to create K8s client")
-			return service.NewCriticalError(fmt.Errorf("failed to create K8s client: %w", err))
-		}
-		h.clientCache.Store(cacheKey, &cachedClient{
-			k8sClient:     kubeClient,
-			dynamicClient: dynamicClient,
-		})
-		ctx.K8sClient = kubeClient
-		ctx.DynamicClient = dynamicClient
+	var secretRV string
+	if secret != nil {
+		secretRV = secret.ResourceVersion
 	}
 
-	// Call next handler in chain
+	kube, dyn, err := h.clientCache.GetOrBuild(key, secretRV, func() (kubernetes.Interface, dynamic.Interface, error) {
+		return h.clientFactory(secret)
+	})
+	if err != nil {
+		ctx.Logger.Error().Err(err).Msg("unable to create K8s client")
+		return service.NewCriticalError(fmt.Errorf("failed to create K8s client: %w", err))
+	}
+
+	ctx.K8sClient = kube
+	ctx.DynamicClient = dyn
+
 	if h.next != nil && !ctx.SkipRemaining {
 		return h.next.Execute(ctx)
 	}

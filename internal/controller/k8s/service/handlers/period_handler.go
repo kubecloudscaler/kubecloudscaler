@@ -20,9 +20,13 @@ import (
 	"errors"
 	"time"
 
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/client-go/util/retry"
 	"k8s.io/utils/ptr"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kubecloudscaler/kubecloudscaler/api/common"
+	kubecloudscalerv1alpha3 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha3"
 	"github.com/kubecloudscaler/kubecloudscaler/internal/controller/k8s/service"
 	"github.com/kubecloudscaler/kubecloudscaler/internal/utils"
 	k8sUtils "github.com/kubecloudscaler/kubecloudscaler/pkg/k8s/utils"
@@ -32,6 +36,10 @@ import (
 
 // RequeueDelaySeconds is the delay in seconds before requeuing a run-once period.
 const RequeueDelaySeconds = 5
+
+// MinRequeueAfter is the minimum requeue delay applied when the computed value is non-positive
+// (e.g. a run-once period that has already ended). Prevents hot-looping on immediate requeue.
+const MinRequeueAfter = 30 * time.Second
 
 // PeriodHandler is a handler that validates and determines the current time period for scaling operations.
 type PeriodHandler struct {
@@ -54,7 +62,7 @@ func NewPeriodHandler() service.Handler {
 func (h *PeriodHandler) Execute(ctx *service.ReconciliationContext) error {
 	h.configureResourceSettings(ctx)
 
-	prevPeriodName := previousPeriodName(ctx.Scaler.Status.CurrentPeriod)
+	prevPeriodType := previousPeriodType(ctx.Scaler.Status.CurrentPeriod)
 
 	period, err := h.resolveActivePeriod(ctx)
 	if err != nil {
@@ -63,7 +71,7 @@ func (h *PeriodHandler) Execute(ctx *service.ReconciliationContext) error {
 	ctx.Period = period
 	ctx.ResourceConfig.K8s.Period = period
 
-	if h.shouldSkipNoaction(ctx, prevPeriodName) {
+	if h.shouldSkipNoaction(ctx, prevPeriodType) {
 		ctx.Logger.Debug().Str("period", periodPkg.NoactionPeriodName).Msg("no action period, skipping")
 		ctx.SkipRemaining = true
 		if ctx.RequeueAfter == 0 {
@@ -94,9 +102,11 @@ func (h *PeriodHandler) configureResourceSettings(ctx *service.ReconciliationCon
 	}
 }
 
-func previousPeriodName(cp *common.ScalerStatusPeriod) string {
+// previousPeriodType returns the Type of the last observed period. Using Type (not Name)
+// avoids false matches when a user creates a custom period literally named "noaction".
+func previousPeriodType(cp *common.ScalerStatusPeriod) string {
 	if cp != nil {
-		return cp.Name
+		return cp.Type
 	}
 	return ""
 }
@@ -119,27 +129,62 @@ func (h *PeriodHandler) resolveActivePeriod(ctx *service.ReconciliationContext) 
 		if errors.Is(err, utils.ErrRunOncePeriod) && !ctx.ShouldFinalize {
 			ctx.Logger.Info().Msg("run-once period detected, requeuing until period ends")
 			if ctx.RequeueAfter == 0 {
-				ctx.RequeueAfter = time.Until(period.EndTime.Add(RequeueDelaySeconds * time.Second))
+				d := time.Until(period.EndTime.Add(RequeueDelaySeconds * time.Second))
+				if d <= 0 {
+					// Period already ended — avoid an immediate-requeue hot loop.
+					d = MinRequeueAfter
+				}
+				ctx.RequeueAfter = d
 			}
 			ctx.SkipRemaining = true
 			return period, nil
 		}
 
 		ctx.Logger.Error().Err(err).Msg("unable to validate period")
-		ctx.Scaler.Status.Comments = ptr.To(err.Error())
+		comments := ptr.To(err.Error())
+		ctx.Scaler.Status.Comments = comments
+		// Best-effort persist of Comments so the user sees why reconciliation failed. A
+		// CriticalError stops the chain before StatusHandler runs, so without this the
+		// in-memory mutation would never reach the cluster. Patch failure is only logged —
+		// the original validation error is still surfaced to the controller.
+		if patchErr := patchStatusComments(ctx, comments); patchErr != nil {
+			ctx.Logger.Warn().Err(patchErr).Msg("failed to persist status.comments")
+		}
 		return nil, service.NewCriticalError(err)
 	}
 	return period, nil
 }
 
+// patchStatusComments persists only status.comments via a status-subresource patch with
+// optimistic locking + retry on conflict. Scoped tightly so spec is never transmitted.
+// NotFound from the inner Get is treated as a no-op (the scaler was deleted between
+// FetchHandler and here; there is nothing to patch).
+func patchStatusComments(ctx *service.ReconciliationContext, comments *string) error {
+	err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		latest := &kubecloudscalerv1alpha3.K8s{}
+		if err := ctx.Client.Get(ctx.Ctx, ctx.Request.NamespacedName, latest); err != nil {
+			return err
+		}
+		patch := client.MergeFromWithOptions(latest.DeepCopy(), client.MergeFromWithOptimisticLock{})
+		latest.Status.Comments = comments
+		return ctx.Client.Status().Patch(ctx.Ctx, latest, patch)
+	})
+	if apierrors.IsNotFound(err) {
+		return nil
+	}
+	return err
+}
+
 // shouldSkipNoaction returns true when we can safely skip the rest of the chain
 // because the period is still "noaction" (steady state). During deletion this
 // must always return false so that StatusHandler can remove the finalizer.
-func (h *PeriodHandler) shouldSkipNoaction(ctx *service.ReconciliationContext, prevPeriodName string) bool {
+// Comparison is on Type rather than Name so a user-defined period literally named
+// "noaction" is not mistaken for the system fallback.
+func (h *PeriodHandler) shouldSkipNoaction(ctx *service.ReconciliationContext, prevPeriodType string) bool {
 	if ctx.ShouldFinalize {
 		return false
 	}
-	return prevPeriodName == periodPkg.NoactionPeriodName && ctx.Period.Name == periodPkg.NoactionPeriodName
+	return prevPeriodType == periodPkg.NoactionPeriodName && string(ctx.Period.Type) == periodPkg.NoactionPeriodName
 }
 
 // SetNext establishes the next handler in the chain.

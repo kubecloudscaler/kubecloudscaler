@@ -18,6 +18,8 @@ package handlers_test
 
 import (
 	"context"
+	"fmt"
+	"sync"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -26,6 +28,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/dynamic"
+	dynfake "k8s.io/client-go/dynamic/fake"
+	"k8s.io/client-go/kubernetes"
+	kfake "k8s.io/client-go/kubernetes/fake"
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
@@ -36,6 +42,34 @@ import (
 	"github.com/kubecloudscaler/kubecloudscaler/internal/controller/k8s/service/testutil"
 )
 
+// stubNamespaceResolver returns a fixed namespace — keeps tests independent of POD_NAMESPACE.
+type stubNamespaceResolver struct{ ns string }
+
+func (s stubNamespaceResolver) Resolve() string { return s.ns }
+
+// stubClientFactory records invocations and returns a deterministic client triple.
+type stubClientFactory struct {
+	invocations []*corev1.Secret
+	kubeClient  kubernetes.Interface
+	dynClient   dynamic.Interface
+	err         error
+}
+
+func (s *stubClientFactory) build(secret *corev1.Secret) (kubernetes.Interface, dynamic.Interface, error) {
+	s.invocations = append(s.invocations, secret)
+	if s.err != nil {
+		return nil, nil, s.err
+	}
+	return s.kubeClient, s.dynClient, nil
+}
+
+func newStubFactory() *stubClientFactory {
+	return &stubClientFactory{
+		kubeClient: kfake.NewSimpleClientset(),
+		dynClient:  dynfake.NewSimpleDynamicClient(runtime.NewScheme()),
+	}
+}
+
 var _ = Describe("AuthHandler", func() {
 	var (
 		handler  service.Handler
@@ -43,10 +77,12 @@ var _ = Describe("AuthHandler", func() {
 		logger   zerolog.Logger
 		scheme   *runtime.Scheme
 		scaler   *kubecloudscalerv1alpha3.K8s
+		factory  *stubClientFactory
 	)
 
 	BeforeEach(func() {
-		handler = handlers.NewAuthHandler(nil)
+		factory = newStubFactory()
+		handler = handlers.NewAuthHandler(stubNamespaceResolver{ns: "default"}, handlers.WithClientFactory(factory.build))
 		logger = zerolog.Nop()
 		scheme = runtime.NewScheme()
 		Expect(kubecloudscalerv1alpha3.AddToScheme(scheme)).To(Succeed())
@@ -74,84 +110,139 @@ var _ = Describe("AuthHandler", func() {
 	})
 
 	Context("When no AuthSecret is specified", func() {
-		It("should attempt to get K8s client (may fail without real cluster)", func() {
+		It("should build a default-credentials client and expose it on the context", func() {
 			reconCtx.Client = fake.NewClientBuilder().WithScheme(scheme).WithObjects(scaler).Build()
 
 			err := handler.Execute(reconCtx)
 
-			// In a test environment without a real K8s cluster, client creation may fail
-			// This is expected behavior - the handler should return a CriticalError
-			if err != nil {
-				Expect(service.IsCriticalError(err)).To(BeTrue())
-			} else {
-				Expect(reconCtx.Secret).To(BeNil())
-				Expect(reconCtx.K8sClient).ToNot(BeNil())
-				Expect(reconCtx.DynamicClient).ToNot(BeNil())
-			}
+			Expect(err).ToNot(HaveOccurred())
+			Expect(reconCtx.Secret).To(BeNil())
+			Expect(reconCtx.K8sClient).To(BeIdenticalTo(factory.kubeClient))
+			Expect(reconCtx.DynamicClient).To(BeIdenticalTo(factory.dynClient))
+			Expect(factory.invocations).To(HaveLen(1))
+			Expect(factory.invocations[0]).To(BeNil())
 		})
 
+		It("should propagate factory errors as CriticalError", func() {
+			factory.err = fmt.Errorf("kubeconfig unreachable")
+			reconCtx.Client = fake.NewClientBuilder().WithScheme(scheme).WithObjects(scaler).Build()
+
+			err := handler.Execute(reconCtx)
+
+			Expect(err).To(HaveOccurred())
+			Expect(service.IsCriticalError(err)).To(BeTrue())
+		})
 	})
 
 	Context("When an AuthSecret is specified and exists", func() {
-		It("should fetch the secret and get K8s client", func() {
+		var authSecret *corev1.Secret
+
+		BeforeEach(func() {
 			secretName := "k8s-secret"
 			scaler.Spec.Config.AuthSecret = ptr.To(secretName)
-			authSecret := &corev1.Secret{
+			authSecret = &corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      secretName,
-					Namespace: "default",
+					Name:            secretName,
+					Namespace:       "default",
+					ResourceVersion: "1",
 				},
-				Data: map[string][]byte{
-					"kubeconfig": []byte("fake-kubeconfig"),
-				},
+				Data: map[string][]byte{"kubeconfig": []byte("fake")},
 			}
 			reconCtx.Client = fake.NewClientBuilder().WithScheme(scheme).WithObjects(scaler, authSecret).Build()
+		})
 
+		It("should fetch the secret, build the client, and chain to next", func() {
 			nextCalled := false
-			mockNext := &testutil.MockHandler{
+			handler.SetNext(&testutil.MockHandler{
 				ExecuteFunc: func(ctx *service.ReconciliationContext) error {
 					nextCalled = true
 					return nil
 				},
-			}
-			handler.SetNext(mockNext)
+			})
 
-			err := handler.Execute(reconCtx)
+			Expect(handler.Execute(reconCtx)).To(Succeed())
+			Expect(reconCtx.Secret.Name).To(Equal(authSecret.Name))
+			Expect(nextCalled).To(BeTrue())
+			Expect(factory.invocations).To(HaveLen(1))
+		})
 
-			// Note: This may return an error if the secret kubeconfig is not valid
-			// In a real test, we would mock the k8sClient.GetClient function
-			// For now, we expect an error because the fake kubeconfig is not valid
-			if err != nil {
-				Expect(service.IsCriticalError(err)).To(BeTrue())
-				Expect(nextCalled).To(BeFalse())
-			} else {
-				Expect(reconCtx.Secret).To(Equal(authSecret))
-				Expect(nextCalled).To(BeTrue())
-			}
+		It("should reuse the cached client when the secret ResourceVersion is unchanged", func() {
+			Expect(handler.Execute(reconCtx)).To(Succeed())
+			Expect(handler.Execute(reconCtx)).To(Succeed())
+
+			// Second reconciliation must hit the cache, so factory is invoked only once
+			Expect(factory.invocations).To(HaveLen(1))
+		})
+
+		It("should rebuild the client when the secret is rotated (ResourceVersion changes)", func() {
+			Expect(handler.Execute(reconCtx)).To(Succeed())
+
+			// Simulate rotation: fetch latest, mutate, update — fake client bumps ResourceVersion.
+			rotated := &corev1.Secret{}
+			secretKey := types.NamespacedName{Namespace: authSecret.Namespace, Name: authSecret.Name}
+			Expect(reconCtx.Client.Get(reconCtx.Ctx, secretKey, rotated)).To(Succeed())
+			rotated.Data["kubeconfig"] = []byte("rotated")
+			Expect(reconCtx.Client.Update(reconCtx.Ctx, rotated)).To(Succeed())
+
+			Expect(handler.Execute(reconCtx)).To(Succeed())
+			Expect(factory.invocations).To(HaveLen(2))
 		})
 	})
 
 	Context("When an AuthSecret is specified but does not exist", func() {
-		It("should return a critical error", func() {
-			secretName := "non-existent-secret"
-			scaler.Spec.Config.AuthSecret = ptr.To(secretName)
+		It("should return a critical error without invoking the factory", func() {
+			scaler.Spec.Config.AuthSecret = ptr.To("non-existent-secret")
 			reconCtx.Client = fake.NewClientBuilder().WithScheme(scheme).WithObjects(scaler).Build()
-
-			nextCalled := false
-			mockNext := &testutil.MockHandler{
-				ExecuteFunc: func(ctx *service.ReconciliationContext) error {
-					nextCalled = true
-					return nil
-				},
-			}
-			handler.SetNext(mockNext)
 
 			err := handler.Execute(reconCtx)
 
 			Expect(err).To(HaveOccurred())
 			Expect(service.IsCriticalError(err)).To(BeTrue())
 			Expect(reconCtx.Secret).To(BeNil())
-			Expect(nextCalled).To(BeFalse())
+			Expect(factory.invocations).To(BeEmpty())
+		})
+	})
+
+	Context("WithClientFactory with a nil factory", func() {
+		It("panics immediately — mis-wired tests must fail loudly, not fall through to real in-cluster config", func() {
+			Expect(func() { handlers.WithClientFactory(nil) }).To(Panic())
+		})
+	})
+
+	Context("Concurrent reconciles hitting the same cacheKey", func() {
+		It("is goroutine-safe (run with -race); factory invocations are bounded", func() {
+			secretName := "k8s-secret"
+			scaler.Spec.Config.AuthSecret = ptr.To(secretName)
+			authSecret := &corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:            secretName,
+					Namespace:       "default",
+					ResourceVersion: "1",
+				},
+				Data: map[string][]byte{"kubeconfig": []byte("fake")},
+			}
+			reconCtx.Client = fake.NewClientBuilder().WithScheme(scheme).WithObjects(scaler, authSecret).Build()
+
+			const workers = 20
+			var wg sync.WaitGroup
+			for range workers {
+				wg.Go(func() {
+					local := &service.ReconciliationContext{
+						Ctx:     context.Background(),
+						Request: reconCtx.Request,
+						Client:  reconCtx.Client,
+						Logger:  reconCtx.Logger,
+						Scaler:  scaler,
+					}
+					Expect(handler.Execute(local)).To(Succeed())
+				})
+			}
+			wg.Wait()
+
+			// Under the current single-mutex cache, concurrent misses may serialise but none
+			// should exceed the worker count, and at least one build must have happened.
+			Expect(factory.invocations).ToNot(BeEmpty())
+			Expect(len(factory.invocations)).To(BeNumerically("<=", workers))
 		})
 	})
 })

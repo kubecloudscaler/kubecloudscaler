@@ -23,8 +23,10 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/rs/zerolog"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -121,15 +123,15 @@ var _ = Describe("StatusHandler", func() {
 		})
 	})
 
-	Context("When client Update fails during finalizer removal", func() {
+	Context("When client Patch fails during finalizer removal", func() {
 		It("should return a recoverable error and set RequeueAfter", func() {
 			controllerutil.AddFinalizer(reconCtx.Scaler, handlers.ScalerFinalizer)
-			injectedErr := fmt.Errorf("update conflict")
+			injectedErr := fmt.Errorf("persistent patch failure")
 			reconCtx.Client = fake.NewClientBuilder().
 				WithScheme(scheme).
 				WithObjects(reconCtx.Scaler).
 				WithInterceptorFuncs(interceptor.Funcs{
-					Update: func(ctx context.Context, c client.WithWatch, obj client.Object, opts ...client.UpdateOption) error {
+					Patch: func(ctx context.Context, c client.WithWatch, obj client.Object, patch client.Patch, opts ...client.PatchOption) error {
 						return injectedErr
 					},
 				}).
@@ -144,20 +146,21 @@ var _ = Describe("StatusHandler", func() {
 		})
 	})
 
-	Context("When client Status Update fails", func() {
+	Context("When client Status Patch fails", func() {
 		It("should return a recoverable error and set RequeueAfter", func() {
-			injectedErr := fmt.Errorf("status update failure")
+			injectedErr := fmt.Errorf("status patch failure")
 			reconCtx.Client = fake.NewClientBuilder().
 				WithScheme(scheme).
 				WithObjects(scaler).
 				WithStatusSubresource(scaler).
 				WithInterceptorFuncs(interceptor.Funcs{
-					SubResourceUpdate: func(
-						ctx context.Context,
-						c client.Client,
-						subResourceName string,
-						obj client.Object,
-						opts ...client.SubResourceUpdateOption,
+					SubResourcePatch: func(
+						_ context.Context,
+						_ client.Client,
+						_ string,
+						_ client.Object,
+						_ client.Patch,
+						_ ...client.SubResourcePatchOption,
 					) error {
 						return injectedErr
 					},
@@ -195,6 +198,106 @@ var _ = Describe("StatusHandler", func() {
 			err := handler.Execute(reconCtx)
 
 			Expect(err).ToNot(HaveOccurred())
+		})
+	})
+
+	Context("DeepCopy isolation between snapshot and Get-overwritten latest", func() {
+		It("writes the ctx-sourced Successful/Failed slices, not the server-side state", func() {
+			// Pre-populate the server with different slice contents than what ctx holds. A
+			// shallow copy of CurrentPeriod would alias the slices and let server state bleed
+			// through after the retry loop's Get.
+			serverScaler := scaler.DeepCopy()
+			serverScaler.Status.CurrentPeriod = &common.ScalerStatusPeriod{
+				Successful: []common.ScalerStatusSuccess{{Name: "stale-from-server", Kind: "deployment"}},
+				Failed:     []common.ScalerStatusFailed{{Name: "stale-failed", Kind: "deployment", Reason: "old"}},
+			}
+			reconCtx.Client = fake.NewClientBuilder().
+				WithScheme(scheme).
+				WithObjects(serverScaler).
+				WithStatusSubresource(serverScaler).
+				Build()
+			reconCtx.SuccessResults = []common.ScalerStatusSuccess{{Name: "fresh-success", Kind: "deployment"}}
+			reconCtx.FailedResults = []common.ScalerStatusFailed{}
+
+			Expect(handler.Execute(reconCtx)).To(Succeed())
+
+			persisted := &kubecloudscalerv1alpha3.K8s{}
+			Expect(reconCtx.Client.Get(reconCtx.Ctx, reconCtx.Request.NamespacedName, persisted)).To(Succeed())
+			Expect(persisted.Status.CurrentPeriod).ToNot(BeNil())
+			Expect(persisted.Status.CurrentPeriod.Successful).To(ConsistOf(
+				common.ScalerStatusSuccess{Name: "fresh-success", Kind: "deployment"},
+			))
+			Expect(persisted.Status.CurrentPeriod.Failed).To(BeEmpty())
+
+			// Mutating the ctx slice after the write must not shift persisted state (no alias).
+			reconCtx.SuccessResults[0].Name = "mutated-after-write"
+			Expect(persisted.Status.CurrentPeriod.Successful[0].Name).To(Equal("fresh-success"))
+		})
+	})
+
+	Context("Retry-on-conflict when patching status", func() {
+		It("retries once on a 409 and succeeds on the second Patch", func() {
+			gvr := schema.GroupResource{Group: "kubecloudscaler.cloud", Resource: "k8s"}
+			var calls int
+			reconCtx.Client = fake.NewClientBuilder().
+				WithScheme(scheme).
+				WithObjects(scaler).
+				WithStatusSubresource(scaler).
+				WithInterceptorFuncs(interceptor.Funcs{
+					SubResourcePatch: func(ctx context.Context, c client.Client, subResourceName string, obj client.Object, patch client.Patch, opts ...client.SubResourcePatchOption) error {
+						calls++
+						if calls == 1 {
+							return apierrors.NewConflict(gvr, obj.GetName(), fmt.Errorf("conflict"))
+						}
+						return c.Status().Patch(ctx, obj, patch, opts...)
+					},
+				}).
+				Build()
+
+			Expect(handler.Execute(reconCtx)).To(Succeed())
+			Expect(calls).To(Equal(2))
+		})
+	})
+
+	Context("When the scaler is deleted between Fetch and the finalizer-remove Patch", func() {
+		It("completes without error (cleanup is idempotent)", func() {
+			scaler.SetFinalizers([]string{handlers.ScalerFinalizer})
+			// Fake client WITHOUT the scaler — any Get inside patchRemoveFinalizer returns NotFound.
+			reconCtx.Client = fake.NewClientBuilder().WithScheme(scheme).Build()
+			reconCtx.ShouldFinalize = true
+
+			err := handler.Execute(reconCtx)
+
+			Expect(err).ToNot(HaveOccurred())
+			Expect(reconCtx.RequeueAfter).To(BeZero())
+		})
+	})
+
+	Context("Retry-on-conflict when removing the finalizer", func() {
+		It("retries once on a 409 and succeeds on the second Patch", func() {
+			controllerutil.AddFinalizer(scaler, handlers.ScalerFinalizer)
+			now := metav1.Now()
+			scaler.SetDeletionTimestamp(&now)
+			gvr := schema.GroupResource{Group: "kubecloudscaler.cloud", Resource: "k8s"}
+			var patchCalls int
+			reconCtx.Client = fake.NewClientBuilder().
+				WithScheme(scheme).
+				WithObjects(scaler).
+				WithInterceptorFuncs(interceptor.Funcs{
+					Patch: func(ctx context.Context, c client.WithWatch, obj client.Object, patch client.Patch, opts ...client.PatchOption) error {
+						patchCalls++
+						if patchCalls == 1 {
+							return apierrors.NewConflict(gvr, obj.GetName(), fmt.Errorf("conflict"))
+						}
+						return c.Patch(ctx, obj, patch, opts...)
+					},
+				}).
+				Build()
+			reconCtx.Scaler = scaler
+			reconCtx.ShouldFinalize = true
+
+			Expect(handler.Execute(reconCtx)).To(Succeed())
+			Expect(patchCalls).To(Equal(2))
 		})
 	})
 })
