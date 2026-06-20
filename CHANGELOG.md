@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.10.1](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.10.0...v1.10.1) (2026-06-20)
+
+
+### Bug Fixes
+
+* **deps:** update all non-major dependencies ([#264](https://github.com/kubecloudscaler/kubecloudscaler/issues/264)) ([eb16639](https://github.com/kubecloudscaler/kubecloudscaler/commit/eb16639e47844a0b7fd35c75b1157c7c2669be73))
+* **deps:** update all non-major dependencies ([#271](https://github.com/kubecloudscaler/kubecloudscaler/issues/271)) ([7d51251](https://github.com/kubecloudscaler/kubecloudscaler/commit/7d51251248c654fe086459cd07715ef81b0331d6))
+* **deps:** update all non-major dependencies to v0.285.0 ([#278](https://github.com/kubecloudscaler/kubecloudscaler/issues/278)) ([a63d3b9](https://github.com/kubecloudscaler/kubecloudscaler/commit/a63d3b90072ed39b13123a4e2d328071d4253df7))
+* **deps:** update github.com/actions/actions-runner-controller digest to 8c84ab2 ([#268](https://github.com/kubecloudscaler/kubecloudscaler/issues/268)) ([c4b6792](https://github.com/kubecloudscaler/kubecloudscaler/commit/c4b67921371ac9dca00ac630ef42b1ed99cb2987))
+* **deps:** update github.com/actions/actions-runner-controller digest to 9c50514 ([#272](https://github.com/kubecloudscaler/kubecloudscaler/issues/272)) ([614a9e2](https://github.com/kubecloudscaler/kubecloudscaler/commit/614a9e271280c4a71f47408703f5a32e49ae9ede))
+* **deps:** update github.com/actions/actions-runner-controller digest to a401686 ([#262](https://github.com/kubecloudscaler/kubecloudscaler/issues/262)) ([8d555b2](https://github.com/kubecloudscaler/kubecloudscaler/commit/8d555b265855d0884b52b2332803fa16975c85ad))
+* **deps:** update github.com/actions/actions-runner-controller digest to c7005c3 ([#282](https://github.com/kubecloudscaler/kubecloudscaler/issues/282)) ([df67fb8](https://github.com/kubecloudscaler/kubecloudscaler/commit/df67fb8085d20ded88c2b561fb6147b40c4ab6b0))
+* **deps:** update k8s.io/utils digest to a95e086 ([#279](https://github.com/kubecloudscaler/kubecloudscaler/issues/279)) ([0313adc](https://github.com/kubecloudscaler/kubecloudscaler/commit/0313adc59869fa1439c67b3ce5da186e9f104570))
+* **deps:** update k8s.io/utils digest to ff6756f ([#273](https://github.com/kubecloudscaler/kubecloudscaler/issues/273)) ([5d7f533](https://github.com/kubecloudscaler/kubecloudscaler/commit/5d7f533e7cc1e45b957555e0e40014c506f58bd6))
+
 ## [1.10.0](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.9.5...v1.10.0) (2026-04-19)
 
 
