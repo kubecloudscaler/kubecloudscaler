@@ -28,10 +28,10 @@ func New(ctx context.Context, config *gcpUtils.Config) (*InstanceGroupManagers, 
 		return nil, fmt.Errorf("project ID cannot be empty")
 	}
 
-	if config.LabelSelector != nil {
+	if len(config.Names) > 0 && config.LabelSelector != nil {
 		return nil, fmt.Errorf(
-			"labelSelector is not supported for instance-group-managers: " +
-				"MIG resources expose no labels at the resource level; use names instead")
+			"cannot set both names and labelSelector for instance-group-managers: " +
+				"use names for explicit selection or labelSelector for instance-label-based MIG discovery, not both")
 	}
 
 	return &InstanceGroupManagers{

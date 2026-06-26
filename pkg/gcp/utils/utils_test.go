@@ -292,3 +292,35 @@ var _ = Describe("GCP Utils", func() {
 func stringPtr(s string) *string {
 	return &s
 }
+
+var _ = Describe("parseMIGRefFromURL", func() {
+	DescribeTable("URL parsing",
+		func(url string, wantOK bool, wantZone, wantName string) {
+			ref, ok := parseMIGRefFromURL(url)
+			Expect(ok).To(Equal(wantOK))
+			if wantOK {
+				Expect(ref.Zone).To(Equal(wantZone))
+				Expect(ref.Name).To(Equal(wantName))
+			}
+		},
+		Entry("zonal MIG path",
+			"projects/my-project/zones/europe-west1-b/instanceGroupManagers/my-mig",
+			true, "europe-west1-b", "my-mig",
+		),
+		Entry("zonal MIG path with numeric project",
+			"projects/123456789/zones/us-central1-a/instanceGroupManagers/app-mig",
+			true, "us-central1-a", "app-mig",
+		),
+		Entry("regional MIG returns false",
+			"projects/my-project/regions/europe-west1/instanceGroupManagers/my-mig",
+			false, "", "",
+		),
+		Entry("empty string returns false",
+			"", false, "", "",
+		),
+		Entry("unrelated URL returns false",
+			"projects/my-project/zones/europe-west1-b/instances/my-vm",
+			false, "", "",
+		),
+	)
+})

@@ -52,6 +52,12 @@ func (cs *ClientSet) Close() error {
 	return errors.Join(errs...)
 }
 
+// MIGRef identifies a zonal Managed Instance Group by name and zone.
+type MIGRef struct {
+	Name string
+	Zone string
+}
+
 // Config defines the configuration for GCP resource management.
 type Config struct {
 	ProjectID         string                `json:"projectId,omitempty"`

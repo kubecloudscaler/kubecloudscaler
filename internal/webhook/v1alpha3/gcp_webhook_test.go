@@ -137,7 +137,7 @@ var _ = Describe("Gcp Webhook Validation", func() {
 			Expect(err.Error()).To(ContainSubstring("type must be 'up' or 'down'"))
 			Expect(warnings).To(BeNil())
 		})
-		It("should reject labelSelector on instance-group-managers", func() {
+		It("should accept labelSelector alone on instance-group-managers (MIG discovery via instance labels)", func() {
 			gcp := &kubecloudscalerv1alpha3.Gcp{
 				Spec: kubecloudscalerv1alpha3.GcpSpec{
 					Config: kubecloudscalerv1alpha3.GcpConfig{
@@ -158,7 +158,40 @@ var _ = Describe("Gcp Webhook Validation", func() {
 					Resources: common.Resources{
 						Types: []common.ResourceKind{common.ResourceInstanceGroupManagers},
 						LabelSelector: &metav1.LabelSelector{
-							MatchLabels: map[string]string{"env": "dev"},
+							MatchLabels: map[string]string{"lifecyclemanager": "kubecloudscaler"},
+						},
+					},
+				},
+			}
+
+			warnings, err := validator.ValidateCreate(ctx, gcp)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(warnings).To(BeNil())
+		})
+
+		It("should reject both names and labelSelector on instance-group-managers", func() {
+			gcp := &kubecloudscalerv1alpha3.Gcp{
+				Spec: kubecloudscalerv1alpha3.GcpSpec{
+					Config: kubecloudscalerv1alpha3.GcpConfig{
+						ProjectID: "my-project",
+					},
+					Periods: []common.ScalerPeriod{
+						{
+							Type: common.PeriodTypeDown,
+							Time: common.TimePeriod{
+								Recurring: &common.RecurringPeriod{
+									Days:      []common.DayOfWeek{common.DaySaturday, common.DaySunday},
+									StartTime: "00:00",
+									EndTime:   "23:59",
+								},
+							},
+						},
+					},
+					Resources: common.Resources{
+						Types: []common.ResourceKind{common.ResourceInstanceGroupManagers},
+						Names: []string{"my-mig"},
+						LabelSelector: &metav1.LabelSelector{
+							MatchLabels: map[string]string{"lifecyclemanager": "kubecloudscaler"},
 						},
 					},
 				},
@@ -166,7 +199,7 @@ var _ = Describe("Gcp Webhook Validation", func() {
 
 			warnings, err := validator.ValidateCreate(ctx, gcp)
 			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("labelSelector is not supported for instance-group-managers"))
+			Expect(err.Error()).To(ContainSubstring("cannot set both resources.names and resources.labelSelector"))
 			Expect(warnings).To(BeNil())
 		})
 	})

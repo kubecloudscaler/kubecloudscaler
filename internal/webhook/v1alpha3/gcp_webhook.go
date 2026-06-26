@@ -81,10 +81,11 @@ func (v *GcpCustomValidator) validateGcp(gcp *kubecloudscalerv1alpha3.Gcp) error
 	}
 
 	for _, resourceType := range gcp.Spec.Resources.Types {
-		if resourceType == common.ResourceInstanceGroupManagers && gcp.Spec.Resources.LabelSelector != nil {
+		if resourceType == common.ResourceInstanceGroupManagers &&
+			len(gcp.Spec.Resources.Names) > 0 && gcp.Spec.Resources.LabelSelector != nil {
 			return fmt.Errorf(
-				"resources.labelSelector is not supported for instance-group-managers: " +
-					"MIG resources expose no labels at the resource level; use resources.names instead")
+				"cannot set both resources.names and resources.labelSelector for instance-group-managers: " +
+					"use names for explicit selection or labelSelector for instance-label-based MIG discovery, not both")
 		}
 	}
 

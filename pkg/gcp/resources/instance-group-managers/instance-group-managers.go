@@ -26,8 +26,11 @@ const (
 )
 
 // SetState stops or starts all managed instances in the selected MIGs based on the current period.
-// MIGs are selected by name (Config.Names); if empty, all MIGs in the region are processed.
-// LabelSelector is not used: MIG resources do not expose labels at the resource level.
+//
+// Selection strategy (mutually exclusive):
+//   - LabelSelector set: discover MIG names by reading the created-by metadata of instances
+//     that match the selector; the MIG-aware stop/start API is still used.
+//   - Names set (or neither): enumerate zone-level MIGs, filtered by name when Names is non-empty.
 func (c *InstanceGroupManagers) SetState(ctx context.Context) ([]common.ScalerStatusSuccess, []common.ScalerStatusFailed, error) {
 	success := make([]common.ScalerStatusSuccess, 0)
 	failed := make([]common.ScalerStatusFailed, 0)
@@ -40,17 +43,31 @@ func (c *InstanceGroupManagers) SetState(ctx context.Context) ([]common.ScalerSt
 	desiredState := c.getDesiredState()
 	found := false
 
-	for _, zone := range zones {
-		migs, err := c.listMIGsInZone(ctx, zone)
+	if c.Config.LabelSelector != nil {
+		refs, err := gcpUtils.GetMIGNamesFromInstanceLabels(
+			ctx, c.Config.Client, c.Config.ProjectID, zones, c.Config.LabelSelector,
+		)
 		if err != nil {
-			return success, failed, fmt.Errorf("failed to list instance group managers in zone %q: %w", zone, err)
+			return success, failed, fmt.Errorf("failed to discover MIGs from instance labels: %w", err)
 		}
-
-		for _, mig := range migs {
+		for _, ref := range refs {
 			found = true
-			migSuccess, migFailed := c.processMIG(ctx, mig, zone, desiredState)
+			migSuccess, migFailed := c.processMIGByName(ctx, ref.Name, ref.Zone, desiredState)
 			success = append(success, migSuccess...)
 			failed = append(failed, migFailed...)
+		}
+	} else {
+		for _, zone := range zones {
+			migs, err := c.listMIGsInZone(ctx, zone)
+			if err != nil {
+				return success, failed, fmt.Errorf("failed to list instance group managers in zone %q: %w", zone, err)
+			}
+			for _, mig := range migs {
+				found = true
+				migSuccess, migFailed := c.processMIGByName(ctx, mig.GetName(), zone, desiredState)
+				success = append(success, migSuccess...)
+				failed = append(failed, migFailed...)
+			}
 		}
 	}
 
@@ -101,23 +118,22 @@ func (c *InstanceGroupManagers) isMIGSelected(mig *computepb.InstanceGroupManage
 	return slices.Contains(c.Config.Names, mig.GetName())
 }
 
-// processMIG lists managed instances in a MIG, determines which ones need a state change,
+// processMIGByName lists managed instances in a MIG, determines which ones need a state change,
 // then calls StopInstances or StartInstances on the MIG with those instance URLs.
-func (c *InstanceGroupManagers) processMIG(
+func (c *InstanceGroupManagers) processMIGByName(
 	ctx context.Context,
-	mig *computepb.InstanceGroupManager,
-	zone, desiredState string,
+	migName, zone, desiredState string,
 ) ([]common.ScalerStatusSuccess, []common.ScalerStatusFailed) {
 	status := common.ScalerStatusSuccess{
 		Kind: "InstanceGroupManager",
-		Name: mig.GetName(),
+		Name: migName,
 	}
 
-	instances, err := c.listManagedInstances(ctx, mig.GetName(), zone)
+	instances, err := c.listManagedInstances(ctx, migName, zone)
 	if err != nil {
 		return nil, []common.ScalerStatusFailed{{
 			Kind:   "InstanceGroupManager",
-			Name:   mig.GetName(),
+			Name:   migName,
 			Reason: err.Error(),
 		}}
 	}
@@ -143,10 +159,10 @@ func (c *InstanceGroupManagers) processMIG(
 		return []common.ScalerStatusSuccess{status}, nil
 	}
 
-	if err := c.applyMIGState(ctx, mig.GetName(), zone, desiredState, toChange); err != nil {
+	if err := c.applyMIGState(ctx, migName, zone, desiredState, toChange); err != nil {
 		return nil, []common.ScalerStatusFailed{{
 			Kind:   "InstanceGroupManager",
-			Name:   mig.GetName(),
+			Name:   migName,
 			Reason: err.Error(),
 		}}
 	}

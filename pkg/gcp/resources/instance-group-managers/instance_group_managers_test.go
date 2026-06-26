@@ -105,8 +105,9 @@ var _ = Describe("InstanceGroupManagers", func() {
 			})
 		})
 
-		Context("when labelSelector is set", func() {
+		Context("when both names and labelSelector are set", func() {
 			BeforeEach(func() {
+				config.Names = []string{"my-mig"}
 				config.LabelSelector = &metaV1.LabelSelector{
 					MatchLabels: map[string]string{"env": "dev"},
 				}
@@ -116,8 +117,23 @@ var _ = Describe("InstanceGroupManagers", func() {
 				var err error
 				igm, err = New(ctx, config)
 				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("labelSelector is not supported"))
+				Expect(err.Error()).To(ContainSubstring("cannot set both names and labelSelector"))
 				Expect(igm).To(BeNil())
+			})
+		})
+
+		Context("when only labelSelector is set (MIG discovery via instance labels)", func() {
+			BeforeEach(func() {
+				config.LabelSelector = &metaV1.LabelSelector{
+					MatchLabels: map[string]string{"lifecyclemanager": "kubecloudscaler"},
+				}
+			})
+
+			It("should create a new InstanceGroupManagers instance", func() {
+				var err error
+				igm, err = New(ctx, config)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(igm).NotTo(BeNil())
 			})
 		})
 	})
