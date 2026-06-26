@@ -23,6 +23,12 @@ const (
 
 	// managedInstanceActionNone is the CurrentAction value when the MIG has no pending work on an instance.
 	managedInstanceActionNone = "NONE"
+
+	// migInstanceStopped is the ManagedInstance.InstanceStatus value after instanceGroupManagers.stopInstances.
+	// This is distinct from gcpUtils.InstanceStopped ("TERMINATED") which is the Instance.Status value
+	// produced by plain instances.stop. The ManagedInstance proto uses a separate enum where
+	// stopInstances yields "STOPPED", not "TERMINATED".
+	migInstanceStopped = "STOPPED"
 )
 
 // SetState stops or starts all managed instances in the selected MIGs based on the current period.
@@ -261,8 +267,10 @@ func (c *InstanceGroupManagers) finalizeIGMMutation(
 }
 
 // getDesiredState determines the desired state based on the current period.
+// Returns migInstanceStopped ("STOPPED") for down periods — not gcpUtils.InstanceStopped ("TERMINATED"),
+// which is the plain instances.stop value and does not match ManagedInstance.InstanceStatus.
 func (c *InstanceGroupManagers) getDesiredState() string {
-	defaultPeriodType := gcpUtils.InstanceStopped
+	defaultPeriodType := migInstanceStopped
 	if c.Config.DefaultPeriodType == string(common.PeriodTypeUp) {
 		defaultPeriodType = gcpUtils.InstanceRunning
 	}
@@ -275,7 +283,7 @@ func (c *InstanceGroupManagers) getDesiredState() string {
 	case common.PeriodTypeUp:
 		return gcpUtils.InstanceRunning
 	case common.PeriodTypeDown:
-		return gcpUtils.InstanceStopped
+		return migInstanceStopped
 	default:
 		return defaultPeriodType
 	}

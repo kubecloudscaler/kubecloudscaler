@@ -115,9 +115,10 @@ var _ = Describe("InstanceGroupManagers", func() {
 				igm.Period = nil
 			})
 
-			It("should return stopped state", func() {
+			// MIG-stopped instances report "STOPPED", not "TERMINATED" (which is the plain instances.stop value).
+			It("should return MIG stopped state", func() {
 				state := igm.getDesiredState()
-				Expect(state).To(Equal(utils.InstanceStopped))
+				Expect(state).To(Equal(migInstanceStopped))
 			})
 		})
 
@@ -137,9 +138,9 @@ var _ = Describe("InstanceGroupManagers", func() {
 				igm.Period = &period.Period{Type: common.PeriodTypeDown}
 			})
 
-			It("should return stopped state", func() {
+			It("should return MIG stopped state", func() {
 				state := igm.getDesiredState()
-				Expect(state).To(Equal(utils.InstanceStopped))
+				Expect(state).To(Equal(migInstanceStopped))
 			})
 		})
 
@@ -210,8 +211,16 @@ var _ = Describe("InstanceGroupManagers", func() {
 		})
 
 		It("should return false when instance status does not match desired state", func() {
-			inst := &computepb.ManagedInstance{InstanceStatus: ptr.To(utils.InstanceStopped)}
-			Expect(isManagedInstanceInDesiredState(inst, utils.InstanceRunning)).To(BeFalse())
+			inst := &computepb.ManagedInstance{InstanceStatus: ptr.To(utils.InstanceRunning)}
+			Expect(isManagedInstanceInDesiredState(inst, migInstanceStopped)).To(BeFalse())
+		})
+
+		// Regression: instanceGroupManagers.stopInstances yields "STOPPED" (not "TERMINATED").
+		// Using gcpUtils.InstanceStopped ("TERMINATED") would cause every reconcile to re-issue
+		// StopInstances against already-stopped instances.
+		It("should return true when MIG instance is STOPPED and desired state is STOPPED", func() {
+			inst := &computepb.ManagedInstance{InstanceStatus: ptr.To(migInstanceStopped)}
+			Expect(isManagedInstanceInDesiredState(inst, migInstanceStopped)).To(BeTrue())
 		})
 	})
 
