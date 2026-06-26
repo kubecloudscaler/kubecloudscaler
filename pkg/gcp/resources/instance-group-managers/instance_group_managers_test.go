@@ -13,6 +13,7 @@ import (
 	"github.com/kubecloudscaler/kubecloudscaler/api/common"
 	"github.com/kubecloudscaler/kubecloudscaler/pkg/gcp/utils"
 	"github.com/kubecloudscaler/kubecloudscaler/pkg/period"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var _ = Describe("InstanceGroupManagers", func() {
@@ -100,6 +101,22 @@ var _ = Describe("InstanceGroupManagers", func() {
 				igm, err = New(ctx, config)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("project ID cannot be empty"))
+				Expect(igm).To(BeNil())
+			})
+		})
+
+		Context("when labelSelector is set", func() {
+			BeforeEach(func() {
+				config.LabelSelector = &metaV1.LabelSelector{
+					MatchLabels: map[string]string{"env": "dev"},
+				}
+			})
+
+			It("should return an error", func() {
+				var err error
+				igm, err = New(ctx, config)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("labelSelector is not supported"))
 				Expect(igm).To(BeNil())
 			})
 		})

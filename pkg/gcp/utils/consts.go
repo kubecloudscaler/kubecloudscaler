@@ -13,4 +13,9 @@ const (
 	InstanceStopping = "STOPPING"
 	// InstanceStarting is the GCP instance starting state.
 	InstanceStarting = "STARTING"
+
+	// OperationTimeoutMinutes is the timeout for GCP zone operation polling.
+	OperationTimeoutMinutes = 5
+	// OperationCheckIntervalSeconds is the polling interval for GCP zone operations.
+	OperationCheckIntervalSeconds = 10
 )

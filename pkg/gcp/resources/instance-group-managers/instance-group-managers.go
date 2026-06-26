@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"slices"
-	"time"
 
 	compute "cloud.google.com/go/compute/apiv1"
 	computepb "cloud.google.com/go/compute/apiv1/computepb"
@@ -16,11 +15,6 @@ import (
 )
 
 const (
-	// OperationTimeoutMinutes is the timeout for GCP operations in minutes.
-	OperationTimeoutMinutes = 5
-	// OperationCheckIntervalSeconds is the interval for checking operation status in seconds.
-	OperationCheckIntervalSeconds = 10
-
 	// managedInstanceActionNone is the CurrentAction value when the MIG has no pending work on an instance.
 	managedInstanceActionNone = "NONE"
 
@@ -202,7 +196,7 @@ func (c *InstanceGroupManagers) applyMIGState(
 	switch desiredState {
 	case gcpUtils.InstanceRunning:
 		return c.startMIGInstances(ctx, migName, zone, instances)
-	case gcpUtils.InstanceStopped:
+	case migInstanceStopped:
 		return c.stopMIGInstances(ctx, migName, zone, instances)
 	default:
 		return fmt.Errorf("unknown desired state: %s", desiredState)
@@ -261,32 +255,16 @@ func (c *InstanceGroupManagers) finalizeIGMMutation(
 			actionVerb, migName, zone, permissionHint, err)
 	}
 	if c.Config.WaitForOperation {
-		return c.waitForOperation(ctx, op.Name(), zone)
+		return gcpUtils.WaitForZoneOperation(ctx, c.Config.Client, c.Config.ProjectID, op.Name(), zone)
 	}
 	return nil
 }
 
 // getDesiredState determines the desired state based on the current period.
-// Returns migInstanceStopped ("STOPPED") for down periods — not gcpUtils.InstanceStopped ("TERMINATED"),
-// which is the plain instances.stop value and does not match ManagedInstance.InstanceStatus.
+// Uses migInstanceStopped ("STOPPED") — not gcpUtils.InstanceStopped ("TERMINATED") — because
+// ManagedInstance.InstanceStatus uses a distinct proto enum from Instance.Status.
 func (c *InstanceGroupManagers) getDesiredState() string {
-	defaultPeriodType := migInstanceStopped
-	if c.Config.DefaultPeriodType == string(common.PeriodTypeUp) {
-		defaultPeriodType = gcpUtils.InstanceRunning
-	}
-
-	if c.Period == nil {
-		return defaultPeriodType
-	}
-
-	switch c.Period.Type {
-	case common.PeriodTypeUp:
-		return gcpUtils.InstanceRunning
-	case common.PeriodTypeDown:
-		return migInstanceStopped
-	default:
-		return defaultPeriodType
-	}
+	return gcpUtils.GetDesiredState(c.Period, c.Config.DefaultPeriodType, migInstanceStopped)
 }
 
 // isManagedInstanceTransitioning returns true when the MIG has a pending action on the instance.
@@ -298,35 +276,4 @@ func isManagedInstanceTransitioning(inst *computepb.ManagedInstance) bool {
 // isManagedInstanceInDesiredState returns true when the instance already matches desiredState.
 func isManagedInstanceInDesiredState(inst *computepb.ManagedInstance, desiredState string) bool {
 	return inst.GetInstanceStatus() == desiredState
-}
-
-// waitForOperation polls ZoneOperations until the operation completes or the context is cancelled.
-func (c *InstanceGroupManagers) waitForOperation(ctx context.Context, operationName, zone string) error {
-	timeout := time.After(OperationTimeoutMinutes * time.Minute)
-	ticker := time.NewTicker(OperationCheckIntervalSeconds * time.Second)
-	defer ticker.Stop()
-
-	for {
-		select {
-		case <-timeout:
-			return fmt.Errorf("operation timed out")
-		case <-ticker.C:
-			op, err := c.Config.Client.ZoneOperations.Get(ctx, &computepb.GetZoneOperationRequest{
-				Operation: operationName,
-				Project:   c.Config.ProjectID,
-				Zone:      zone,
-			})
-			if err != nil {
-				return fmt.Errorf("failed to get operation status: %w", err)
-			}
-			if op.GetStatus() == computepb.Operation_DONE {
-				if op.Error != nil && len(op.Error.Errors) > 0 {
-					return fmt.Errorf("operation failed: %v", op.Error.Errors)
-				}
-				return nil
-			}
-		case <-ctx.Done():
-			return ctx.Err()
-		}
-	}
 }
