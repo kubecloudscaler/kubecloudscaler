@@ -17,10 +17,11 @@ import (
 // It supports authentication via service account key from Kubernetes secret or default credentials
 func GetClient(ctx context.Context, secret *corev1.Secret) (*gcpUtils.ClientSet, error) {
 	var (
-		instancesClient      *compute.InstancesClient
-		regionsClient        *compute.RegionsClient
-		zoneOperationsClient *compute.ZoneOperationsClient
-		err                  error
+		instancesClient             *compute.InstancesClient
+		regionsClient               *compute.RegionsClient
+		zoneOperationsClient        *compute.ZoneOperationsClient
+		instanceGroupManagersClient *compute.InstanceGroupManagersClient
+		err                         error
 	)
 
 	if secret != nil {
@@ -56,6 +57,15 @@ func GetClient(ctx context.Context, secret *corev1.Secret) (*gcpUtils.ClientSet,
 		if err != nil {
 			return nil, fmt.Errorf("failed to create ZoneOperations client: %w", err)
 		}
+
+		//nolint:staticcheck // SA1019: deprecated; JSON-from-Secret auth until migration
+		instanceGroupManagersClient, err = compute.NewInstanceGroupManagersRESTClient(
+			ctx,
+			option.WithCredentialsJSON(serviceAccountKey),
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create InstanceGroupManagers client: %w", err)
+		}
 	} else {
 		// Use default credentials (Application Default Credentials)
 		instancesClient, err = compute.NewInstancesRESTClient(ctx)
@@ -72,12 +82,18 @@ func GetClient(ctx context.Context, secret *corev1.Secret) (*gcpUtils.ClientSet,
 		if err != nil {
 			return nil, fmt.Errorf("failed to create ZoneOperations client with default credentials: %w", err)
 		}
+
+		instanceGroupManagersClient, err = compute.NewInstanceGroupManagersRESTClient(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create InstanceGroupManagers client with default credentials: %w", err)
+		}
 	}
 
 	return &gcpUtils.ClientSet{
-		Instances:      instancesClient,
-		Regions:        regionsClient,
-		ZoneOperations: zoneOperationsClient,
+		Instances:             instancesClient,
+		Regions:               regionsClient,
+		ZoneOperations:        zoneOperationsClient,
+		InstanceGroupManagers: instanceGroupManagersClient,
 	}, nil
 }
 

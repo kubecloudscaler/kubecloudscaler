@@ -19,9 +19,9 @@ Counter of reconciliation runs by controller and result.
 | `result`     | `success`, `critical_error`, `recoverable_error` | Reconciliation outcome |
 
 **Example queries:**
-- Error rate by controller:  
+- Error rate by controller:
   `rate(kubecloudscaler_reconcile_total{result=~"critical_error|recoverable_error"}[5m]) / rate(kubecloudscaler_reconcile_total[5m])`
-- Successful K8s reconciliations:  
+- Successful K8s reconciliations:
   `rate(kubecloudscaler_reconcile_total{controller="k8s_scaler", result="success"}[5m])`
 
 ---
@@ -37,9 +37,9 @@ Histogram of reconciliation duration in seconds, by controller.
 Buckets: 0.001, 0.0025, 0.00625, … up to ~14.5s (exponential ×2.5).
 
 **Example queries:**
-- K8s reconciliation duration P95:  
+- K8s reconciliation duration P95:
   `histogram_quantile(0.95, rate(kubecloudscaler_reconcile_duration_seconds_bucket{controller="k8s_scaler"}[5m]))`
-- Average duration by controller:  
+- Average duration by controller:
   `rate(kubecloudscaler_reconcile_duration_seconds_sum[5m]) / rate(kubecloudscaler_reconcile_duration_seconds_count[5m])`
 
 ---
@@ -55,9 +55,9 @@ Counter of scaling operations (success or failure) by controller, resource kind,
 | `result`        | `success`, `failed` | Scaling operation result                        |
 
 **Example queries:**
-- Scaling failure rate by kind:  
+- Scaling failure rate by kind:
   `rate(kubecloudscaler_scaling_operations_total{result="failed"}[5m]) / (rate(kubecloudscaler_scaling_operations_total[5m]) or vector(0))`
-- Successful scaling volume by kind:  
+- Successful scaling volume by kind:
   `sum by (resource_kind) (rate(kubecloudscaler_scaling_operations_total{result="success"}[5m]))`
 
 ---
@@ -72,9 +72,9 @@ Counter of times a period was considered active, by controller and period type.
 | `period_type`| `up`, `down`, `noaction` | Active period type (scale up, scale down, or none) |
 
 **Example queries:**
-- Reconciliations with “up” period:  
+- Reconciliations with “up” period:
   `rate(kubecloudscaler_period_activations_total{period_type="up"}[5m])`
-- Breakdown by up/down/noaction:  
+- Breakdown by up/down/noaction:
   `sum by (period_type) (rate(kubecloudscaler_period_activations_total[5m]))`
 
 ---

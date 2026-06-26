@@ -386,8 +386,3 @@ _Appears in:_
 | `disableEvents` _boolean_ | Disable events |   |   |
 | `authSecret` _string_ | AuthSecret name |   |   |
 | `restoreOnDelete` _boolean_ | Restore resource state on CR deletion (default: true) | true |   |
-
-
-
-
-
