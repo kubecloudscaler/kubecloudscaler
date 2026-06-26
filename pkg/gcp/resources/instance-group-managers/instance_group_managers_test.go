@@ -230,7 +230,7 @@ var _ = Describe("InstanceGroupManagers", func() {
 		})
 
 		It("should return an error when desired state is unknown", func() {
-			err := igm.applyMIGState(ctx, "mig-test", "europe-west1-b", "SUSPENDED", []string{})
+			err := igm.applyMIGState(ctx, "mig-test", "europe-west1-b", "UNKNOWN", []string{})
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("unknown desired state"))
 		})
