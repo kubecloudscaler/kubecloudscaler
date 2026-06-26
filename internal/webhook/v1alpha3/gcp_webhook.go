@@ -24,6 +24,7 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
+	"github.com/kubecloudscaler/kubecloudscaler/api/common"
 	kubecloudscalerv1alpha3 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha3"
 )
 
@@ -76,6 +77,14 @@ func (v *GcpCustomValidator) validateGcp(gcp *kubecloudscalerv1alpha3.Gcp) error
 	for i, p := range gcp.Spec.Periods {
 		if err := validatePeriod(p, i); err != nil {
 			return err
+		}
+	}
+
+	for _, resourceType := range gcp.Spec.Resources.Types {
+		if resourceType == common.ResourceInstanceGroupManagers && gcp.Spec.Resources.LabelSelector != nil {
+			return fmt.Errorf(
+				"resources.labelSelector is not supported for instance-group-managers: " +
+					"MIG resources expose no labels at the resource level; use resources.names instead")
 		}
 	}
 

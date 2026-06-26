@@ -11,13 +11,21 @@ import (
 
 // WaitForZoneOperation polls ZoneOperations until the operation completes or the context is cancelled.
 func WaitForZoneOperation(ctx context.Context, clients *ClientSet, projectID, operationName, zone string) error {
-	timeout := time.After(OperationTimeoutMinutes * time.Minute)
+	if clients == nil {
+		return fmt.Errorf("clients cannot be nil")
+	}
+	if clients.ZoneOperations == nil {
+		return fmt.Errorf("ZoneOperations client cannot be nil")
+	}
+
+	timer := time.NewTimer(OperationTimeoutMinutes * time.Minute)
+	defer timer.Stop()
 	ticker := time.NewTicker(OperationCheckIntervalSeconds * time.Second)
 	defer ticker.Stop()
 
 	for {
 		select {
-		case <-timeout:
+		case <-timer.C:
 			return fmt.Errorf("operation timed out")
 		case <-ticker.C:
 			op, err := clients.ZoneOperations.Get(ctx, &computepb.GetZoneOperationRequest{

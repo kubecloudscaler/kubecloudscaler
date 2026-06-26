@@ -21,6 +21,7 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/kubecloudscaler/kubecloudscaler/api/common"
 	kubecloudscalerv1alpha3 "github.com/kubecloudscaler/kubecloudscaler/api/v1alpha3"
@@ -134,6 +135,38 @@ var _ = Describe("Gcp Webhook Validation", func() {
 			warnings, err := validator.ValidateCreate(ctx, gcp)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("type must be 'up' or 'down'"))
+			Expect(warnings).To(BeNil())
+		})
+		It("should reject labelSelector on instance-group-managers", func() {
+			gcp := &kubecloudscalerv1alpha3.Gcp{
+				Spec: kubecloudscalerv1alpha3.GcpSpec{
+					Config: kubecloudscalerv1alpha3.GcpConfig{
+						ProjectID: "my-project",
+					},
+					Periods: []common.ScalerPeriod{
+						{
+							Type: common.PeriodTypeDown,
+							Time: common.TimePeriod{
+								Recurring: &common.RecurringPeriod{
+									Days:      []common.DayOfWeek{common.DaySaturday, common.DaySunday},
+									StartTime: "00:00",
+									EndTime:   "23:59",
+								},
+							},
+						},
+					},
+					Resources: common.Resources{
+						Types: []common.ResourceKind{common.ResourceInstanceGroupManagers},
+						LabelSelector: &metav1.LabelSelector{
+							MatchLabels: map[string]string{"env": "dev"},
+						},
+					},
+				},
+			}
+
+			warnings, err := validator.ValidateCreate(ctx, gcp)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("labelSelector is not supported for instance-group-managers"))
 			Expect(warnings).To(BeNil())
 		})
 	})
