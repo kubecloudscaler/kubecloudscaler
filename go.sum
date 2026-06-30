@@ -28,8 +28,8 @@ github.com/AzureAD/microsoft-authentication-library-for-go v1.7.2 h1:RHK7bS+HQMs
 github.com/AzureAD/microsoft-authentication-library-for-go v1.7.2/go.mod h1:HKpQxkWaGLJ+D/5H8QRpyQXA1eKjxkFlOMwck5+33Jk=
 github.com/Masterminds/semver/v3 v3.4.0 h1:Zog+i5UMtVoCU8oKka5P7i9q9HgrJeGzI9SA1Xbatp0=
 github.com/Masterminds/semver/v3 v3.4.0/go.mod h1:4V+yj/TJE1HU9XfppCwVMZq3I84lprf4nC11bSS5beM=
-github.com/actions/actions-runner-controller v0.27.7-0.20260619110817-c7005c3696e3 h1:pyabOnGJ6ebtCg1EKGcSw4whgGHYLdmjWGwGrguOgKM=
-github.com/actions/actions-runner-controller v0.27.7-0.20260619110817-c7005c3696e3/go.mod h1:D4vPewcm4wKhjv/in9aayIRwoHqFtgEC+sJqsl3D6hs=
+github.com/actions/actions-runner-controller v0.27.7-0.20260630130558-2ee6b3b8e8d2 h1:rUIUHT3m9jBUv3A4O5JWShmAex6HB6E4tasQKKg1IzQ=
+github.com/actions/actions-runner-controller v0.27.7-0.20260630130558-2ee6b3b8e8d2/go.mod h1:D4vPewcm4wKhjv/in9aayIRwoHqFtgEC+sJqsl3D6hs=
 github.com/antlr4-go/antlr/v4 v4.13.1 h1:SqQKkuVZ+zWkMMNkjy5FZe5mr5WURWnlpmOuzYWrPrQ=
 github.com/antlr4-go/antlr/v4 v4.13.1/go.mod h1:GKmUxMtwp6ZgGwZSva4eWPC5mS6vUAmOABFgjdkM7Nw=
 github.com/beorn7/perks v1.0.1 h1:VlbKKnNfV8bJzeqoa4cOKqO6bYr3WgKZxO8Z16+hsOM=
