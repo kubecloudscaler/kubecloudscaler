@@ -4,7 +4,7 @@ go 1.26.3
 
 require (
 	cloud.google.com/go/compute v1.64.0
-	github.com/actions/actions-runner-controller v0.27.7-0.20260619110817-c7005c3696e3
+	github.com/actions/actions-runner-controller v0.27.7-0.20260630130558-2ee6b3b8e8d2
 	github.com/onsi/ginkgo/v2 v2.31.0
 	github.com/onsi/gomega v1.42.0
 	github.com/prometheus/client_golang v1.23.2
