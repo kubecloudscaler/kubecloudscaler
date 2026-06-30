@@ -168,6 +168,14 @@ func IsInstanceTransitioning(instance *computepb.Instance) bool {
 	return status == InstanceStopping || status == InstanceStarting
 }
 
+// IsInstanceMIGManaged returns true if the instance is managed by a zonal MIG.
+// MIG-managed instances must be scaled via the instance-group-managers resource type —
+// calling instances.stop directly causes the MIG autohealer to immediately recreate them.
+func IsInstanceMIGManaged(instance *computepb.Instance) bool {
+	_, ok := parseMIGRefFromCreatedBy(instance)
+	return ok
+}
+
 // GetMIGNamesFromInstanceLabels discovers zonal MIGs that own instances matching the label selector.
 // It lists instances by label, reads their created-by metadata, and returns deduplicated MIGRef values.
 // Standalone instances (no created-by metadata) and regional MIGs are silently skipped.

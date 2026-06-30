@@ -46,6 +46,14 @@ func (c *VMInstances) SetState(ctx context.Context) ([]common.ScalerStatusSucces
 			Name: instance.GetName(),
 		}
 
+		// Skip MIG-managed instances — instances.stop fights the autohealer (currentAction → RECREATING).
+		// Use the instance-group-managers resource type for MIG-managed VMs instead.
+		if gcpUtils.IsInstanceMIGManaged(instance) {
+			status.Comment = "Instance is MIG-managed; use instance-group-managers resource type"
+			success = append(success, status)
+			continue
+		}
+
 		// Skip instances that are in transitional states
 		if gcpUtils.IsInstanceTransitioning(instance) {
 			status.Comment = "Instance is in transitional state"
