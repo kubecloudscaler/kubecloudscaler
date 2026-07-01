@@ -16,13 +16,11 @@ import (
 // GetClient creates a GCP Compute Engine client
 // It supports authentication via service account key from Kubernetes secret or default credentials
 func GetClient(ctx context.Context, secret *corev1.Secret) (*gcpUtils.ClientSet, error) {
-	var (
-		instancesClient      *compute.InstancesClient
-		regionsClient        *compute.RegionsClient
-		zoneOperationsClient *compute.ZoneOperationsClient
-		err                  error
-	)
+	cs := &gcpUtils.ClientSet{}
+	// cleanup closes any clients already opened if a later one fails.
+	cleanup := func() { _ = cs.Close() }
 
+	var err error
 	if secret != nil {
 		// Use service account key from Kubernetes secret
 		serviceAccountKey, exists := secret.Data["service-account-key.json"]
@@ -31,54 +29,58 @@ func GetClient(ctx context.Context, secret *corev1.Secret) (*gcpUtils.ClientSet,
 		}
 
 		//nolint:staticcheck // SA1019: deprecated; JSON-from-Secret auth until migration
-		instancesClient, err = compute.NewInstancesRESTClient(
-			ctx,
-			option.WithCredentialsJSON(serviceAccountKey),
-		)
+		cs.Instances, err = compute.NewInstancesRESTClient(ctx, option.WithCredentialsJSON(serviceAccountKey))
 		if err != nil {
 			return nil, fmt.Errorf("failed to create Instances client: %w", err)
 		}
 
 		//nolint:staticcheck // SA1019: deprecated; JSON-from-Secret auth until migration
-		regionsClient, err = compute.NewRegionsRESTClient(
-			ctx,
-			option.WithCredentialsJSON(serviceAccountKey),
-		)
+		cs.Regions, err = compute.NewRegionsRESTClient(ctx, option.WithCredentialsJSON(serviceAccountKey))
 		if err != nil {
+			cleanup()
 			return nil, fmt.Errorf("failed to create Regions client: %w", err)
 		}
 
 		//nolint:staticcheck // SA1019: deprecated; JSON-from-Secret auth until migration
-		zoneOperationsClient, err = compute.NewZoneOperationsRESTClient(
-			ctx,
-			option.WithCredentialsJSON(serviceAccountKey),
-		)
+		cs.ZoneOperations, err = compute.NewZoneOperationsRESTClient(ctx, option.WithCredentialsJSON(serviceAccountKey))
 		if err != nil {
+			cleanup()
 			return nil, fmt.Errorf("failed to create ZoneOperations client: %w", err)
+		}
+
+		//nolint:staticcheck // SA1019: deprecated; JSON-from-Secret auth until migration
+		cs.InstanceGroupManagers, err = compute.NewInstanceGroupManagersRESTClient(ctx, option.WithCredentialsJSON(serviceAccountKey))
+		if err != nil {
+			cleanup()
+			return nil, fmt.Errorf("failed to create InstanceGroupManagers client: %w", err)
 		}
 	} else {
 		// Use default credentials (Application Default Credentials)
-		instancesClient, err = compute.NewInstancesRESTClient(ctx)
+		cs.Instances, err = compute.NewInstancesRESTClient(ctx)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create Instances client with default credentials: %w", err)
 		}
 
-		regionsClient, err = compute.NewRegionsRESTClient(ctx)
+		cs.Regions, err = compute.NewRegionsRESTClient(ctx)
 		if err != nil {
+			cleanup()
 			return nil, fmt.Errorf("failed to create Regions client with default credentials: %w", err)
 		}
 
-		zoneOperationsClient, err = compute.NewZoneOperationsRESTClient(ctx)
+		cs.ZoneOperations, err = compute.NewZoneOperationsRESTClient(ctx)
 		if err != nil {
+			cleanup()
 			return nil, fmt.Errorf("failed to create ZoneOperations client with default credentials: %w", err)
+		}
+
+		cs.InstanceGroupManagers, err = compute.NewInstanceGroupManagersRESTClient(ctx)
+		if err != nil {
+			cleanup()
+			return nil, fmt.Errorf("failed to create InstanceGroupManagers client with default credentials: %w", err)
 		}
 	}
 
-	return &gcpUtils.ClientSet{
-		Instances:      instancesClient,
-		Regions:        regionsClient,
-		ZoneOperations: zoneOperationsClient,
-	}, nil
+	return cs, nil
 }
 
 // GetProjectFromEnv returns the project ID from environment variable

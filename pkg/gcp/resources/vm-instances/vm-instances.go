@@ -5,20 +5,12 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"time"
 
 	compute "cloud.google.com/go/compute/apiv1"
 	computepb "cloud.google.com/go/compute/apiv1/computepb"
 
 	"github.com/kubecloudscaler/kubecloudscaler/api/common"
 	gcpUtils "github.com/kubecloudscaler/kubecloudscaler/pkg/gcp/utils"
-)
-
-const (
-	// OperationTimeoutMinutes is the timeout for GCP operations in minutes.
-	OperationTimeoutMinutes = 5
-	// OperationCheckIntervalSeconds is the interval for checking operation status in seconds.
-	OperationCheckIntervalSeconds = 10
 )
 
 // SetState scales instances based on the current period
@@ -52,6 +44,14 @@ func (c *VMInstances) SetState(ctx context.Context) ([]common.ScalerStatusSucces
 		status := common.ScalerStatusSuccess{
 			Kind: "ComputeInstance",
 			Name: instance.GetName(),
+		}
+
+		// Skip MIG-managed instances — instances.stop fights the autohealer (currentAction → RECREATING).
+		// Use the instance-group-managers resource type for MIG-managed VMs instead.
+		if gcpUtils.IsInstanceMIGManaged(instance) {
+			status.Comment = "Instance is MIG-managed; use instance-group-managers resource type"
+			success = append(success, status)
+			continue
 		}
 
 		// Skip instances that are in transitional states
@@ -97,23 +97,7 @@ func (c *VMInstances) SetState(ctx context.Context) ([]common.ScalerStatusSucces
 // defaultPeriodType is applied — not the pre-CR VM state. This means RestoreOnDelete
 // stops VMs by default ("down") unless defaultPeriodType is explicitly set to "up".
 func (c *VMInstances) getDesiredState() string {
-	defaultPeriodType := gcpUtils.InstanceStopped
-	if c.Config.DefaultPeriodType == string(common.PeriodTypeUp) {
-		defaultPeriodType = gcpUtils.InstanceRunning
-	}
-
-	if c.Period == nil {
-		return defaultPeriodType
-	}
-
-	switch c.Period.Type {
-	case common.PeriodTypeUp:
-		return gcpUtils.InstanceRunning
-	case common.PeriodTypeDown:
-		return gcpUtils.InstanceStopped
-	default:
-		return defaultPeriodType
-	}
+	return gcpUtils.GetDesiredState(c.Period, c.Config.DefaultPeriodType, gcpUtils.InstanceStopped)
 }
 
 // isInstanceInDesiredState checks if the instance is already in the desired state
@@ -176,7 +160,7 @@ func (c *VMInstances) finalizeInstanceMutation(
 			actionVerb, instanceName, zone, permissionHint, err)
 	}
 	if c.Config.WaitForOperation {
-		return c.waitForOperation(ctx, op.Name(), zone)
+		return gcpUtils.WaitForZoneOperation(ctx, c.Config.Client, c.Config.ProjectID, op.Name(), zone)
 	}
 	return nil
 }
@@ -197,39 +181,4 @@ func (c *VMInstances) extractZoneFromInstance(instance *computepb.Instance) stri
 	}
 
 	return ""
-}
-
-// waitForOperation waits for a GCP operation to complete
-func (c *VMInstances) waitForOperation(ctx context.Context, operationName, zone string) error {
-	// Set a timeout for the operation
-	timeout := time.After(OperationTimeoutMinutes * time.Minute)
-	ticker := time.NewTicker(OperationCheckIntervalSeconds * time.Second)
-	defer ticker.Stop()
-
-	for {
-		select {
-		case <-timeout:
-			return fmt.Errorf("operation timed out")
-		case <-ticker.C:
-			// Check operation status
-			getReq := &computepb.GetZoneOperationRequest{
-				Operation: operationName,
-				Project:   c.Config.ProjectID,
-				Zone:      zone,
-			}
-			op, err := c.Config.Client.ZoneOperations.Get(ctx, getReq)
-			if err != nil {
-				return fmt.Errorf("failed to get operation status: %w", err)
-			}
-
-			if op.GetStatus() == computepb.Operation_DONE {
-				if op.Error != nil && op.Error.Errors != nil && len(op.Error.Errors) > 0 {
-					return fmt.Errorf("operation failed: %v", op.Error.Errors)
-				}
-				return nil
-			}
-		case <-ctx.Done():
-			return ctx.Err()
-		}
-	}
 }

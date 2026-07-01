@@ -20,9 +20,10 @@ type GcpResource struct {
 // ClientSet groups all GCP compute clients used by the scaler.
 // Callers must call Close() when the ClientSet is no longer needed.
 type ClientSet struct {
-	Instances      *compute.InstancesClient
-	ZoneOperations *compute.ZoneOperationsClient
-	Regions        *compute.RegionsClient
+	Instances             *compute.InstancesClient
+	ZoneOperations        *compute.ZoneOperationsClient
+	Regions               *compute.RegionsClient
+	InstanceGroupManagers *compute.InstanceGroupManagersClient
 }
 
 // Close releases all underlying GCP client connections.
@@ -43,7 +44,18 @@ func (cs *ClientSet) Close() error {
 			errs = append(errs, err)
 		}
 	}
+	if cs.InstanceGroupManagers != nil {
+		if err := cs.InstanceGroupManagers.Close(); err != nil {
+			errs = append(errs, err)
+		}
+	}
 	return errors.Join(errs...)
+}
+
+// MIGRef identifies a zonal Managed Instance Group by name and zone.
+type MIGRef struct {
+	Name string
+	Zone string
 }
 
 // Config defines the configuration for GCP resource management.

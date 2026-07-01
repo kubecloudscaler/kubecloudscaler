@@ -7,6 +7,7 @@ import (
 
 	"github.com/rs/zerolog"
 
+	instancegroupmanagers "github.com/kubecloudscaler/kubecloudscaler/pkg/gcp/resources/instance-group-managers"
 	vminstances "github.com/kubecloudscaler/kubecloudscaler/pkg/gcp/resources/vm-instances"
 	"github.com/kubecloudscaler/kubecloudscaler/pkg/k8s/resources/cronjobs"
 	"github.com/kubecloudscaler/kubecloudscaler/pkg/k8s/resources/deployments"
@@ -30,6 +31,8 @@ func NewResource(ctx context.Context, resourceName string, config Config, logger
 		return newCronJobsResource(ctx, config)
 	case "vm-instances":
 		return newVMInstancesResource(ctx, config)
+	case "instance-group-managers":
+		return newInstanceGroupManagersResource(ctx, config)
 	case "github-ars":
 		return newGitHubARSResource(ctx, config)
 	case "scaledobjects":
@@ -71,6 +74,18 @@ func newCronJobsResource(ctx context.Context, config Config) (Resource, error) {
 	resource, err := cronjobs.New(ctx, config.K8s)
 	if err != nil {
 		return nil, fmt.Errorf("error creating cronjobs resource: %w", err)
+	}
+	return resource, nil
+}
+
+// newInstanceGroupManagersResource creates a new instance-group-managers resource
+func newInstanceGroupManagersResource(ctx context.Context, config Config) (Resource, error) {
+	if config.GCP == nil {
+		return nil, fmt.Errorf("GCP config is required for instance-group-managers resource")
+	}
+	resource, err := instancegroupmanagers.New(ctx, config.GCP)
+	if err != nil {
+		return nil, fmt.Errorf("error creating instance-group-managers resource: %w", err)
 	}
 	return resource, nil
 }

@@ -167,3 +167,71 @@ func IsInstanceTransitioning(instance *computepb.Instance) bool {
 	status := GetInstanceStatus(instance)
 	return status == InstanceStopping || status == InstanceStarting
 }
+
+// IsInstanceMIGManaged returns true if the instance is managed by a zonal MIG.
+// MIG-managed instances must be scaled via the instance-group-managers resource type —
+// calling instances.stop directly causes the MIG autohealer to immediately recreate them.
+func IsInstanceMIGManaged(instance *computepb.Instance) bool {
+	_, ok := parseMIGRefFromCreatedBy(instance)
+	return ok
+}
+
+// GetMIGNamesFromInstanceLabels discovers zonal MIGs that own instances matching the label selector.
+// It lists instances by label, reads their created-by metadata, and returns deduplicated MIGRef values.
+// Standalone instances (no created-by metadata) and regional MIGs are silently skipped.
+func GetMIGNamesFromInstanceLabels(
+	ctx context.Context,
+	clients *ClientSet,
+	projectID string,
+	zones []string,
+	labelSelector *metaV1.LabelSelector,
+) ([]MIGRef, error) {
+	instances, err := GetInstancesInZones(ctx, clients, projectID, zones, labelSelector)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list instances for MIG discovery: %w", err)
+	}
+
+	seen := make(map[string]struct{})
+	var refs []MIGRef
+	for _, inst := range instances {
+		ref, ok := parseMIGRefFromCreatedBy(inst)
+		if !ok {
+			continue
+		}
+		key := ref.Zone + "/" + ref.Name
+		if _, exists := seen[key]; !exists {
+			seen[key] = struct{}{}
+			refs = append(refs, ref)
+		}
+	}
+	return refs, nil
+}
+
+// parseMIGRefFromCreatedBy reads the created-by metadata key that MIGs inject into their instances
+// and delegates to parseMIGRefFromURL.
+func parseMIGRefFromCreatedBy(inst *computepb.Instance) (MIGRef, bool) {
+	if inst.Metadata == nil {
+		return MIGRef{}, false
+	}
+	for _, item := range inst.Metadata.Items {
+		if item.GetKey() == "created-by" {
+			return parseMIGRefFromURL(item.GetValue())
+		}
+	}
+	return MIGRef{}, false
+}
+
+// parseMIGRefFromURL extracts zone and MIG name from a GCP resource path of the form:
+//
+//	projects/{project}/zones/{zone}/instanceGroupManagers/{mig-name}
+//
+// Returns false for regional MIGs (regions/ instead of zones/) or any unrecognised format.
+func parseMIGRefFromURL(url string) (MIGRef, bool) {
+	parts := strings.Split(url, "/")
+	for i := 0; i+3 < len(parts); i++ {
+		if parts[i] == "zones" && parts[i+2] == "instanceGroupManagers" {
+			return MIGRef{Zone: parts[i+1], Name: parts[i+3]}, true
+		}
+	}
+	return MIGRef{}, false
+}

@@ -5,6 +5,10 @@ Scales GCP resources based on time periods.
 ## Supported Resources
 
 - Compute Engine VM instances (`common.ResourceVMInstances` = `"vm-instances"`)
+- Managed Instance Groups (`common.ResourceInstanceGroupManagers` = `"instance-group-managers"`)
+  - Uses `instanceGroupManagers.stopInstances`/`startInstances` (MIG-aware API)
+  - Selection by MIG name (`resources.names`); label selectors do not apply to MIGs
+  - Do NOT use plain `instances.stop` on MIG-managed VMs — the autohealer will immediately recreate them
 - Do NOT use `"instance"`, `"disk"`, or other arbitrary strings
 
 ## Handler Chain

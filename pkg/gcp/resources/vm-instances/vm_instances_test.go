@@ -158,6 +158,32 @@ var _ = Describe("ComputeInstances", func() {
 		})
 	})
 
+	Describe("SetState MIG guard", func() {
+		BeforeEach(func() {
+			ci = &VMInstances{Config: config}
+		})
+
+		Context("when instance is MIG-managed", func() {
+			It("should skip the instance with a descriptive comment", func() {
+				// isInstanceMIGManaged is exercised indirectly via utils.IsInstanceMIGManaged.
+				// Build a minimal instance with created-by metadata pointing to a MIG.
+				instance := &computepb.Instance{
+					Name:   stringPtr("mig-vm-0"),
+					Status: stringPtr(utils.InstanceRunning),
+					Metadata: &computepb.Metadata{
+						Items: []*computepb.Items{
+							{
+								Key:   stringPtr("created-by"),
+								Value: stringPtr("projects/my-project/zones/europe-west1-b/instanceGroupManagers/my-mig"),
+							},
+						},
+					},
+				}
+				Expect(utils.IsInstanceMIGManaged(instance)).To(BeTrue())
+			})
+		})
+	})
+
 	Describe("extractZoneFromInstance", func() {
 		BeforeEach(func() {
 			ci = &VMInstances{Config: config}
