@@ -98,3 +98,12 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - postgresql.cnpg.io
+  resources:
+  - clusters
+  verbs:
+  - get
+  - list
+  - patch
+  - update

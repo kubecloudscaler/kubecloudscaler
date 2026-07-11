@@ -8,7 +8,7 @@ Inspired by [kube-downscaler](https://codeberg.org/hjacobs/kube-downscaler).
 
 ## Features
 
-- **Kubernetes resources**: Deployments, StatefulSets, CronJobs, HPAs, GitHub AutoScaling Runner Sets
+- **Kubernetes resources**: Deployments, StatefulSets, CronJobs, HPAs, GitHub AutoScaling Runner Sets, KEDA ScaledObjects, CloudNativePG Clusters
 - **GCP resources**: Compute Engine VM instances
 - **Flow orchestration**: coordinate scaling across multiple K8s and GCP resources with time delays
 - **Recurring and fixed periods**: schedule by day/time or specific date ranges
@@ -52,6 +52,28 @@ spec:
     types: [deployments]
   config:
     forceExcludeSystemNamespaces: true
+```
+
+#### Hibernate CloudNativePG clusters outside business hours
+
+```yaml
+apiVersion: kubecloudscaler.cloud/v1alpha3
+kind: K8s
+metadata:
+  name: db-nightly-hibernation
+spec:
+  periods:
+    - type: down
+      time:
+        recurring:
+          days: [mon, tue, wed, thu, fri]
+          startTime: "20:00"
+          endTime: "07:00"
+          timezone: "Europe/Paris"
+  resources:
+    types: [cnpg-clusters]
+  config:
+    namespaces: [staging]
 ```
 
 #### Stop GCP VMs on weekends
@@ -135,8 +157,10 @@ kubectl apply -f <scaler-resource.yaml>
 
 | Kind | Resource types |
 |------|---------------|
-| K8s | `deployments`, `statefulsets`, `cronjobs`, `hpa`, `github-ars` |
+| K8s | `deployments`, `statefulsets`, `cronjobs`, `hpa`, `github-ars`, `scaledobjects`, `cnpg-clusters` |
 | Gcp | `vm-instances` |
+
+For `cnpg-clusters`, scaling toggles the [CloudNativePG](https://cloudnative-pg.io/) `cnpg.io/hibernation` annotation: a down period hibernates the cluster (all pods are shut down while PVCs are preserved) and an up period resumes it. This makes it possible to power off non-production databases outside business hours while keeping their data intact.
 
 ### Period configuration
 

@@ -33,6 +33,13 @@ const (
 	KedaPausedAnnotation = "autoscaling.keda.sh/paused"
 	// KedaPausedReplicasAnnotation is the KEDA annotation to set paused replicas count.
 	KedaPausedReplicasAnnotation = "autoscaling.keda.sh/paused-replicas"
+
+	// CNPGHibernationAnnotation is the CloudNativePG annotation controlling cluster hibernation.
+	CNPGHibernationAnnotation = "cnpg.io/hibernation"
+	// CNPGHibernationOn hibernates the cluster: pods are shut down while PVCs are preserved.
+	CNPGHibernationOn = "on"
+	// CNPGHibernationOff resumes a hibernated cluster.
+	CNPGHibernationOff = "off"
 )
 
 // IntReplicasStrategy handles scaling for resources with integer replicas (Deployments, StatefulSets).
@@ -364,4 +371,89 @@ func (s *KedaPauseStrategy) restore(resource ResourceItem) (bool, error) {
 	resource.SetAnnotations(annotations)
 
 	return false, nil
+}
+
+// CNPGHibernateStrategy handles scaling for CloudNativePG Clusters.
+// Scaling is not replica-based: setting the cnpg.io/hibernation annotation to
+// "on" shuts down all cluster pods while preserving PVCs, and "off" resumes them.
+type CNPGHibernateStrategy struct {
+	kind          string
+	logger        *zerolog.Logger
+	annotationMgr utils.AnnotationManager
+}
+
+// NewCNPGHibernateStrategy creates a new CNPGHibernateStrategy.
+func NewCNPGHibernateStrategy(
+	kind string,
+	logger *zerolog.Logger,
+	annotationMgr utils.AnnotationManager,
+) *CNPGHibernateStrategy {
+	return &CNPGHibernateStrategy{
+		kind:          kind,
+		logger:        logger,
+		annotationMgr: annotationMgr,
+	}
+}
+
+// GetKind returns the resource kind.
+func (s *CNPGHibernateStrategy) GetKind() string {
+	return s.kind
+}
+
+// ApplyScaling toggles CloudNativePG hibernation based on the period type.
+// On "down" it hibernates the cluster; on "up" it resumes it. Both record the
+// original hibernation state so that restoring (going out of period) can return
+// the cluster to whatever state it was in before the scaler acted.
+func (s *CNPGHibernateStrategy) ApplyScaling(
+	_ context.Context,
+	resource ResourceItem,
+	periodType string,
+	period *periodPkg.Period,
+) (bool, error) {
+	switch periodType {
+	case periodTypeDown:
+		s.setHibernation(resource, period, CNPGHibernationOn)
+	case "up":
+		s.setHibernation(resource, period, CNPGHibernationOff)
+	default:
+		return s.restore(resource)
+	}
+
+	return false, nil
+}
+
+// setHibernation records the original hibernation state and sets the annotation
+// to the requested value.
+func (s *CNPGHibernateStrategy) setHibernation(resource ResourceItem, period *periodPkg.Period, value string) {
+	wasHibernating := isHibernating(resource.GetAnnotations())
+	annotations := s.annotationMgr.AddBoolAnnotations(resource.GetAnnotations(), period, wasHibernating)
+	annotations[CNPGHibernationAnnotation] = value
+	resource.SetAnnotations(annotations)
+}
+
+// restore returns the cluster to its original hibernation state and clears the
+// scaler bookkeeping annotations.
+func (s *CNPGHibernateStrategy) restore(resource ResourceItem) (bool, error) {
+	isAlreadyRestored, wasHibernating, annotations, err := s.annotationMgr.RestoreBoolAnnotations(resource.GetAnnotations())
+	if err != nil {
+		return false, err
+	}
+
+	if isAlreadyRestored {
+		return true, nil
+	}
+
+	if ptr.Deref(wasHibernating, false) {
+		annotations[CNPGHibernationAnnotation] = CNPGHibernationOn
+	} else {
+		delete(annotations, CNPGHibernationAnnotation)
+	}
+	resource.SetAnnotations(annotations)
+
+	return false, nil
+}
+
+// isHibernating reports whether the cluster is currently hibernated.
+func isHibernating(annotations map[string]string) bool {
+	return annotations[CNPGHibernationAnnotation] == CNPGHibernationOn
 }

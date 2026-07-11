@@ -8,6 +8,7 @@ import (
 	"github.com/rs/zerolog"
 
 	vminstances "github.com/kubecloudscaler/kubecloudscaler/pkg/gcp/resources/vm-instances"
+	"github.com/kubecloudscaler/kubecloudscaler/pkg/k8s/resources/cnpg"
 	"github.com/kubecloudscaler/kubecloudscaler/pkg/k8s/resources/cronjobs"
 	"github.com/kubecloudscaler/kubecloudscaler/pkg/k8s/resources/deployments"
 	ars "github.com/kubecloudscaler/kubecloudscaler/pkg/k8s/resources/github_autoscalingrunnersets"
@@ -34,6 +35,8 @@ func NewResource(ctx context.Context, resourceName string, config Config, logger
 		return newGitHubARSResource(ctx, config)
 	case "scaledobjects":
 		return newScaledObjectsResource(ctx, config)
+	case "cnpg-clusters":
+		return newCNPGClustersResource(ctx, config)
 	default:
 		return nil, fmt.Errorf("%w: %s", ErrResourceNotFound, resourceName)
 	}
@@ -107,6 +110,18 @@ func newScaledObjectsResource(ctx context.Context, config Config) (Resource, err
 	resource, err := scaledobjects.New(ctx, config.K8s)
 	if err != nil {
 		return nil, fmt.Errorf("error creating scaledobjects resource: %w", err)
+	}
+	return resource, nil
+}
+
+// newCNPGClustersResource creates a new cnpg-clusters resource
+func newCNPGClustersResource(ctx context.Context, config Config) (Resource, error) {
+	if config.K8s == nil {
+		return nil, fmt.Errorf("K8s config is required for cnpg-clusters resource")
+	}
+	resource, err := cnpg.New(ctx, config.K8s)
+	if err != nil {
+		return nil, fmt.Errorf("error creating cnpg-clusters resource: %w", err)
 	}
 	return resource, nil
 }

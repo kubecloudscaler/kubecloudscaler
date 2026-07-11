@@ -18,6 +18,7 @@ var availableResources = []string{
 	"cronjobs",
 	"github-ars",
 	"scaledobjects",
+	"cnpg-clusters",
 }
 
 // GetAvailableResources returns a copy of the available resource types for scaling.
