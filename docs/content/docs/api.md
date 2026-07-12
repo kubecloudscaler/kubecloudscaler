@@ -254,7 +254,7 @@ _Appears in:_
 
 | Field | Description | Default | Validation |
 | --- | --- | --- | --- |
-| `name` _string_ |   |   |   |
+| `name` _string_ | Name is used both as an identifier inside the Flow spec and as a component of the generated child K8s CR name. It must be a DNS-1123 label. |   | Pattern: `^[a-z0-9]([-a-z0-9]*[a-z0-9])?$` |
 | `resources` _[common.Resources](#commonresources)_ |   |   |   |
 | `config` _[kubecloudscaler.cloud/v1alpha3.K8sConfig](#kubecloudscalercloudv1alpha3k8sconfig)_ |   |   |   |
 
@@ -269,7 +269,7 @@ _Appears in:_
 
 | Field | Description | Default | Validation |
 | --- | --- | --- | --- |
-| `name` _string_ |   |   |   |
+| `name` _string_ | Name is used both as an identifier inside the Flow spec and as a component of the generated child Gcp CR name. It must be a DNS-1123 label. |   | Pattern: `^[a-z0-9]([-a-z0-9]*[a-z0-9])?$` |
 | `resources` _[common.Resources](#commonresources)_ |   |   |   |
 | `config` _[kubecloudscaler.cloud/v1alpha3.GcpConfig](#kubecloudscalercloudv1alpha3gcpconfig)_ |   |   |   |
 
@@ -298,7 +298,7 @@ _Appears in:_
 
 | Field | Description | Default | Validation |
 | --- | --- | --- | --- |
-| `name` _string_ |   |   |   |
+| `name` _string_ | Name must match a K8sResource or GcpResource declared in spec.resources. Constrained to DNS-1123 label syntax to keep generated child CR names valid. |   | Pattern: `^[a-z0-9]([-a-z0-9]*[a-z0-9])?$` |
 | `startTimeDelay` _string_ | StartTimeDelay is the duration to delay the start of the period It is a duration in minutes It is optional and if not provided, the period will start at the start time of the period | 0m | Pattern: `^\d*m$` |
 | `endTimeDelay` _string_ | EndTimeDelay is the duration to delay the end of the period It is a duration in minutes It is optional and if not provided, the period will end at the end time of the period | 0m | Pattern: `^\d*m$` |
 
