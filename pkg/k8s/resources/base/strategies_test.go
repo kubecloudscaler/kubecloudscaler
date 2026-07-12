@@ -402,3 +402,129 @@ func TestBoolSuspendStrategy_ApplyScaling(t *testing.T) {
 		})
 	}
 }
+
+// ---------------------------------------------------------------------------
+// CNPGHibernateStrategy
+// ---------------------------------------------------------------------------
+
+func TestCNPGHibernateStrategy_ApplyScaling(t *testing.T) {
+	annotationMgr := utils.NewAnnotationManager()
+
+	tests := []struct {
+		name            string
+		periodType      string
+		period          *periodPkg.Period
+		initAnnotations map[string]string
+		wantHibernation string // "" means the annotation must be absent
+		wantRestored    bool
+	}{
+		{
+			name:            "down: hibernates and records original state",
+			periodType:      "down",
+			period:          newTestPeriod(),
+			wantHibernation: CNPGHibernationOn,
+		},
+		{
+			name:            "up: resumes and records original state",
+			periodType:      "up",
+			period:          newTestPeriod(),
+			initAnnotations: map[string]string{CNPGHibernationAnnotation: CNPGHibernationOn},
+			wantHibernation: CNPGHibernationOff,
+		},
+		{
+			name:       "restore: was hibernated, returns to hibernated",
+			periodType: "restore",
+			period:     nil,
+			initAnnotations: map[string]string{
+				CNPGHibernationAnnotation:              CNPGHibernationOff,
+				"kubecloudscaler.cloud/original-value": "true",
+			},
+			wantHibernation: CNPGHibernationOn,
+		},
+		{
+			name:       "restore: was not hibernated, removes annotation",
+			periodType: "restore",
+			period:     nil,
+			initAnnotations: map[string]string{
+				CNPGHibernationAnnotation:              CNPGHibernationOn,
+				"kubecloudscaler.cloud/original-value": "false",
+			},
+			wantHibernation: "",
+		},
+		{
+			name:            "restore: already restored is a no-op",
+			periodType:      "restore",
+			period:          nil,
+			initAnnotations: map[string]string{},
+			wantHibernation: "",
+			wantRestored:    true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			annotations := make(map[string]string)
+			for k, v := range tt.initAnnotations {
+				annotations[k] = v
+			}
+
+			resource := &mockResourceItem{name: "test-cluster", namespace: "default", annotations: annotations}
+			strategy := NewCNPGHibernateStrategy("cnpgcluster", testLogger(), annotationMgr)
+
+			assert.Equal(t, "cnpgcluster", strategy.GetKind())
+
+			restored, err := strategy.ApplyScaling(context.Background(), resource, tt.periodType, tt.period)
+			require.NoError(t, err)
+			assert.Equal(t, tt.wantRestored, restored)
+
+			if tt.wantHibernation == "" {
+				assert.NotContains(t, resource.GetAnnotations(), CNPGHibernationAnnotation)
+			} else {
+				assert.Equal(t, tt.wantHibernation, resource.GetAnnotations()[CNPGHibernationAnnotation])
+			}
+		})
+	}
+}
+
+// TestCNPGHibernateStrategy_Lifecycle drives a single resource through a
+// down -> up -> restore sequence to verify the original state captured on the
+// first action survives later transitions and is honored on restore.
+func TestCNPGHibernateStrategy_Lifecycle(t *testing.T) {
+	annotationMgr := utils.NewAnnotationManager()
+	strategy := NewCNPGHibernateStrategy("cnpgcluster", testLogger(), annotationMgr)
+	ctx := context.Background()
+
+	t.Run("originally not hibernated", func(t *testing.T) {
+		resource := &mockResourceItem{name: "c", namespace: "default", annotations: map[string]string{}}
+
+		_, err := strategy.ApplyScaling(ctx, resource, "down", newTestPeriod())
+		require.NoError(t, err)
+		assert.Equal(t, CNPGHibernationOn, resource.GetAnnotations()[CNPGHibernationAnnotation])
+
+		_, err = strategy.ApplyScaling(ctx, resource, "up", newTestPeriod())
+		require.NoError(t, err)
+		assert.Equal(t, CNPGHibernationOff, resource.GetAnnotations()[CNPGHibernationAnnotation])
+
+		_, err = strategy.ApplyScaling(ctx, resource, "restore", nil)
+		require.NoError(t, err)
+		assert.NotContains(t, resource.GetAnnotations(), CNPGHibernationAnnotation)
+		assert.NotContains(t, resource.GetAnnotations(), "kubecloudscaler.cloud/original-value")
+	})
+
+	t.Run("originally hibernated", func(t *testing.T) {
+		resource := &mockResourceItem{
+			name:        "c",
+			namespace:   "default",
+			annotations: map[string]string{CNPGHibernationAnnotation: CNPGHibernationOn},
+		}
+
+		_, err := strategy.ApplyScaling(ctx, resource, "up", newTestPeriod())
+		require.NoError(t, err)
+		assert.Equal(t, CNPGHibernationOff, resource.GetAnnotations()[CNPGHibernationAnnotation])
+
+		_, err = strategy.ApplyScaling(ctx, resource, "restore", nil)
+		require.NoError(t, err)
+		assert.Equal(t, CNPGHibernationOn, resource.GetAnnotations()[CNPGHibernationAnnotation])
+		assert.NotContains(t, resource.GetAnnotations(), "kubecloudscaler.cloud/original-value")
+	})
+}

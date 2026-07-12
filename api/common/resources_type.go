@@ -18,6 +18,7 @@ const (
 	ResourceGithubARS     ResourceKind = "github-ars"
 	ResourceHPA           ResourceKind = "hpa"
 	ResourceScaledObjects ResourceKind = "scaledobjects"
+	ResourceCNPGClusters  ResourceKind = "cnpg-clusters"
 	ResourceVMInstances   ResourceKind = "vm-instances"
 )
 
