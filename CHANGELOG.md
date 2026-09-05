@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.11.1](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.11.0...v1.11.1) (2026-09-05)
+
+
+### Bug Fixes
+
+* **deps:** update all non-major dependencies ([#284](https://github.com/kubecloudscaler/kubecloudscaler/issues/284)) ([2feb9b2](https://github.com/kubecloudscaler/kubecloudscaler/commit/2feb9b23c2d9f2d01f61a78c8fabd36c165b9896))
+* **deps:** update all non-major dependencies ([#304](https://github.com/kubecloudscaler/kubecloudscaler/issues/304)) ([fab0260](https://github.com/kubecloudscaler/kubecloudscaler/commit/fab0260bab675ea1266b951fe908bad5b1e93efb))
+* **deps:** update github.com/actions/actions-runner-controller digest to 252eb51 ([#288](https://github.com/kubecloudscaler/kubecloudscaler/issues/288)) ([036fe97](https://github.com/kubecloudscaler/kubecloudscaler/commit/036fe979255a8d94071097c45630deafd9c607e5))
+* **deps:** update github.com/actions/actions-runner-controller digest to a035c5a ([#299](https://github.com/kubecloudscaler/kubecloudscaler/issues/299)) ([20e5546](https://github.com/kubecloudscaler/kubecloudscaler/commit/20e55461f09013b383b11941677ad7d5ec3f4f20))
+* **deps:** update github.com/actions/actions-runner-controller digest to a4ac89e ([#306](https://github.com/kubecloudscaler/kubecloudscaler/issues/306)) ([6fb0c3a](https://github.com/kubecloudscaler/kubecloudscaler/commit/6fb0c3a40fb363ba1a640103b9589ec820f468d8))
+* **deps:** update k8s.io/utils digest to cf1189d ([#287](https://github.com/kubecloudscaler/kubecloudscaler/issues/287)) ([3261dea](https://github.com/kubecloudscaler/kubecloudscaler/commit/3261dea9c9bef59ff09a8f5cb64de387d2186f4a))
+* **deps:** update module google.golang.org/api to v0.291.0 ([#303](https://github.com/kubecloudscaler/kubecloudscaler/issues/303)) ([4bd7b69](https://github.com/kubecloudscaler/kubecloudscaler/commit/4bd7b6972edd46adb1d6862753cbab421e2d5d14))
+
 ## [1.11.0](https://github.com/kubecloudscaler/kubecloudscaler/compare/v1.10.0...v1.11.0) (2026-07-12)
 
 
