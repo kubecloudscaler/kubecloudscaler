@@ -107,9 +107,13 @@ KubeCloudScaler can manage various types of Kubernetes workload resources. By de
 | `cronjobs` | Scheduled job resources |
 | `hpas` | Horizontal Pod Autoscalers |
 | `github-ars` | GitHub AutoScalingRunnerSets |
+| `scaledobjects` | KEDA ScaledObjects (use this for KEDA-managed Deployments/StatefulSets) |
 
 > [!WARNING]
-> Application resources (deployments, statefulsets, cronjobs) cannot be managed simultaneously with HPA resources as they serve conflicting purposes. The controller validates this at runtime.
+> Do not target `deployments` or `statefulsets` directly when an autoscaler (HPA or KEDA `ScaledObject`) manages the same workload — the controllers fight over `.spec.replicas` and the workload never stabilizes:
+>
+> - **Down period with `minReplicas` > 0**: the HPA pulls the workload back to its own `minReplicas`, so replicas oscillate. Scale the `hpas` or `scaledobjects` type instead.
+> - **Down period with `minReplicas: 0`**: stable under a standalone HPA (the HPA stops acting while the target is at 0 replicas), but a KEDA `ScaledObject` keeps scaling the workload back up from 0, causing continuous pod churn. KEDA-managed workloads must be scaled through the `scaledobjects` type — down periods with `minReplicas: 0` pause the `ScaledObject` via the `autoscaling.keda.sh/paused` annotations, which KEDA honors without conflict.
 
 ### Resource Selection
 
@@ -474,6 +478,7 @@ status:
 8. **Test Period Logic**: Verify your time periods work as expected, especially when using `reverse` mode
 9. **Consider Time Zones**: Always specify the correct timezone for your schedule
 10. **Resource Exclusions**: Use `config.excludeNamespaces` or label selectors to protect critical resources
+11. **KEDA-Managed Workloads**: Scale KEDA `ScaledObjects` through the `scaledobjects` type — targeting the underlying Deployment directly causes replica thrashing
 
 ## Troubleshooting
 
@@ -489,6 +494,11 @@ status:
 - Verify the timezone is set correctly
 - Check that period times don't overlap unexpectedly
 - Ensure `reverse` mode is used correctly
+
+### Workload Oscillates (Scale Down/Up Loop)
+
+- Check if an HPA targets the same workload — it pulls replicas back to its own `minReplicas` when the down period uses a non-zero value
+- Check if a KEDA `ScaledObject` manages the workload — scale the `scaledobjects` type instead, so down periods pause the ScaledObject rather than fight it
 
 ### ArgoCD Conflicts
 
