@@ -1,4 +1,4 @@
-FROM cgr.dev/chainguard/static@sha256:f51c2493951313c3ad4069080b2814ffb6ed6fe3909dabeb84a9482f42d5600b
+FROM cgr.dev/chainguard/static@sha256:41e17ed83c594a64a9396b6ab96dd26d5ddc290dacf4c177464712ff21ad534f
 ARG TARGETPLATFORM
 LABEL org.opencontainers.image.source https://github.com/kubecloudscaler/kubecloudscaler
 ENTRYPOINT ["/kubecloudscaler"]
